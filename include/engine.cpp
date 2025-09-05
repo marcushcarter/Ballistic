@@ -7,6 +7,7 @@
 #include <fstream>
 #include <cstdlib>
 #include <source_location>
+#include <chrono>
 
 static void BE_Message(int severity, const std::string& module, const std::string& message, const std::string& file = "", int line = 0, const std::source_location& loc = std::source_location::current()) {
     std::string displayFile;
@@ -56,7 +57,7 @@ static void BE_Message(int severity, const std::string& module, const std::strin
 // ========================================================================
 
 float BE_FrameTime::update() {
-    currentTime = std::chrono::high_resolution_clock::now();
+    currentTime = std::chrono::steady_clock::now();
     dt = std::chrono::duration<float>(currentTime - previousTime).count();
     previousTime = currentTime;
 
@@ -255,11 +256,6 @@ BE_Texture::BE_Texture(const std::string& textureName, const std::string& imageP
     unit = slot;
     glBindTexture(type, ID);
 
-    glGenTextures(1, &ID);
-    glActiveTexture(GL_TEXTURE0 + slot);
-    unit = slot;
-    glBindTexture(type, ID);
-
     glTexParameteri(type, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(type, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
     glTexParameteri(type, GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -319,20 +315,20 @@ void BE_Camera::rotate(const glm::vec3& axis, float angle) {
 void BE_Camera::handleInputs(GLFWwindow* window, float dt) {
     float speed = 2.5f;
     float sensitivity = 1.5f;
+
     glm::vec3 move(0.0f);
+    glm::vec3 tmp(0.0f);
+    glm::vec3 forward, right, up;
 
-    // Direction vectors from orientation
-    glm::vec3 forward = orientation * glm::vec3(0,0,-1);
-    glm::vec3 right   = orientation * glm::vec3(1,0,0);
-    glm::vec3 up      = orientation * glm::vec3(0,1,0);
+    // Rotate standard axes by the camera quaternion
+    forward = orientation * glm::vec3(0, 0, -1);
+    right   = orientation * glm::vec3(1, 0, 0);
+    up      = orientation * glm::vec3(0, 1, 0);
 
-    glm::vec3 flatForward(forward.x, 0, forward.z);
-    if (glm::length(flatForward) > 1e-6f) flatForward = glm::normalize(flatForward);
-
-    glm::vec3 flatRight(right.x, 0, right.z);
-    flatRight = glm::normalize(flatRight);
-
-    glm::vec3 flatUp(0, up.y, 0);
+    // Flatten forward/right vectors for FPS movement
+    glm::vec3 flatForward = glm::normalize(glm::vec3(forward.x, 0.0f, forward.z));
+    glm::vec3 flatRight   = glm::normalize(glm::vec3(right.x, 0.0f, right.z));
+    glm::vec3 flatUp      = glm::vec3(0.0f, 1.0f, 0.0f);
 
     // Movement
     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) move += flatForward * speed * dt;
@@ -345,15 +341,20 @@ void BE_Camera::handleInputs(GLFWwindow* window, float dt) {
     position += move;
 
     // Rotation
-    float yawDelta = 0.0f, pitchDelta = 0.0f;
-    if (glfwGetKey(window, GLFW_KEY_LEFT))  yawDelta   = dt * sensitivity;
-    if (glfwGetKey(window, GLFW_KEY_RIGHT)) yawDelta   = -dt * sensitivity;
-    if (glfwGetKey(window, GLFW_KEY_UP))    pitchDelta = dt * sensitivity;
-    if (glfwGetKey(window, GLFW_KEY_DOWN))  pitchDelta = -dt * sensitivity;
+    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS)  yaw   += dt * sensitivity;
+    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) yaw   -= dt * sensitivity;
+    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS)    pitch += dt * sensitivity;
+    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS)  pitch -= dt * sensitivity;
 
-    if (std::abs(pitchDelta) > 1e-6f) rotate(glm::vec3(1,0,0), pitchDelta);
-    if (std::abs(yawDelta) > 1e-6f)   rotate(glm::vec3(0,1,0), yawDelta);
+    // Clamp pitch to avoid flipping
+    if (pitch > glm::radians(89.9f)) pitch = glm::radians(89.9f);
+    if (pitch < glm::radians(-89.9f)) pitch = glm::radians(-89.9f);
 
+    // Build quaternions from pitch and yaw
+    glm::quat qPitch = glm::angleAxis(pitch, glm::vec3(1,0,0));
+    glm::quat qYaw   = glm::angleAxis(yaw,   glm::vec3(0,1,0));
+
+    orientation = glm::normalize(qYaw * qPitch);
 }
 
 void BE_Camera::updateViewMatrix() {
@@ -375,9 +376,9 @@ void BE_Camera::uploadToShader(GLuint shaderID, const glm::mat4& modelMatrix) {
     glm::mat4 mvp = projViewMatrix * modelMatrix;
 
     glUniformMatrix4fv(glGetUniformLocation(shaderID, "uMVP"), 1, GL_FALSE, &mvp[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uModel"), 1, GL_FALSE, &modelMatrix[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uView"), 1, GL_FALSE, &viewMatrix[0][0]);
-    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uProjection"), 1, GL_FALSE, &projectionMatrix[0][0]);
+    // glUniformMatrix4fv(glGetUniformLocation(shaderID, "uModel"), 1, GL_FALSE, &modelMatrix[0][0]);
+    // glUniformMatrix4fv(glGetUniformLocation(shaderID, "uView"), 1, GL_FALSE, &viewMatrix[0][0]);
+    // glUniformMatrix4fv(glGetUniformLocation(shaderID, "uProjection"), 1, GL_FALSE, &projectionMatrix[0][0]);
 
     glUniform3fv(glGetUniformLocation(shaderID, "camPos"), 1, &position[0]);
 }
@@ -417,17 +418,17 @@ void BE_Mesh::draw(BE_Shader& shader) {
     unsigned int numDiffuse = 0;
     unsigned int numSpecular = 0;
 
-    for (size_t i = 0; i < textures.size(); i++) {
-        std::string type = textures[i].texType;
-        std::string numStr;
+    // for (size_t i = 0; i < textures.size(); i++) {
+    //     std::string type = textures[i].texType;
+    //     std::string numStr;
 
-        if (type == "diffuse") numStr = std::to_string(numDiffuse++);
-        else if (type == "specular") numStr = std::to_string(numSpecular++);
+    //     if (type == "diffuse") numStr = std::to_string(numDiffuse++);
+    //     else if (type == "specular") numStr = std::to_string(numSpecular++);
 
-        std::string uniformName = type + numStr;
-        textures[i].setUniformUnit(shader.ID, uniformName.c_str());
-        textures[i].bind();
-    }
+    //     std::string uniformName = type + numStr;
+    //     textures[i].setUniformUnit(shader.ID, uniformName.c_str());
+    //     textures[i].bind();
+    // }
 
     glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
     vao.unbind();
@@ -510,8 +511,8 @@ void BE_Engine::closeWindow() {
 
 void BE_Engine::beginFrame() {
 
-    glfwSetWindowUserPointer(window, this);
-    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    // glfwSetWindowUserPointer(window, this);
+    // glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     
     glfwPollEvents();
     // inputs
@@ -523,7 +524,7 @@ void BE_Engine::beginFrame() {
 void BE_Engine::beginRender() {
     glViewport(0, 0, width, height);
     glClearColor(0.5,0.5,0.5,0.5);
-    glClear(GL_COLOR_BUFFER_BIT || GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 void BE_Engine::endFrame() { glfwSwapBuffers(window); }

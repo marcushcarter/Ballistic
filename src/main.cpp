@@ -63,21 +63,20 @@ int main() {
     BE_Mesh cube("Cube", vertices, indices, {});
     BE_Shader shader("CubeShader", &vertexSrc, &fragmentSrc);
     BE_Camera camera("MainCam", engine.width, engine.height, 45.0f, 0.1f, 100.0f, {0,0,3}, {0,0,-1});
+glfwSwapInterval(0);
 
     while(engine.isRunning()) {
-        // engine.beginFrame();
-
-        // engine.beginRender();
-        // engine.endFrame();
 
         engine.beginFrame();
+
+        if (engine.frameTime.frameCountFPS == 1)
+        std::cout << engine.frameTime.fps << " FPS " << engine.frameTime.ms << " MS" << std::endl;
 
         camera.handleInputs(engine.window, engine.frameTime.dt);
         camera.updateViewMatrix();
 
         engine.beginRender();
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT); // fix
-
 
         glm::mat4 model = glm::mat4(1.0f);
         camera.uploadToShader(shader.ID, model);

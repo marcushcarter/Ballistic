@@ -36,8 +36,9 @@ public:
     int fpsHistoryCount = 0;
     
 private:
-    std::chrono::high_resolution_clock::time_point previousTime;
-    std::chrono::high_resolution_clock::time_point currentTime;
+    std::chrono::steady_clock::time_point previousTime = std::chrono::steady_clock::now();
+    std::chrono::steady_clock::time_point currentTime;
+
 };
 
 struct BE_Vertex {
@@ -131,6 +132,7 @@ public:
     int width, height;
     float zoom, fov;
     float nearPlane, farPlane;
+    float yaw, pitch, roll;
     glm::vec3 position;
     glm::quat orientation;
 
