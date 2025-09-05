@@ -9,7 +9,7 @@ LDFLAGS := -Llib -lglfw3dll
 
 # === Files ===
 SRCS := src/main.cpp
-ENGINE_SCRS := $(wildcard include/*.cpp) $(wildcard include/glad/*.c)
+ENGINE_SCRS := $(wildcard include/*.cpp) $(wildcard include/glad/*.c) $(wildcard include/stb_image/*.cpp)
 
 ALL_SRCS:= $(SRCS) $(ENGINE_SCRS)
 

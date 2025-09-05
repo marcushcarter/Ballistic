@@ -7,6 +7,8 @@ int main() {
     BE_Engine engine("My Engine");
     engine.bind();
 
+    BE_VAO vao;
+
     while(engine.isRunning()) {
         engine.beginFrame();
 
