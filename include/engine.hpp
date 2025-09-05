@@ -18,9 +18,6 @@
 #include <vector>
 
 class BE_FrameTime {
-private:
-    std::chrono::high_resolution_clock::time_point previousTime;
-    std::chrono::high_resolution_clock::time_point currentTime;
 public:
     
     static constexpr int FPS_HISTORY_COUNT = 100;
@@ -37,7 +34,10 @@ public:
     std::array<float, FPS_HISTORY_COUNT> fpsHistory{};
     int fpsHistoryIndex = 0;
     int fpsHistoryCount = 0;
-
+    
+private:
+    std::chrono::high_resolution_clock::time_point previousTime;
+    std::chrono::high_resolution_clock::time_point currentTime;
 };
 
 struct BE_Vertex {
@@ -48,7 +48,6 @@ struct BE_Vertex {
 };
 
 class BE_VAO {
-private:
 public:
     GLuint ID = 0;
 
@@ -59,7 +58,6 @@ public:
 };
 
 class BE_VBO {
-private:
 public:
     GLuint ID = 0;
 
@@ -73,7 +71,6 @@ public:
 };
 
 class BE_EBO {
-private:
 public:
     GLuint ID = 0;
 
@@ -85,10 +82,6 @@ public:
 };
 
 class BE_Shader {
-private:
-    static std::string getFileContents(const std::string& filename);
-    static void getCompileErrors(GLuint shader, const std::string& type);
-    GLuint compileShader(GLenum type, const std::string& source);
 public:
     std::string name;
     GLuint ID = 0;
@@ -107,31 +100,32 @@ public:
 
     ~BE_Shader();
     void activate();
+    
+private:
+    static std::string getFileContents(const std::string& filename);
+    static void getCompileErrors(GLuint shader, const std::string& type);
+    GLuint compileShader(GLenum type, const std::string& source);
 };
 
 class BE_Texture {
-private:
 public:
     GLuint ID = 0;
+    std::string name;
+    std::string texType;
     GLuint unit = 0;
     GLenum type = GL_TEXTURE_2D;
     int width = 0;
     int height = 0;
     int channels = 0;
-    std::string name;
 
-    BE_Texture() = default;
-    BE_Texture(const std::string& textureName, const std::string& imageFile, GLuint slot, GLenum type = GL_TEXTURE_2D);
-    // BE_Texture(const std::string& name, int width, int height, unsigned char* data, GLuint slot, GLenum format = GL_RGBA, GLenum type = GL_TEXTURE_2D);
+    BE_Texture(const std::string& textureName, const std::string& imagePath, const std::string& texType, GLuint slot);
     ~BE_Texture();
     void setUniformUnit(GLuint shaderID, const char* uniform);
     void bind();
     void unbind();
-
 };
 
 class BE_Camera {
-private:
 public:
     std::string name;
     int width, height;
@@ -139,19 +133,37 @@ public:
     float nearPlane, farPlane;
     glm::vec3 position;
     glm::quat orientation;
-    glm::mat4 projPersp, projOrtho;
-    glm::mat4 viewMatrix;
 
-    BE_Camera(const std::string& cameraName, int width, int height, float fov, float nearPlane, float farPlane, const glm::vec3& pos, const glm::vec3& dir);
+    glm::mat4 projectionMatrix;
+    glm::mat4 orthoMatrix;
+    glm::mat4 viewMatrix;
+    glm::mat4 projViewMatrix;
+
+    BE_Camera(const std::string& cameraName, int width = 1440, int height = 900, 
+             float fov = 45.0f, float nearPlane = 0.1f, float farPlane = 100.0f, 
+             const glm::vec3& pos = {0,0,0}, const glm::vec3& dir = {0,0,-1} );
+
     void rotate(const glm::vec3& axis, float angle);
     void handleInputs(GLFWwindow* window, float dt);
     void updateViewMatrix();
-    void uploadToShader(GLuint shaderID, const char* uniform);
 
+    void uploadToShader(GLuint shaderID, const glm::mat4& modelMatrix);
+};
+
+class BE_Mesh {
+public:
+    std::string name;
+    std::vector<BE_Vertex> vertices;
+    std::vector<GLuint> indices;
+    std::vector<BE_Texture> textures;
+    BE_VAO vao;
+
+    BE_Mesh(const std::string& meshName, const std::vector<BE_Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<BE_Texture>& texs);
+    ~BE_Mesh();
+    void draw(BE_Shader& shader);
 };
 
 class BE_Engine {
-private:
 public:
     GLFWwindow* window;
     std::string title;

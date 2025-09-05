@@ -140,49 +140,6 @@ void BE_EBO::unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
 // ========================================================================
 
-std::string BE_Shader::getFileContents(const std::string& filename) {
-    std::ifstream file(filename, std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "Failed to open shader file: " << filename << "\n";
-        return "";
-    }
-    std::ostringstream ss;
-    ss << file.rdbuf();
-    return ss.str();
-}
-
-void BE_Shader::getCompileErrors(GLuint shader, const std::string& type) {
-    GLint success;
-    char infoLog[1024];
-    if (type != "PROGRAM") {
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
-        if (!success) {
-            glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
-            std::cerr << "SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n";
-        }
-    } else {
-        glGetProgramiv(shader, GL_LINK_STATUS, &success);
-        if (!success) {
-            glGetProgramInfoLog(shader, 1024, nullptr, infoLog);
-            std::cerr << "SHADER_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n";
-        }
-    }
-}
-
-GLuint BE_Shader::compileShader(GLenum type, const std::string& source) {
-    GLuint shader = glCreateShader(type);
-    const char* src = source.c_str();
-    glShaderSource(shader, 1, &src, nullptr);
-    glCompileShader(shader);
-    switch (type) {
-        case GL_VERTEX_SHADER:   getCompileErrors(shader, "VERTEX"); break;
-        case GL_FRAGMENT_SHADER: getCompileErrors(shader, "FRAGMENT"); break;
-        case GL_GEOMETRY_SHADER: getCompileErrors(shader, "GEOMETRY"); break;
-        case GL_COMPUTE_SHADER:  getCompileErrors(shader, "COMPUTE"); break;
-    }
-    return shader;
-}
-
 BE_Shader::BE_Shader(const std::string& shaderName, const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath)
     : name(shaderName.empty() ? "new shader" : shaderName) {
 
@@ -236,16 +193,61 @@ BE_Shader::~BE_Shader() { glDeleteProgram(ID); }
 
 void BE_Shader::activate() { glUseProgram(ID); }
 
+std::string BE_Shader::getFileContents(const std::string& filename) {
+    std::ifstream file(filename, std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "Failed to open shader file: " << filename << "\n";
+        return "";
+    }
+    std::ostringstream ss;
+    ss << file.rdbuf();
+    return ss.str();
+}
+
+void BE_Shader::getCompileErrors(GLuint shader, const std::string& type) {
+    GLint success;
+    char infoLog[1024];
+    if (type != "PROGRAM") {
+        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        if (!success) {
+            glGetShaderInfoLog(shader, 1024, nullptr, infoLog);
+            std::cerr << "SHADER_COMPILATION_ERROR of type: " << type << "\n" << infoLog << "\n";
+        }
+    } else {
+        glGetProgramiv(shader, GL_LINK_STATUS, &success);
+        if (!success) {
+            glGetProgramInfoLog(shader, 1024, nullptr, infoLog);
+            std::cerr << "SHADER_LINKING_ERROR of type: " << type << "\n" << infoLog << "\n";
+        }
+    }
+}
+
+GLuint BE_Shader::compileShader(GLenum type, const std::string& source) {
+    GLuint shader = glCreateShader(type);
+    const char* src = source.c_str();
+    glShaderSource(shader, 1, &src, nullptr);
+    glCompileShader(shader);
+    switch (type) {
+        case GL_VERTEX_SHADER:   getCompileErrors(shader, "VERTEX"); break;
+        case GL_FRAGMENT_SHADER: getCompileErrors(shader, "FRAGMENT"); break;
+        case GL_GEOMETRY_SHADER: getCompileErrors(shader, "GEOMETRY"); break;
+        case GL_COMPUTE_SHADER:  getCompileErrors(shader, "COMPUTE"); break;
+    }
+    return shader;
+}
+
 // ========================================================================
 
-BE_Texture::BE_Texture(const std::string& textureName, const std::string& imageFile, GLuint slot, GLenum type)
-    : name(textureName.empty() ? "new texture" : textureName), unit(slot), type(type) {
+BE_Texture::BE_Texture(const std::string& textureName, const std::string& imagePath, const std::string& texType, GLuint slot)
+    : name(textureName.empty() ? "new texture" : textureName), texType(texType.empty() ? "diffuse" : texType), unit(slot)  {
+
+    type = GL_TEXTURE_2D;
 
     int widthImg, heightImg, numColCh;
     stbi_set_flip_vertically_on_load(true);
-    unsigned char* data = stbi_load(imageFile.c_str(), &width, &height, &channels, 0);
+    unsigned char* data = stbi_load(imagePath.c_str(), &width, &height, &channels, 0);
     if (!data) {
-        BE_Message(2, "TEXTURE", "Failed to load texture " + textureName, imageFile.c_str(), 1);
+        BE_Message(2, "TEXTURE", "Failed to load texture " + textureName, imagePath.c_str(), 1);
     }
 
     glGenTextures(1, &ID);
@@ -268,7 +270,7 @@ BE_Texture::BE_Texture(const std::string& textureName, const std::string& imageF
                     (channels == 1) ? GL_RED : 0;
 
     if (format == 0) {
-        BE_Message(2, "TEXTURE", "Unsupported color channel count " + channels, imageFile.c_str(), 1);
+        BE_Message(2, "TEXTURE", "Unsupported color channel count " + channels, imagePath.c_str(), 1);
         stbi_image_free(data);
     }
 
@@ -296,19 +298,17 @@ void BE_Texture::unbind() { glBindTexture(GL_TEXTURE_2D, 0); }
 
 // ========================================================================
 
-
 BE_Camera::BE_Camera(const std::string& cameraName, int width, int height, float fov, float nearPlane, float farPlane, const glm::vec3& pos, const glm::vec3& dir) 
-    : name(cameraName.empty() ? "new camera" : cameraName), width(width), height(height), fov(fov), nearPlane(nearPlane), farPlane(farPlane), position(pos) {
+    : name(cameraName.empty() ? "new camera" : cameraName), width(width), height(height), fov(fov), nearPlane(nearPlane), farPlane(farPlane), position(pos), zoom(1.0f) {
 
     glm::vec3 forward = glm::normalize(dir);
     glm::vec3 defaultForward = glm::vec3(0.0f, 0.0f, -1.0f);
     orientation = glm::rotation(defaultForward, forward);
 
-    zoom = 1.0f;
+    projectionMatrix = glm::perspective(glm::radians(fov), static_cast<float>(width) / static_cast<float>(height), nearPlane, farPlane);
+    orthoMatrix = glm::ortho(0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, -1.0f, 1.0f);
 
-    projPersp = glm::mat4(1.0f);
-    projOrtho = glm::mat4(1.0f);
-    viewMatrix = glm::mat4(1.0f);
+    updateViewMatrix();
 }
 
 void BE_Camera::rotate(const glm::vec3& axis, float angle) {
@@ -357,17 +357,82 @@ void BE_Camera::handleInputs(GLFWwindow* window, float dt) {
 }
 
 void BE_Camera::updateViewMatrix() {
-    glm::vec3 forward = orientation * glm::vec3(0,0,-1);
-    glm::vec3 up      = orientation * glm::vec3(0,1,0);
-    viewMatrix = glm::lookAt(position, position + forward, up);
+    glm::vec3 forward = orientation * glm::vec3(0, 0, -1);
+    glm::vec3 up      = orientation * glm::vec3(0, 1,  0);
+    glm::vec3 target  = position + forward;
+
+    viewMatrix = glm::lookAt(position, target, up);
+
+    projectionMatrix = glm::perspective(glm::radians(fov), static_cast<float>(width) / static_cast<float>(height), nearPlane, farPlane);
+
+    projViewMatrix = projectionMatrix * viewMatrix;
+    
+    orthoMatrix = glm::ortho(0.0f, static_cast<float>(width), static_cast<float>(height), 0.0f, -1.0f, 1.0f);
+
 }
 
-void BE_Camera::uploadToShader(GLuint shaderID, const char* uniform) {
+void BE_Camera::uploadToShader(GLuint shaderID, const glm::mat4& modelMatrix) {
+    glm::mat4 mvp = projViewMatrix * modelMatrix;
+
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uMVP"), 1, GL_FALSE, &mvp[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uModel"), 1, GL_FALSE, &modelMatrix[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uView"), 1, GL_FALSE, &viewMatrix[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uProjection"), 1, GL_FALSE, &projectionMatrix[0][0]);
+
     glUniform3fv(glGetUniformLocation(shaderID, "camPos"), 1, &position[0]);
-    glUniformMatrix4fv(glGetUniformLocation(shaderID, uniform), 1, GL_FALSE, &projPersp[0][0]);
 }
 
 // ========================================================================
+
+BE_Mesh::BE_Mesh(const std::string& meshName, const std::vector<BE_Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<BE_Texture>& texs)
+    : name(meshName.empty() ? "new mesh" : meshName), vertices(verts), indices(inds), textures(texs) {
+
+    vao = BE_VAO();
+    vao.bind();
+
+    BE_VBO vbo(vertices);
+    BE_EBO ebo(indices);
+
+    vbo.linkVertexAttrib(0, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)0);
+    vbo.linkVertexAttrib(1, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(3 * sizeof(float)));
+    vbo.linkVertexAttrib(2, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(6 * sizeof(float)));
+    vbo.linkVertexAttrib(3, 2, GL_FLOAT, sizeof(BE_Vertex), (void*)(9 * sizeof(float)));
+    
+    vao.unbind();
+    vbo.unbind();
+    ebo.unbind();
+}
+
+BE_Mesh::~BE_Mesh() {
+    vao.unbind();
+    for (auto& tex : textures) {
+        tex.~BE_Texture();
+    }
+}
+
+void BE_Mesh::draw(BE_Shader& shader) {
+    shader.activate();
+    vao.bind();
+
+    unsigned int numDiffuse = 0;
+    unsigned int numSpecular = 0;
+
+    for (size_t i = 0; i < textures.size(); i++) {
+        std::string type = textures[i].texType;
+        std::string numStr;
+
+        if (type == "diffuse") numStr = std::to_string(numDiffuse++);
+        else if (type == "specular") numStr = std::to_string(numSpecular++);
+
+        std::string uniformName = type + numStr;
+        textures[i].setUniformUnit(shader.ID, uniformName.c_str());
+        textures[i].bind();
+    }
+
+    glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
+    vao.unbind();
+
+}
 
 // ========================================================================
 
