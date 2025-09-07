@@ -8,6 +8,7 @@
 #include <cstdlib>
 #include <source_location>
 #include <chrono>
+#include <cstring>
 
 static void BE_Message(int severity, const std::string& module, const std::string& message, const std::string& file = "", int line = 0, const std::source_location& loc = std::source_location::current()) {
     std::string displayFile;
@@ -240,11 +241,10 @@ GLuint BE_Shader::compileShader(GLenum type, const std::string& source) {
 // ========================================================================
 
 BE_Texture::BE_Texture(const std::string& textureName, const std::string& imagePath, const std::string& texType, GLuint slot)
-    : name(textureName.empty() ? "new texture" : textureName), texType(texType.empty() ? "diffuse" : texType), unit(slot)  {
+    : name(textureName.empty() ? "new texture" : textureName), texType(texType), unit(slot)  {
 
     type = GL_TEXTURE_2D;
 
-    int widthImg, heightImg, numColCh;
     stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(imagePath.c_str(), &width, &height, &channels, 0);
     if (!data) {
@@ -261,11 +261,11 @@ BE_Texture::BE_Texture(const std::string& textureName, const std::string& imageP
     glTexParameteri(type, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(type, GL_TEXTURE_WRAP_T, GL_REPEAT);
 
-    GLenum format = (channels == 4) ? GL_RGBA :
-                    (channels == 3) ? GL_RGB :
-                    (channels == 1) ? GL_RED : 0;
-
-    if (format == 0) {
+    GLenum format;
+    if (channels == 4) format = GL_RGBA;
+    else if (channels == 3) format = GL_RGB;
+    else if (channels == 1) format = GL_RED;
+    else {
         BE_Message(2, "TEXTURE", "Unsupported color channel count " + channels, imagePath.c_str(), 1);
         stbi_image_free(data);
     }
@@ -275,6 +275,19 @@ BE_Texture::BE_Texture(const std::string& textureName, const std::string& imageP
 
     stbi_image_free(data);
     glBindTexture(type, 0);
+}
+
+BE_Texture::BE_Texture(const std::string& textureName, const std::string& texType, int width, int height, const std::string& rawData)
+    : name(textureName), texType(texType) {
+
+    glGenTextures(1, &ID);
+    glBindTexture(GL_TEXTURE_2D, ID);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, rawData.data());
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 BE_Texture::~BE_Texture() { glDeleteTextures(1, &ID); }
@@ -287,7 +300,7 @@ void BE_Texture::setUniformUnit(GLuint shaderID, const char* uniform) {
 
 void BE_Texture::bind() {
     glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, ID);
+    glBindTexture(type, ID);
 }
 
 void BE_Texture::unbind() { glBindTexture(GL_TEXTURE_2D, 0); }
@@ -376,9 +389,9 @@ void BE_Camera::uploadToShader(GLuint shaderID, const glm::mat4& modelMatrix) {
     glm::mat4 mvp = projViewMatrix * modelMatrix;
 
     glUniformMatrix4fv(glGetUniformLocation(shaderID, "uMVP"), 1, GL_FALSE, &mvp[0][0]);
-    // glUniformMatrix4fv(glGetUniformLocation(shaderID, "uModel"), 1, GL_FALSE, &modelMatrix[0][0]);
-    // glUniformMatrix4fv(glGetUniformLocation(shaderID, "uView"), 1, GL_FALSE, &viewMatrix[0][0]);
-    // glUniformMatrix4fv(glGetUniformLocation(shaderID, "uProjection"), 1, GL_FALSE, &projectionMatrix[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uModel"), 1, GL_FALSE, &modelMatrix[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uView"), 1, GL_FALSE, &viewMatrix[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uProjection"), 1, GL_FALSE, &projectionMatrix[0][0]);
 
     glUniform3fv(glGetUniformLocation(shaderID, "camPos"), 1, &position[0]);
 }
@@ -418,21 +431,156 @@ void BE_Mesh::draw(BE_Shader& shader) {
     unsigned int numDiffuse = 0;
     unsigned int numSpecular = 0;
 
-    // for (size_t i = 0; i < textures.size(); i++) {
-    //     std::string type = textures[i].texType;
-    //     std::string numStr;
+    for (size_t i = 0; i < textures.size(); i++) {
+        std::string type = textures[i].texType;
+        std::string numStr;
 
-    //     if (type == "diffuse") numStr = std::to_string(numDiffuse++);
-    //     else if (type == "specular") numStr = std::to_string(numSpecular++);
+        if (type == "diffuse") { numStr = std::to_string(numDiffuse++); }
+        else if (type == "specular") numStr = std::to_string(numSpecular++);
 
-    //     std::string uniformName = type + numStr;
-    //     textures[i].setUniformUnit(shader.ID, uniformName.c_str());
-    //     textures[i].bind();
-    // }
+        std::string uniformName = type + numStr;
+        textures[i].setUniformUnit(shader.ID, uniformName.c_str());
+        textures[i].bind();
+    }
 
     glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
     vao.unbind();
 
+}
+
+int BE_FindOrAddVertex(std::vector<BE_Vertex>& vertices, const BE_Vertex& v) {
+    for (size_t i = 0; i < vertices.size(); i++) {
+        if (memcmp(&vertices[i], &v, sizeof(BE_Vertex)) == 0) {
+            return static_cast<int>(i);
+        }
+    }
+    vertices.push_back(v);
+    return static_cast<int>(vertices.size() - 1);
+}
+
+void BE_Mesh::loadOBJ(const std::string& objPath) {
+    std::ifstream file(objPath);
+    if (!file.is_open()) {
+        std::cerr << "[Mesh] Failed to open OBJ file: " << objPath << std::endl;
+        return;
+    }
+
+    std::vector<glm::vec3> positions;
+    std::vector<glm::vec3> normals;
+    std::vector<glm::vec2> uvs;
+
+    std::vector<BE_Vertex> loadedVerts;
+    std::vector<GLuint> loadedIndices;
+
+    std::string line;
+    int lineNum = 0;
+
+    while (std::getline(file, line)) {
+        lineNum++;
+
+        if (line.empty() || line[0] == '#' || line.starts_with("o ") || line.starts_with("s "))
+            continue;
+
+        std::istringstream ss(line);
+
+        if (line.starts_with("v ")) {
+            glm::vec3 v;
+            ss.ignore(2);
+            ss >> v.x >> v.y >> v.z;
+            positions.push_back(v);
+
+        } else if (line.starts_with("vt ")) {
+            glm::vec2 vt;
+            ss.ignore(3);
+            ss >> vt.x >> vt.y;
+            uvs.push_back(vt);
+
+        } else if (line.starts_with("vn ")) {
+            glm::vec3 vn;
+            ss.ignore(3);
+            ss >> vn.x >> vn.y >> vn.z;
+            normals.push_back(vn);
+
+        } else if (line.starts_with("f ")) {
+            ss.ignore(2);
+
+            std::vector<BE_Vertex> faceVerts;
+            std::string token;
+
+            while (ss >> token) {
+                BE_Vertex vert{};
+                int vi = 0, vti = 0, vni = 0;
+
+                if (sscanf(token.c_str(), "%d/%d/%d", &vi, &vti, &vni) == 3) {
+                    vi--; vti--; vni--;
+                    vert.position = positions[vi];
+                    vert.normal   = normals[vni];
+                    vert.color    = {1.0f, 1.0f, 1.0f};
+                    vert.texUV    = uvs[vti];
+
+                } else if (sscanf(token.c_str(), "%d//%d", &vi, &vni) == 2) {
+                    vi--; vni--;
+                    vert.position = positions[vi];
+                    vert.normal   = normals[vni];
+                    vert.color    = {1.0f, 1.0f, 1.0f};
+                    vert.texUV    = {0.0f, 0.0f};
+
+                } else if (sscanf(token.c_str(), "%d/%d", &vi, &vti) == 2) {
+                    vi--; vti--;
+                    vert.position = positions[vi];
+                    vert.normal   = {0.0f, 0.0f, 1.0f};
+                    vert.color    = {1.0f, 1.0f, 1.0f};
+                    vert.texUV    = uvs[vti];
+
+                } else if (sscanf(token.c_str(), "%d", &vi) == 1) {
+                    vi--;
+                    vert.position = positions[vi];
+                    vert.normal   = {0.0f, 0.0f, 1.0f};
+                    vert.color    = {1.0f, 1.0f, 1.0f};
+                    vert.texUV    = {0.0f, 0.0f};
+
+                } else {
+                    std::cerr << "[Mesh] Invalid face token at line " << lineNum << ": " << token << std::endl;
+                }
+
+                faceVerts.push_back(vert);
+            }
+
+            // triangulate (fan method)
+            for (size_t i = 1; i + 1 < faceVerts.size(); i++) {
+                int i0 = BE_FindOrAddVertex(loadedVerts, faceVerts[0]);
+                int i1 = BE_FindOrAddVertex(loadedVerts, faceVerts[i]);
+                int i2 = BE_FindOrAddVertex(loadedVerts, faceVerts[i + 1]);
+
+                loadedIndices.push_back(i1);
+                loadedIndices.push_back(i0);
+                loadedIndices.push_back(i2);
+            }
+        }
+    }
+
+    file.close();
+
+    // Replace mesh data
+    this->vertices = std::move(loadedVerts);
+    this->indices  = std::move(loadedIndices);
+    this->textures = { BE_Texture("fallback", "diffuse", 2, 2, BE::Default::fallbackTexture) };
+
+    // Rebuild VAO/VBO/EBO
+    vao.bind();
+    delete vbo;
+    delete ebo;
+    vbo = new BE_VBO(this->vertices);
+    ebo = new BE_EBO(this->indices);
+
+    vbo->linkVertexAttrib(0, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)0);
+    vbo->linkVertexAttrib(1, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(3 * sizeof(float)));
+    vbo->linkVertexAttrib(2, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(6 * sizeof(float)));
+    vbo->linkVertexAttrib(3, 2, GL_FLOAT, sizeof(BE_Vertex), (void*)(9 * sizeof(float)));
+
+    vao.unbind();
+
+    std::cout << "[Mesh] OBJ loaded successfully: " << objPath << std::endl;
 }
 
 // ========================================================================
@@ -454,8 +602,8 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 static BE_Engine* g_boundEngine = nullptr;
 
-BE_Engine::BE_Engine(const std::string& t, int w, int h, const std::source_location& loc) 
-    : title(t), width(w), height(h), running(true), window(nullptr) {
+BE_Engine::BE_Engine(const std::string& title, int width, int height, const std::source_location& loc) 
+    : title(title.empty() ? "new engine" : title), width(width), height(height), running(true), window(nullptr) {
     
     if (!glfwInit()) {
         BE_Message(3, "ENGINE", "Failed to initialize GLFW", loc.file_name(), loc.line());
@@ -479,15 +627,23 @@ BE_Engine::BE_Engine(const std::string& t, int w, int h, const std::source_locat
         BE_Message(3, "ENGINE", "Failed to initialize GLAD", loc.file_name(), loc.line());
     }
     
-    // resources
+    // initial scene / resources
+
+    depthShader = std::make_unique<BE_Shader>("DepthShader", &BE::Default::DepthVertexShader);
 
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_CULL_FACE);
     glCullFace(GL_FRONT);
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LESS);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+    glClearColor(0.1f, 0.1f, 0.1f, 0.1f);
+
+    // glCullFace(GL_BACK);
+    // glFrontFace(GL_CW);
 
     glfwShowWindow(window);
 
@@ -511,8 +667,8 @@ void BE_Engine::closeWindow() {
 
 void BE_Engine::beginFrame() {
 
-    // glfwSetWindowUserPointer(window, this);
-    // glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetWindowUserPointer(window, this);
+    glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
     
     glfwPollEvents();
     // inputs
@@ -523,7 +679,7 @@ void BE_Engine::beginFrame() {
 
 void BE_Engine::beginRender() {
     glViewport(0, 0, width, height);
-    glClearColor(0.5,0.5,0.5,0.5);
+    glClearColor(0,0,0,0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 

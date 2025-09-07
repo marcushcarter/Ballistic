@@ -120,6 +120,7 @@ public:
     int channels = 0;
 
     BE_Texture(const std::string& textureName, const std::string& imagePath, const std::string& texType, GLuint slot);
+    BE_Texture(const std::string& textureName, const std::string& texType, int width, int height, const std::string& rawData);
     ~BE_Texture();
     void setUniformUnit(GLuint shaderID, const char* uniform);
     void bind();
@@ -166,6 +167,7 @@ public:
     BE_Mesh(const std::string& meshName, const std::vector<BE_Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<BE_Texture>& texs);
     ~BE_Mesh();
     void draw(BE_Shader& shader);
+    void loadOBJ(const std::string& objPath);
 };
 
 class BE_Engine {
@@ -190,4 +192,6 @@ public:
     void beginRender();
     void endFrame();
 
+private:
+    std::unique_ptr<BE_Shader> depthShader;
 };
