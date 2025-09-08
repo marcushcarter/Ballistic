@@ -179,6 +179,8 @@ struct BE_Light {
 class BE_LightManager {
 public:
     std::vector<BE_Light> lights;
+    std::vector<BE_Light> activeLights;
+    
     size_t maxLights = 64;
     GLuint lightSSBO = 0;
     BE_Light* mappedPtr = nullptr;
@@ -189,6 +191,8 @@ public:
 
     void updateGPU();
     void uploadToShader(GLuint shaderID);
+
+    void updateActiveLightsForObject(const glm::vec3& objPos, float objRadius);
 
 };
 

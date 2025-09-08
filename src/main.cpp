@@ -113,6 +113,11 @@ int main() {
     pointLight.color = glm::vec4(1, 0.8, 0.6, 1);
     lights.lights.push_back(pointLight);
 
+    BE_Light farLight{};
+    farLight.position = glm::vec4(0, 500, 2, 1);
+    farLight.color = glm::vec4(1, 0.8, 0.6, 1);
+    for (int i = 0; i < 50; i++) { lights.lights.push_back(farLight); }
+
     lights.updateGPU();
 
     while(engine.isRunning()) {
@@ -139,6 +144,8 @@ int main() {
         engine.beginRender();
 
         shader.activate();
+
+        lights.updateActiveLightsForObject(glm::vec3(0,0,0), 5.0f);
         lights.uploadToShader(shader.ID);
         glm::mat4 model = glm::mat4(1.0f);
         camera.uploadToShader(shader.ID, model);

@@ -583,7 +583,7 @@ void BE_Mesh::loadOBJ(const std::string& objPath) {
 
 BE_LightManager::BE_LightManager(size_t maxLights) 
     : maxLights(maxLights) {
-        
+
     glGenBuffers(1, &lightSSBO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
     glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(BE_Light) * maxLights, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
@@ -602,13 +602,28 @@ BE_LightManager::~BE_LightManager() {
 
 void BE_LightManager::bind() { glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO); }
 
-void BE_LightManager::updateGPU() {
-    for (size_t i = 0; i < lights.size(); ++i)
-        mappedPtr[i] = lights[i];
-}
+void BE_LightManager::updateGPU() { std::memcpy(mappedPtr, lights.data(), lights.size() * sizeof(BE_Light)); }
 
-void BE_LightManager::uploadToShader(GLuint shaderID) {
-    glUniform1i(glGetUniformLocation(shaderID, "numLights"), (int)lights.size());
+void BE_LightManager::uploadToShader(GLuint shaderID) { glUniform1i(glGetUniformLocation(shaderID, "numLights"), (int)activeLights.size()); }
+
+void BE_LightManager::updateActiveLightsForObject(const glm::vec3& objPos, float objRadius) {
+    activeLights.clear();
+
+    for (auto& light : lights) {
+        if (light.position.w == 0.0f) {
+            activeLights.push_back(light);
+        } 
+        else {
+            float distance = glm::length(glm::vec3(light.position) - objPos);
+            float range = light.extra.w;
+            if (distance <= objRadius + range)
+                activeLights.push_back(light);
+        }
+    }
+
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
+    std::memcpy(mappedPtr, activeLights.data(), activeLights.size() * sizeof(BE_Light));
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
 // ========================================================================
