@@ -4,12 +4,12 @@ CXX := g++
 CXXFLAGS := -std=c++20 -g -lm 
 
 # === Paths ===
-INCLUDES := -Iinclude -I.
+INCLUDES := -Iinclude -I. -Iinclude/BEngine
 LDFLAGS := -Llib -lglfw3dll
 
 # === Files ===
 SRCS := src/main.cpp
-ENGINE_SCRS := $(wildcard include/*.cpp) $(wildcard include/glad/*.c) $(wildcard include/stb_image/*.cpp)
+ENGINE_SCRS := $(wildcard include/BEngine/*.cpp) $(wildcard include/BEngine/glad/*.c) $(wildcard include/BEngine/stb_image/*.cpp)
 
 ALL_SRCS:= $(SRCS) $(ENGINE_SCRS)
 

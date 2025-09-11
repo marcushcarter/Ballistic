@@ -1,16 +1,16 @@
 #pragma once
 
-#include <glad/glad.h>
-#include <GLFW/glfw3.h>
+#include <BEngine/glad/glad.h>
+#include <BEngine/GLFW/glfw3.h>
 
 #define GLM_ENABLE_EXPERIMENTAL
-#include <glm/glm.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/quaternion.hpp>
-#include <glm/gtx/quaternion.hpp>
-#include <glm/gtc/type_ptr.hpp>
+#include <BEngine/glm/glm.hpp>
+#include <BEngine/glm/gtc/matrix_transform.hpp>
+#include <BEngine/glm/gtc/quaternion.hpp>
+#include <BEngine/glm/gtx/quaternion.hpp>
+#include <BEngine/glm/gtc/type_ptr.hpp>
 
-#include <stb_image/stb_image.h>
+#include <BEngine/stb_image/stb_image.h>
 
 #include <string>
 #include <source_location>
@@ -18,6 +18,8 @@
 #include <chrono>
 #include <vector>
 #include <memory>
+
+#include "BEngine/engine_default.hpp"
 
 class BE_FrameTime {
 public:
