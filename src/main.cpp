@@ -32,6 +32,13 @@ int main() {
         camera.handleInputs(engine.getWindow(), engine.getFrameTime().dt);
         camera.updateViewMatrix();
 
+        {
+            auto shader = engine.resources().getShaderPtr(0);
+            if (shader && glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) {
+                shader->recompile("shaders/scene.vert", "shaders/scene.frag");
+            }
+        }
+
         // updates
 
         // glm::vec3 rainbowColor = glm::vec3(std::sinf(glfwGetTime() * 0.5f) * 0.5f + 0.5f, std::sinf(glfwGetTime() * 0.5f + 2.0943951f) * 0.5f + 0.5f, std::sinf(glfwGetTime() * 0.5f + 4.1887902f) * 0.5f + 0.5f);

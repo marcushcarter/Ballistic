@@ -107,6 +107,13 @@ public:
 
     ~BE_Shader();
     void activate();
+
+    void recompile(
+        const std::string& vertexPath = "", 
+        const std::string& fragmentPath = "", 
+        const std::string& geometryPath = "", 
+        const std::string& computePath = ""
+    );
     
 private:
     static std::string getFileContents(const std::string& filename);

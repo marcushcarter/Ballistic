@@ -238,6 +238,33 @@ GLuint BE_Shader::compileShader(GLenum type, const std::string& source) {
     return shader;
 }
 
+void BE_Shader::recompile(const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath) {
+    
+    GLuint vertexShader = 0, fragmentShader = 0, geometryShader = 0, computeShader = 0;
+
+    if (!vertexPath.empty()) vertexShader = compileShader(GL_VERTEX_SHADER, getFileContents(vertexPath));
+    if (!fragmentPath.empty()) fragmentShader = compileShader(GL_FRAGMENT_SHADER, getFileContents(fragmentPath));
+    if (!geometryPath.empty()) geometryShader = compileShader(GL_GEOMETRY_SHADER, getFileContents(geometryPath));
+    if (!computePath.empty()) computeShader = compileShader(GL_COMPUTE_SHADER, getFileContents(computePath));
+
+    GLuint newProgram = glCreateProgram();
+    if (vertexShader)   glAttachShader(newProgram, vertexShader);
+    if (fragmentShader) glAttachShader(newProgram, fragmentShader);
+    if (geometryShader) glAttachShader(newProgram, geometryShader);
+    if (computeShader)  glAttachShader(newProgram, computeShader);
+    glLinkProgram(newProgram);
+    getCompileErrors(newProgram, "PROGRAM");
+
+    glDeleteProgram(ID);
+    ID = newProgram;
+
+    if (vertexShader)   glDeleteShader(vertexShader);
+    if (fragmentShader) glDeleteShader(fragmentShader);
+    if (geometryShader) glDeleteShader(geometryShader);
+    if (computeShader)  glDeleteShader(computeShader);
+
+}
+
 // ========================================================================
 
 BE_Texture::BE_Texture(const std::string& textureName, const std::string& imagePath, const std::string& texType, GLuint slot)
