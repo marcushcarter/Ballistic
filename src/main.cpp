@@ -9,9 +9,7 @@ int main() {
     engine.bind();
 
     engine.resources().loadMesh("Test Scene", "res/models/scene.obj");
-    engine.resources().loadMesh("Cube", "res/models/cube.obj");
     
-    engine.resources().loadShader("Scene", "include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_core_default.frag");
     engine.resources().loadShader("Color", "include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_color_uniform.frag");
 
     engine.resources().loadTexture("fallback", "diffuse", 4, 4, BE::Default::FallbackTexture);
@@ -54,7 +52,7 @@ int main() {
         // rendering
 
         {
-            auto shader = engine.resources().getShaderPtr(0);
+            auto& shader = engine.resources().sceneShader;
             auto mesh = engine.resources().getMeshPtr(0);
 
             shader->activate();
@@ -63,22 +61,11 @@ int main() {
             camera.uploadToShader(shader->ID);
             glm::mat4 model = glm::mat4(1.0f);
             mesh->draw(*shader, model);
-
-
-
-
         }
-        
-        // glm::mat4 model = glm::mat4(1.0f);
-        // engine.resources().getShaderPtr(0)->activate();
-        // lights.updateActiveLightsForObject(glm::vec3(0,0,0), 5.0f);
-        // lights.uploadToShader(engine.resources().getShaderPtr(0)->ID);
-        // camera.uploadToShader(engine.resources().getShaderPtr(0)->ID);
-        // engine.resources().getMeshPtr(0)->draw(*engine.resources().getShaderPtr(0), model);
 
         {
-            auto shader = engine.resources().getShaderPtr(1);
-            auto mesh = engine.resources().getMeshPtr(1);
+            auto shader = engine.resources().getShaderPtr(0);
+            auto& mesh = engine.resources().cubeMesh;
 
             shader->activate();
             camera.uploadToShader(shader->ID);

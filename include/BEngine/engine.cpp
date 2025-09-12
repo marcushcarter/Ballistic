@@ -447,7 +447,7 @@ void BE_Camera::uploadToShader(GLuint shaderID) {
 
 // ========================================================================
 
-BE_Mesh::BE_Mesh() : vertices(), indices(), textures() {}
+// BE_Mesh::BE_Mesh() : vertices(), indices(), textures() {}
 
 BE_Mesh::BE_Mesh(const std::string& meshName, const std::vector<BE_Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<BE_Texture>& texs)
     : name(meshName.empty() ? "new mesh" : meshName), vertices(verts), indices(inds), textures(texs) {
@@ -1021,6 +1021,8 @@ BE_Engine::BE_Engine(const std::string& title, int width, int height, const std:
     }
     
     // initial scene / resources
+
+    resources().loadDefaults();
 
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);

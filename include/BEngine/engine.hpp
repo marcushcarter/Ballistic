@@ -182,7 +182,7 @@ public:
     BE_VBO* vbo = nullptr;
     BE_EBO* ebo = nullptr;
 
-    BE_Mesh();
+    BE_Mesh() = default;
     BE_Mesh(const std::string& meshName, const std::vector<BE_Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<BE_Texture>& texs);
     BE_Mesh(const std::string& meshName, const std::string& objPath);
     BE_Mesh(const std::string& meshName, const std::string* objSource);
@@ -267,6 +267,16 @@ public:
     std::shared_ptr<BE_Texture> loadTexture(const std::string& textureName, const std::string& imagePath, const std::string& texType, GLuint slot);
     std::shared_ptr<BE_Texture> loadTexture(const std::string& textureName, const std::string& texType, int width, int height, const std::string& rawData);
     std::shared_ptr<BE_Texture> getTexturePtr(size_t index);
+
+    std::unique_ptr<BE_Mesh> cubeMesh;
+    std::unique_ptr<BE_Shader> sceneShader;
+    std::unique_ptr<BE_Shader> lightShader;
+    
+    void loadDefaults() {
+        cubeMesh = std::make_unique<BE_Mesh>("Cube Mesh", "include/BEngine/meshes/cube.obj");
+        sceneShader = std::make_unique<BE_Shader>("Scene Shader", "include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_core_default.frag");
+        lightShader = std::make_unique<BE_Shader>("Light Shader", "include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_color_uniform.frag");
+    }
 };
 
 class BE_Engine {
