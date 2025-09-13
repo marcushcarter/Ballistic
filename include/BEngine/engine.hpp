@@ -276,6 +276,8 @@ public:
     void removeShader(const std::string& name, const std::source_location& loc = std::source_location::current());
     std::shared_ptr<Shader> getShader(const std::string& name, const std::source_location& loc = std::source_location::current());
 
+    void loadShaderDSL(const std::string& filePath, const std::source_location& loc = std::source_location::current());
+
     std::shared_ptr<Texture> loadTexture(const std::string& name, const std::string& imagePath, const std::string& texType, GLuint slot, const std::source_location& loc = std::source_location::current());
     std::shared_ptr<Texture> loadTexture(const std::string& name, const std::string& texType, int width, int height, const std::string& rawData, const std::source_location& loc = std::source_location::current());
     void removeTexture(const std::string& name, const std::source_location& loc = std::source_location::current());

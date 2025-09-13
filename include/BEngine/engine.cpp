@@ -165,6 +165,8 @@ Shader::Shader(const std::string& shaderName, const std::string& vertexPath, con
     if (fragmentShader) glDeleteShader(fragmentShader);
     if (geometryShader) glDeleteShader(geometryShader);
     if (computeShader) glDeleteShader(computeShader);
+    
+    // Message(0, "SHADER", "Shader '" + shaderName + "' loaded successfully", "PATH", 1);
 
 }
 
@@ -190,6 +192,8 @@ Shader::Shader(const std::string& shaderName, const std::string* vertexSource, c
     if (fragmentShader) glDeleteShader(fragmentShader);
     if (geometryShader) glDeleteShader(geometryShader);
     if (computeShader) glDeleteShader(computeShader);
+    
+    // Message(0, "SHADER", "Shader '" + shaderName + "' loaded successfully", "SOURCE", 1);
 }
 
 Shader::~Shader() { glDeleteProgram(ID); }
@@ -242,6 +246,8 @@ GLuint Shader::compileShader(GLenum type, const std::string& source) {
 void Shader::recompile(const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath) {
     
     GLuint vertexShader = 0, fragmentShader = 0, geometryShader = 0, computeShader = 0;
+
+    if (vertexPath.empty() && fragmentPath.empty() && geometryPath.empty() && computePath.empty()) return;
 
     if (!vertexPath.empty()) vertexShader = compileShader(GL_VERTEX_SHADER, getFileContents(vertexPath));
     if (!fragmentPath.empty()) fragmentShader = compileShader(GL_FRAGMENT_SHADER, getFileContents(fragmentPath));
@@ -1061,6 +1067,144 @@ std::shared_ptr<Shader> ResourceManager::loadShader(const std::string& name, con
     return shader;
 }
 
+const char* GLTypeToString(GLenum type) {
+    switch (type) {
+        case GL_VERTEX_SHADER: return "GL_VERTEX_SHADER";
+        case GL_FRAGMENT_SHADER: return "GL_FRAGMENT_SHADER";
+        case GL_GEOMETRY_SHADER: return "GL_GEOMETRY_SHADER";
+        case GL_COMPUTE_SHADER: return "GL_COMPUTE_SHADER";
+        default: return "UNKNOWN_GLENUM";
+    }
+}
+
+std::string join_names(const std::vector<std::string>& names) {
+    if (names.empty()) return "";
+
+    std::ostringstream oss;
+    for (size_t i = 0; i < names.size(); i++) {
+        oss << "'" << names[i] << "'";
+        if (i < names.size() - 2) {
+            oss << " ";
+        } else if (i == names.size() - 2) {
+            oss << " and ";
+        }
+    }
+    return oss.str();
+}
+
+void ResourceManager::loadShaderDSL(const std::string& filePath, const std::source_location& loc) {
+    
+    std::ifstream file(filePath);
+    if (!file.is_open()) {
+        Message(2, "SHADER", "Failed to open DSL file " + filePath, filePath.c_str(), 1);
+        return;
+    }
+
+    struct ShaderSource {
+        std::string source;
+        GLenum type;
+    };
+
+    std::unordered_map<std::string, ShaderSource> localShaders;
+    std::vector<std::string> shaderNames;
+
+    ShaderSource currentShader;
+    std::string currentName;
+    bool writingShader = false;
+
+    std::string line;
+    int lineNum = 0;
+    while (std::getline(file, line)) {
+        lineNum++;
+
+        line.erase(0, line.find_first_not_of(" \t\r\n"));
+        line.erase(line.find_last_not_of(" \t\r\n") + 1);
+        if (line.empty()) continue;
+
+        if (line[0] == '@') {
+            if (writingShader) {
+                localShaders[currentName] = currentShader;
+                currentShader = {};
+                currentName.clear();
+                writingShader = false;
+            }
+
+            if (line.find("@vs") == 0) {
+                currentName = line.substr(4);
+                currentShader.type = GL_VERTEX_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@fs") == 0) {
+                currentName = line.substr(4);
+                currentShader.type = GL_FRAGMENT_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@gs") == 0) {
+                currentName = line.substr(4);
+                currentShader.type = GL_GEOMETRY_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@cs") == 0) {
+                currentName = line.substr(4);
+                currentShader.type = GL_COMPUTE_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@program") == 0) {
+                std::istringstream ss(line.substr(9));
+                std::string programName;
+                ss >> programName;
+
+                std::string vertexName, fragmentName, geometryName, computeName;
+
+                std::unordered_map<GLenum, std::string> usedTypes;
+
+                std::string shaderName;
+                while (ss >> shaderName) {
+                    auto it = localShaders.find(shaderName);
+                    if (it == localShaders.end()) {
+                        Message(2, "SHADER", "Shader '" + shaderName + "' not found in DSL file", filePath.c_str(), lineNum);
+                        continue;
+                    }
+
+                    GLenum type = it->second.type;
+
+                    if (usedTypes.find(type) != usedTypes.end()) {
+                        Message(1, "SHADER", "Program '" + programName + "' already has a shader of type " + GLTypeToString(type) + " (" + usedTypes[type] + ")", filePath.c_str(), lineNum);
+                        continue;
+                    }
+
+                    usedTypes[type] = shaderName;
+
+                    if (type == GL_VERTEX_SHADER) vertexName = shaderName;
+                    else if (type == GL_FRAGMENT_SHADER) fragmentName = shaderName;
+                    else if (type == GL_GEOMETRY_SHADER) geometryName = shaderName;
+                    else if (type == GL_COMPUTE_SHADER) computeName = shaderName;
+
+                }
+
+                const std::string* vsSrc = vertexName.empty() ? nullptr : &localShaders[vertexName].source;
+                const std::string* fsSrc = fragmentName.empty() ? nullptr : &localShaders[fragmentName].source;
+                const std::string* gsSrc = geometryName.empty() ? nullptr : &localShaders[geometryName].source;
+                const std::string* csSrc = computeName.empty() ? nullptr : &localShaders[computeName].source;
+
+                loadShader(programName, vsSrc, fsSrc, gsSrc, csSrc, loc);
+                shaderNames.push_back(programName);
+            }
+
+        } else if (writingShader) {
+            currentShader.source += line + "\n";
+        }
+    }
+
+    if (writingShader) localShaders[currentName] = currentShader;
+
+    file.close();
+
+    std::string namesStr = join_names(shaderNames);
+
+    Message(0, "SHADERS", "DSL shaders " + namesStr + " loaded successfully", filePath.c_str(), lineNum);
+}
+
 void ResourceManager::removeShader(const std::string& name, const std::source_location& loc) {
     auto it = shaders.find(name);
     if (it != shaders.end()) {
@@ -1125,8 +1269,8 @@ std::shared_ptr<Texture> ResourceManager::getTexture(const std::string& name, co
 
 void ResourceManager::loadDefaults() {
     loadMesh("Default_Cube", "include/BEngine/meshes/cube.obj");
-    loadShader("Default_Scene", "include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_core_default.frag");
-    loadShader("Default_Light", "include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_color_uniform.frag");
+    loadShaderDSL("include/BEngine/shaders/core/default_scene.dsl");
+    loadShaderDSL("include/BEngine/shaders/core/flat_color.dsl");
     loadTexture("Fallback", "diffuse", 4, 4, BE::Default::FallbackTexture);
 }
 

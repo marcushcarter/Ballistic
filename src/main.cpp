@@ -5,7 +5,7 @@
 
 int main() {
 
-    BE::Engine engine("Unordered Maps and Scenes");
+    BE::Engine engine("DSL file shader loading :-0");
     engine.bind();
 
     BE::Scene scene;
@@ -26,12 +26,12 @@ int main() {
         scene.activeCamera->handleInputs(engine.getWindow(), engine.getFrameTime().dt);
         scene.activeCamera->updateViewMatrix();
 
-        { // recompile shader
-            auto shader = engine.resources().getShader("Default_Light");
-            if (shader && glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) {
-                engine.resources().getShader("Default_Light")->recompile("include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_core_default.frag");
-            }
-        }
+        // { // recompile shader
+        //     auto shader = engine.resources().getShader("flat_color");
+        //     if (shader && glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) {
+        //         engine.resources().getShader("flat_color")->recompile("include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_core_default.frag");
+        //     }
+        // }
 
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_1) == GLFW_PRESS) {
             scene.addCamera("Camera2");
@@ -46,7 +46,7 @@ int main() {
         // rendering
 
         { // test scene model drawing
-            auto shader = engine.resources().getShader("Default_Scene");
+            auto shader = engine.resources().getShader("default_scene");
             auto mesh = engine.resources().getMesh("Test Scene");
 
             shader->activate();
@@ -57,7 +57,7 @@ int main() {
         }
 
         { // drawing lights
-            auto shader = engine.resources().getShader("Default_Light");
+            auto shader = engine.resources().getShader("flat_color");
             auto mesh = engine.resources().getMesh("Default_Cube");
 
             shader->activate();
@@ -74,7 +74,7 @@ int main() {
         
         { // drawing cameras
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-            auto shader = engine.resources().getShader("Default_Light");
+            auto shader = engine.resources().getShader("flat_color");
             auto mesh = engine.resources().getMesh("Default_Cube");
 
             shader->activate();
