@@ -119,6 +119,13 @@ public:
         const std::string& geometryPath = "", 
         const std::string& computePath = ""
     );
+
+    void recompile(
+        const std::string* vertexSource, 
+        const std::string* fragmentSource, 
+        const std::string* geometrySource, 
+        const std::string* computeSource
+    );
     
 private:
     static std::string getFileContents(const std::string& filename);

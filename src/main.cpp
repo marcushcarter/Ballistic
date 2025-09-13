@@ -26,12 +26,9 @@ int main() {
         scene.activeCamera->handleInputs(engine.getWindow(), engine.getFrameTime().dt);
         scene.activeCamera->updateViewMatrix();
 
-        // { // recompile shader
-        //     auto shader = engine.resources().getShader("flat_color");
-        //     if (shader && glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) {
-        //         engine.resources().getShader("flat_color")->recompile("include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_core_default.frag");
-        //     }
-        // }
+        if (glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) {
+            engine.resources().loadShaderDSL("include/BEngine/shaders/core/flat_color.dsl");
+        }
 
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_1) == GLFW_PRESS) {
             scene.addCamera("Camera2");

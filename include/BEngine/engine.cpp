@@ -247,12 +247,37 @@ void Shader::recompile(const std::string& vertexPath, const std::string& fragmen
     
     GLuint vertexShader = 0, fragmentShader = 0, geometryShader = 0, computeShader = 0;
 
-    if (vertexPath.empty() && fragmentPath.empty() && geometryPath.empty() && computePath.empty()) return;
-
     if (!vertexPath.empty()) vertexShader = compileShader(GL_VERTEX_SHADER, getFileContents(vertexPath));
     if (!fragmentPath.empty()) fragmentShader = compileShader(GL_FRAGMENT_SHADER, getFileContents(fragmentPath));
     if (!geometryPath.empty()) geometryShader = compileShader(GL_GEOMETRY_SHADER, getFileContents(geometryPath));
     if (!computePath.empty()) computeShader = compileShader(GL_COMPUTE_SHADER, getFileContents(computePath));
+
+    GLuint newProgram = glCreateProgram();
+    if (vertexShader)   glAttachShader(newProgram, vertexShader);
+    if (fragmentShader) glAttachShader(newProgram, fragmentShader);
+    if (geometryShader) glAttachShader(newProgram, geometryShader);
+    if (computeShader)  glAttachShader(newProgram, computeShader);
+    glLinkProgram(newProgram);
+    getCompileErrors(newProgram, "PROGRAM");
+
+    glDeleteProgram(ID);
+    ID = newProgram;
+
+    if (vertexShader)   glDeleteShader(vertexShader);
+    if (fragmentShader) glDeleteShader(fragmentShader);
+    if (geometryShader) glDeleteShader(geometryShader);
+    if (computeShader)  glDeleteShader(computeShader);
+
+}
+
+void Shader::recompile(const std::string* vertexSource, const std::string* fragmentSource, const std::string* geometrySource, const std::string* computeSource) {
+    
+    GLuint vertexShader = 0, fragmentShader = 0, geometryShader = 0, computeShader = 0;
+
+    if (vertexSource) vertexShader = compileShader(GL_VERTEX_SHADER, *vertexSource);
+    if (fragmentSource) fragmentShader = compileShader(GL_FRAGMENT_SHADER, *fragmentSource);
+    if (geometrySource) geometryShader = compileShader(GL_GEOMETRY_SHADER, *geometrySource);
+    if (computeSource) computeShader = compileShader(GL_COMPUTE_SHADER, *computeSource);
 
     GLuint newProgram = glCreateProgram();
     if (vertexShader)   glAttachShader(newProgram, vertexShader);
@@ -806,7 +831,7 @@ void LightManager::bind() { glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightS
 
 void LightManager::updateGPU() { std::memcpy(mappedPtr, lights.data(), lights.size() * sizeof(Light)); }
 
-void LightManager::uploadToShader(GLuint shaderID) { glUniform1i(glGetUniformLocation(shaderID, "numLights"), (int)lights.size()); } // from glUniform1i(glGetUniformLocation(shaderID, "numLights"), (int)activeLights.size());
+void LightManager::uploadToShader(GLuint shaderID) { glUniform1i(glGetUniformLocation(shaderID, "numLights"), (int)lights.size()); }
 
 // void LightManager::updateActiveLightsForObject(const glm::vec3& objPos, float objRadius) {
 //     activeLights.clear();
@@ -1187,7 +1212,13 @@ void ResourceManager::loadShaderDSL(const std::string& filePath, const std::sour
                 const std::string* gsSrc = geometryName.empty() ? nullptr : &localShaders[geometryName].source;
                 const std::string* csSrc = computeName.empty() ? nullptr : &localShaders[computeName].source;
 
-                loadShader(programName, vsSrc, fsSrc, gsSrc, csSrc, loc);
+                auto it = shaders.find(programName);
+                if (it != shaders.end()) {
+                    getShader(programName)->recompile(vsSrc, fsSrc, gsSrc, csSrc);
+                } else {
+                    loadShader(programName, vsSrc, fsSrc, gsSrc, csSrc, loc);
+                }
+
                 shaderNames.push_back(programName);
             }
 
