@@ -880,26 +880,85 @@ void BE_LightManager::draw(BE_Shader& shader, BE_Mesh& mesh, BE_Camera& camera) 
     // }
 }
 
-void BE_LightManager::addLight(const BE_Light& light) {
+size_t BE_LightManager::addLight(const std::string& name, int type, const std::source_location& loc) {
+    BE_Light light(type);
     if (lights.size() < maxLights) {
+        size_t index = lights.size();
         lights.push_back(light);
         generateMatrices(lights.back());
-        updateGPU();
+        lightLookup[name] = index;
+        return index;
     }
+    BE_Message(1, "LIGHT", "No space left for light '" + name + "' in light manager", loc.file_name(), loc.line());
+    return SIZE_MAX;
 }
 
-void BE_LightManager::updateLight(size_t index, const BE_Light& light) {
-    if (index < lights.size()) {
-        lights[index] = light;
-        generateMatrices(lights[index]);
-        updateGPU();
-    }
-}
-
-void BE_LightManager::removeLight(size_t index) {
-    if (index < lights.size()) {
+void BE_LightManager::removeLight(const std::string& name, int type, const std::source_location& loc) {
+    auto it = lightLookup.find(name);
+    if (it != lightLookup.end()) {
+        size_t index = it->second;
         lights.erase(lights.begin() + index);
+        lightLookup.erase(it);
+
+        for (auto& [key, value] : lightLookup) {
+            if (value > index) value--;
+        }
+
         updateGPU();
+    } else {
+        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+    }   
+}
+
+void BE_LightManager::setLightPosition(const std::string& name, const glm::vec3& position, const std::source_location& loc) {
+    auto it = lightLookup.find(name);
+    if (it != lightLookup.end()) {
+        lights[it->second].position = glm::vec4(position, lights[it->second].position.w);
+        generateMatrices(lights[it->second]);
+        updateGPU();
+    } else {
+        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+    }
+}
+
+void BE_LightManager::setLightColor(const std::string& name, const glm::vec3& color, const std::source_location& loc) {
+    auto it = lightLookup.find(name);
+    if (it != lightLookup.end()) {
+        lights[it->second].color = glm::vec4(color, lights[it->second].color.w);
+        updateGPU();
+    } else {
+        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+    }
+}
+
+void BE_LightManager::setLightIntensity(const std::string& name, float intensity, const std::source_location& loc) {
+    auto it = lightLookup.find(name);
+    if (it != lightLookup.end()) {
+        lights[it->second].color[3] = intensity;
+        updateGPU();
+    } else {
+        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+    }
+}
+
+void BE_LightManager::setLightDirection(const std::string& name, const glm::vec3& direction, const std::source_location& loc) {
+    auto it = lightLookup.find(name);
+    if (it != lightLookup.end()) {
+        lights[it->second].direction = glm::vec4(direction, lights[it->second].direction.w);
+        generateMatrices(lights[it->second]);
+        updateGPU();
+    } else {
+        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+    }
+}
+
+BE_Light* BE_LightManager::getLight(const std::string& name, const std::source_location& loc) {
+    auto it = lightLookup.find(name);
+    if (it != lightLookup.end()) {
+        return &lights[it->second];
+    } else {
+        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+        return nullptr;
     }
 }
 
@@ -1071,7 +1130,7 @@ void BE_ResourceManager::loadDefaults() {
 
 // ========================================================================
 
-BE_Scene::BE_Scene() : lights(128) { addCamera("Camera1"); }
+BE_Scene::BE_Scene() : lightManager(128) { addCamera("Camera1"); }
 
 std::shared_ptr<BE_Camera> BE_Scene::addCamera(const std::string& name, const std::source_location& loc) {
     auto it = cameras.find(name);

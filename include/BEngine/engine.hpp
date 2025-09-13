@@ -214,6 +214,7 @@ public:
 class BE_LightManager {
 public:
     std::vector<BE_Light> lights;
+    std::unordered_map<std::string, size_t> lightLookup;
     // std::vector<BE_Light> activeLights;
     
     size_t maxLights = 64;
@@ -233,10 +234,13 @@ public:
 
     void draw(BE_Shader& shader, BE_Mesh& mesh, BE_Camera& camera);
 
-    void addLight(const BE_Light& light);
-    void updateLight(size_t index, const BE_Light& light);
-    void removeLight(size_t index);
-
+    size_t addLight(const std::string& name, int type, const std::source_location& loc = std::source_location::current());
+    void removeLight(const std::string& name, int type, const std::source_location& loc = std::source_location::current());
+    void setLightPosition(const std::string& name, const glm::vec3& position, const std::source_location& loc = std::source_location::current());
+    void setLightColor(const std::string& name, const glm::vec3& color, const std::source_location& loc = std::source_location::current());
+    void setLightIntensity(const std::string& name, float intensity, const std::source_location& loc = std::source_location::current());
+    void setLightDirection(const std::string& name, const glm::vec3& direction, const std::source_location& loc = std::source_location::current());
+    BE_Light* getLight(const std::string& name, const std::source_location& loc = std::source_location::current());
 };
 
 class BE_ResourceManager {
@@ -279,9 +283,7 @@ public:
 };
 
 class BE_Scene {
-public:   
-    BE_LightManager lights;
-
+public:
     std::unordered_map<std::string, std::shared_ptr<BE_Camera>> cameras;
     std::shared_ptr<BE_Camera> activeCamera;
     
@@ -290,6 +292,11 @@ public:
     std::shared_ptr<BE_Camera> addCamera(const std::string& name, const std::source_location& loc = std::source_location::current());
     void removeCamera(const std::string& name, const std::source_location& loc = std::source_location::current());
     std::shared_ptr<BE_Camera> getCamera(const std::string& name, const std::source_location& loc = std::source_location::current());
+
+    BE_LightManager& lights() { return lightManager; }
+    
+private:
+    BE_LightManager lightManager;
 
 };
 

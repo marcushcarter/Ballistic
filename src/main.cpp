@@ -12,8 +12,8 @@ int main() {
 
     engine.resources().loadMesh("Test Scene", "res/models/scene.obj");
 
-    BE_Light light1;
-    scene.lights.addLight(light1);
+    scene.lights().addLight("light1", 1);
+    scene.lights().setLightPosition("light1", glm::vec3(0,0.5,0));
 
     while(engine.isRunning()) {
 
@@ -38,9 +38,8 @@ int main() {
         }
 
         // updates
-        
-        BE_Light lightnew2(1.0f, glm::vec3(0,0.5,0), glm::vec3(0), glm::vec3(1), std::sinf(glfwGetTime()) + 1.0f, 0.0f);
-        scene.lights.updateLight(0, lightnew2);
+
+        scene.lights().setLightIntensity("light1", std::sinf(glfwGetTime()) + 1.0f);
         
         engine.beginRender();
 
@@ -51,8 +50,7 @@ int main() {
             auto mesh = engine.resources().getMesh("Test Scene");
 
             shader->activate();
-            // scene.lights.updateActiveLightsForObject(glm::vec3(0,0,0), 5.0f);
-            scene.lights.uploadToShader(shader->ID);
+            scene.lights().uploadToShader(shader->ID);
             scene.activeCamera->uploadToShader(shader->ID);
             glm::mat4 model = glm::mat4(1.0f);
             mesh->draw(*shader, model);
@@ -65,11 +63,11 @@ int main() {
             shader->activate();
             scene.activeCamera->uploadToShader(shader->ID);
             GLuint colorLoc = glGetUniformLocation(shader->ID, "uColor");
-            for (int i = 0; i < scene.lights.lights.size(); i++) {
+            for (int i = 0; i < scene.lights().lights.size(); i++) {
                 glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(scene.lights.lights[i].position[0], scene.lights.lights[i].position[1], scene.lights.lights[i].position[2]));
+                model = glm::translate(model, glm::vec3(scene.lights().lights[i].position[0], scene.lights().lights[i].position[1], scene.lights().lights[i].position[2]));
                 model = glm::scale(model, glm::vec3(0.1f));    
-                glUniform4fv(colorLoc, 1, glm::value_ptr(scene.lights.lights[i].color));
+                glUniform4fv(colorLoc, 1, glm::value_ptr(scene.lights().lights[i].color));
                 mesh->draw(*shader, model);
             }
         }
@@ -83,7 +81,6 @@ int main() {
             scene.activeCamera->uploadToShader(shader->ID);
             glUniform4fv(glGetUniformLocation(shader->ID, "uColor"), 1, glm::value_ptr(glm::vec4(1)));
             for (auto& [key, camera] : scene.cameras) {
-                // if (camera == scene.activeCamera) continue;
                 glm::mat4 model = glm::mat4(1.0f);
                 model = glm::translate(model, glm::vec3(camera->position[0], camera->position[1], camera->position[2]));
                 model = glm::scale(model, glm::vec3(0.25f));
