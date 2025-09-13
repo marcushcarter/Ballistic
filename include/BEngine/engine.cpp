@@ -9,7 +9,9 @@
 #include <chrono>
 #include <cstring>
 
-static void BE_Message(int severity, const std::string& module, const std::string& message, const std::string& file = "", int line = 0, const std::source_location& loc = std::source_location::current()) {
+namespace BE {
+
+static void Message(int severity, const std::string& module, const std::string& message, const std::string& file = "", int line = 0, const std::source_location& loc = std::source_location::current()) {
     std::string displayFile;
     int displayLine;
 
@@ -56,7 +58,7 @@ static void BE_Message(int severity, const std::string& module, const std::strin
 
 // ========================================================================
 
-float BE_FrameTime::update() {
+float FrameTime::update() {
     currentTime = std::chrono::steady_clock::now();
     dt = std::chrono::duration<float>(currentTime - previousTime).count();
     previousTime = currentTime;
@@ -84,35 +86,35 @@ float BE_FrameTime::update() {
 
 // ========================================================================
 
-BE_VAO::BE_VAO() { glGenVertexArrays(1, &ID); }
+VAO::VAO() { glGenVertexArrays(1, &ID); }
 
-BE_VAO::~BE_VAO() { glDeleteVertexArrays(1, &ID); }
+VAO::~VAO() { glDeleteVertexArrays(1, &ID); }
 
-void BE_VAO::bind() { glBindVertexArray(ID); }
+void VAO::bind() { glBindVertexArray(ID); }
 
-void BE_VAO::unbind() { glBindVertexArray(0); }
+void VAO::unbind() { glBindVertexArray(0); }
 
 // ========================================================================
 
-BE_VBO::BE_VBO(GLfloat* vertices, GLsizeiptr size) {
+VBO::VBO(GLfloat* vertices, GLsizeiptr size) {
     glGenBuffers(1, &ID);
     glBindBuffer(GL_ARRAY_BUFFER, ID);
     glBufferData(GL_ARRAY_BUFFER, size, vertices, GL_STATIC_DRAW);
 }
 
-BE_VBO::BE_VBO(const std::vector<BE_Vertex>& vertices) {
+VBO::VBO(const std::vector<Vertex>& vertices) {
     glGenBuffers(1, &ID);
     glBindBuffer(GL_ARRAY_BUFFER, ID);
-    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(BE_Vertex), vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 }
 
-BE_VBO::~BE_VBO() { glDeleteBuffers(1, &ID); }
+VBO::~VBO() { glDeleteBuffers(1, &ID); }
 
-void BE_VBO::bind() { glBindBuffer(GL_ARRAY_BUFFER, ID); }
+void VBO::bind() { glBindBuffer(GL_ARRAY_BUFFER, ID); }
 
-void BE_VBO::unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
+void VBO::unbind() { glBindBuffer(GL_ARRAY_BUFFER, 0); }
 
-void BE_VBO::linkVertexAttrib(GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset) {
+void VBO::linkVertexAttrib(GLuint layout, GLuint numComponents, GLenum type, GLsizeiptr stride, void* offset) {
     bind();
     glVertexAttribPointer(layout, numComponents, type, GL_FALSE, stride, offset);
     glEnableVertexAttribArray(layout);
@@ -121,27 +123,27 @@ void BE_VBO::linkVertexAttrib(GLuint layout, GLuint numComponents, GLenum type, 
 
 // ========================================================================
 
-BE_EBO::BE_EBO(GLuint* indices, GLsizeiptr size) {
+EBO::EBO(GLuint* indices, GLsizeiptr size) {
     glGenBuffers(1, &ID);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, size, indices, GL_STATIC_DRAW);
 }
 
-BE_EBO::BE_EBO(const std::vector<GLuint>& indices) {
+EBO::EBO(const std::vector<GLuint>& indices) {
     glGenBuffers(1, &ID);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(GLuint), indices.data(), GL_STATIC_DRAW);
 }
 
-BE_EBO::~BE_EBO() { glDeleteBuffers(1, &ID); }
+EBO::~EBO() { glDeleteBuffers(1, &ID); }
 
-void BE_EBO::bind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID); }
+void EBO::bind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ID); }
 
-void BE_EBO::unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
+void EBO::unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
 // ========================================================================
 
-BE_Shader::BE_Shader(const std::string& shaderName, const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath)
+Shader::Shader(const std::string& shaderName, const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath)
     : name(shaderName.empty() ? "new shader" : shaderName) {
 
     GLuint vertexShader = 0, fragmentShader = 0, geometryShader = 0, computeShader = 0;
@@ -166,7 +168,7 @@ BE_Shader::BE_Shader(const std::string& shaderName, const std::string& vertexPat
 
 }
 
-BE_Shader::BE_Shader(const std::string& shaderName, const std::string* vertexSource, const std::string* fragmentSource, const std::string* geometrySource, const std::string* computeSource)
+Shader::Shader(const std::string& shaderName, const std::string* vertexSource, const std::string* fragmentSource, const std::string* geometrySource, const std::string* computeSource)
     : name(shaderName.empty() ? "new shader" : shaderName) {
 
     GLuint vertexShader = 0, fragmentShader = 0, geometryShader = 0, computeShader = 0;
@@ -190,11 +192,11 @@ BE_Shader::BE_Shader(const std::string& shaderName, const std::string* vertexSou
     if (computeShader) glDeleteShader(computeShader);
 }
 
-BE_Shader::~BE_Shader() { glDeleteProgram(ID); }
+Shader::~Shader() { glDeleteProgram(ID); }
 
-void BE_Shader::activate() { glUseProgram(ID); }
+void Shader::activate() { glUseProgram(ID); }
 
-std::string BE_Shader::getFileContents(const std::string& filename) {
+std::string Shader::getFileContents(const std::string& filename) {
     std::ifstream file(filename, std::ios::binary);
     if (!file.is_open()) {
         std::cerr << "Failed to open shader file: " << filename << "\n";
@@ -205,7 +207,7 @@ std::string BE_Shader::getFileContents(const std::string& filename) {
     return ss.str();
 }
 
-void BE_Shader::getCompileErrors(GLuint shader, const std::string& type) {
+void Shader::getCompileErrors(GLuint shader, const std::string& type) {
     GLint success;
     char infoLog[1024];
     if (type != "PROGRAM") {
@@ -223,7 +225,7 @@ void BE_Shader::getCompileErrors(GLuint shader, const std::string& type) {
     }
 }
 
-GLuint BE_Shader::compileShader(GLenum type, const std::string& source) {
+GLuint Shader::compileShader(GLenum type, const std::string& source) {
     GLuint shader = glCreateShader(type);
     const char* src = source.c_str();
     glShaderSource(shader, 1, &src, nullptr);
@@ -237,7 +239,7 @@ GLuint BE_Shader::compileShader(GLenum type, const std::string& source) {
     return shader;
 }
 
-void BE_Shader::recompile(const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath) {
+void Shader::recompile(const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath) {
     
     GLuint vertexShader = 0, fragmentShader = 0, geometryShader = 0, computeShader = 0;
 
@@ -266,7 +268,7 @@ void BE_Shader::recompile(const std::string& vertexPath, const std::string& frag
 
 // ========================================================================
 
-BE_Texture::BE_Texture(const std::string& textureName, const std::string& imagePath, const std::string& texType, GLuint slot)
+Texture::Texture(const std::string& textureName, const std::string& imagePath, const std::string& texType, GLuint slot)
     : name(textureName.empty() ? "new texture" : textureName), texType(texType), unit(slot)  {
 
     type = GL_TEXTURE_2D;
@@ -274,7 +276,7 @@ BE_Texture::BE_Texture(const std::string& textureName, const std::string& imageP
     stbi_set_flip_vertically_on_load(true);
     unsigned char* data = stbi_load(imagePath.c_str(), &width, &height, &channels, 0);
     if (!data) {
-        BE_Message(2, "TEXTURE", "Failed to load texture " + textureName, imagePath.c_str(), 1);
+        Message(2, "TEXTURE", "Failed to load texture " + textureName, imagePath.c_str(), 1);
     }
 
     glGenTextures(1, &ID);
@@ -292,7 +294,7 @@ BE_Texture::BE_Texture(const std::string& textureName, const std::string& imageP
     else if (channels == 3) format = GL_RGB;
     else if (channels == 1) format = GL_RED;
     else {
-        BE_Message(2, "TEXTURE", "Unsupported color channel count " + channels, imagePath.c_str(), 1);
+        Message(2, "TEXTURE", "Unsupported color channel count " + channels, imagePath.c_str(), 1);
         stbi_image_free(data);
     }
 
@@ -303,7 +305,7 @@ BE_Texture::BE_Texture(const std::string& textureName, const std::string& imageP
     glBindTexture(type, 0);
 }
 
-BE_Texture::BE_Texture(const std::string& textureName, const std::string& texType, int width, int height, const std::string& rawData)
+Texture::Texture(const std::string& textureName, const std::string& texType, int width, int height, const std::string& rawData)
     : name(textureName), texType(texType) {
 
     glGenTextures(1, &ID);
@@ -316,24 +318,24 @@ BE_Texture::BE_Texture(const std::string& textureName, const std::string& texTyp
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-BE_Texture::~BE_Texture() { glDeleteTextures(1, &ID); }
+Texture::~Texture() { glDeleteTextures(1, &ID); }
 
-void BE_Texture::setUniformUnit(GLuint shaderID, const char* uniform) {
+void Texture::setUniformUnit(GLuint shaderID, const char* uniform) {
     GLuint loc = glGetUniformLocation(shaderID, uniform);
     glUseProgram(shaderID);
     glUniform1i(loc, unit);
 }
 
-void BE_Texture::bind() {
+void Texture::bind() {
     glActiveTexture(GL_TEXTURE0 + unit);
     glBindTexture(type, ID);
 }
 
-void BE_Texture::unbind() { glBindTexture(GL_TEXTURE_2D, 0); }
+void Texture::unbind() { glBindTexture(GL_TEXTURE_2D, 0); }
 
 // ========================================================================
 
-BE_Camera::BE_Camera(const std::string& cameraName, int width, int height, float fov, float nearPlane, float farPlane, const glm::vec3& pos, const glm::vec3& dir) 
+Camera::Camera(const std::string& cameraName, int width, int height, float fov, float nearPlane, float farPlane, const glm::vec3& pos, const glm::vec3& dir) 
     : name(cameraName.empty() ? "new camera" : cameraName), width(width), height(height), fov(fov), nearPlane(nearPlane), farPlane(farPlane), position(pos), zoom(1.0f) {
 
     glm::vec3 forward = glm::normalize(dir);
@@ -346,12 +348,12 @@ BE_Camera::BE_Camera(const std::string& cameraName, int width, int height, float
     updateViewMatrix();
 }
 
-void BE_Camera::rotate(const glm::vec3& axis, float angle) {
+void Camera::rotate(const glm::vec3& axis, float angle) {
     glm::quat qrot = glm::angleAxis(angle, axis);
     orientation = glm::normalize(qrot * orientation);
 }
 
-void BE_Camera::handleInputs(GLFWwindow* window, float dt) {
+void Camera::handleInputs(GLFWwindow* window, float dt) {
     static bool mouseLookActive = false;
     static double lastX = 0, lastY = 0;
 
@@ -419,7 +421,7 @@ void BE_Camera::handleInputs(GLFWwindow* window, float dt) {
     orientation = glm::normalize(qYaw * qPitch);
 }
 
-void BE_Camera::updateViewMatrix() {
+void Camera::updateViewMatrix() {
     glm::vec3 forward = orientation * glm::vec3(0, 0, -1);
     glm::vec3 up      = orientation * glm::vec3(0, 1,  0);
     glm::vec3 target  = position + forward;
@@ -434,7 +436,7 @@ void BE_Camera::updateViewMatrix() {
 
 }
 
-void BE_Camera::uploadToShader(GLuint shaderID) {
+void Camera::uploadToShader(GLuint shaderID) {
     // glm::mat4 mvp = projViewMatrix * modelMatrix;
 
     // glUniformMatrix4fv(glGetUniformLocation(shaderID, "uMVP"), 1, GL_FALSE, &mvp[0][0]);
@@ -447,44 +449,44 @@ void BE_Camera::uploadToShader(GLuint shaderID) {
 
 // ========================================================================
 
-// BE_Mesh::BE_Mesh() : vertices(), indices(), textures() {}
+// Mesh::Mesh() : vertices(), indices(), textures() {}
 
-BE_Mesh::BE_Mesh(const std::string& meshName, const std::vector<BE_Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<BE_Texture>& texs)
+Mesh::Mesh(const std::string& meshName, const std::vector<Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<Texture>& texs)
     : name(meshName.empty() ? "new mesh" : meshName), vertices(verts), indices(inds), textures(texs) {
 
     vao.bind();
 
-    vbo = new BE_VBO(vertices);
-    ebo = new BE_EBO(indices);
+    vbo = new VBO(vertices);
+    ebo = new EBO(indices);
 
-    vbo->linkVertexAttrib(0, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)0);
-    vbo->linkVertexAttrib(1, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(3 * sizeof(float)));
-    vbo->linkVertexAttrib(2, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(6 * sizeof(float)));
-    vbo->linkVertexAttrib(3, 2, GL_FLOAT, sizeof(BE_Vertex), (void*)(9 * sizeof(float)));
+    vbo->linkVertexAttrib(0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);
+    vbo->linkVertexAttrib(1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(float)));
+    vbo->linkVertexAttrib(2, 3, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(float)));
+    vbo->linkVertexAttrib(3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
     
     vao.unbind();
 }
 
-BE_Mesh::BE_Mesh(const std::string& meshName, const std::string& objPath)
+Mesh::Mesh(const std::string& meshName, const std::string& objPath)
     : name(meshName.empty() ? "new mesh" : meshName), vertices(), indices(), textures() {
     loadOBJ(objPath.c_str());
 }
 
-BE_Mesh::BE_Mesh(const std::string& meshName, const std::string* objSource)
+Mesh::Mesh(const std::string& meshName, const std::string* objSource)
     : name(meshName.empty() ? "new mesh" : meshName), vertices(), indices(), textures() {
     loadOBJSource(objSource);
 }
 
-BE_Mesh::~BE_Mesh() {
+Mesh::~Mesh() {
     delete vbo;
     delete ebo;
     
     for (auto& tex : textures) {
-        tex.~BE_Texture();
+        tex.~Texture();
     }
 }
 
-void BE_Mesh::draw(BE_Shader& shader, const glm::mat4& modelMatrix) {
+void Mesh::draw(Shader& shader, const glm::mat4& modelMatrix) {
     shader.activate();
     vao.bind();
     
@@ -510,9 +512,9 @@ void BE_Mesh::draw(BE_Shader& shader, const glm::mat4& modelMatrix) {
 
 }
 
-int GetOrAddVertex(std::vector<BE_Vertex>& vertices, const BE_Vertex& v) {
+int GetOrAddVertex(std::vector<Vertex>& vertices, const Vertex& v) {
     for (size_t i = 0; i < vertices.size(); i++) {
-        if (memcmp(&vertices[i], &v, sizeof(BE_Vertex)) == 0) {
+        if (memcmp(&vertices[i], &v, sizeof(Vertex)) == 0) {
             return static_cast<int>(i);
         }
     }
@@ -520,10 +522,10 @@ int GetOrAddVertex(std::vector<BE_Vertex>& vertices, const BE_Vertex& v) {
     return static_cast<int>(vertices.size() - 1);
 }
 
-void BE_Mesh::loadOBJ(const std::string& objPath) {
+void Mesh::loadOBJ(const std::string& objPath) {
     std::ifstream file(objPath);
     if (!file.is_open()) {
-        BE_Message(2, "MESH", "Failed to open OBJ file " + objPath, objPath.c_str(), 1);
+        Message(2, "MESH", "Failed to open OBJ file " + objPath, objPath.c_str(), 1);
         return;
     }
 
@@ -531,7 +533,7 @@ void BE_Mesh::loadOBJ(const std::string& objPath) {
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> uvs;
 
-    std::vector<BE_Vertex> loadedVerts;
+    std::vector<Vertex> loadedVerts;
     std::vector<GLuint> loadedIndices;
 
     std::string line;
@@ -566,11 +568,11 @@ void BE_Mesh::loadOBJ(const std::string& objPath) {
         } else if (line.starts_with("f ")) {
             ss.ignore(2);
 
-            std::vector<BE_Vertex> faceVerts;
+            std::vector<Vertex> faceVerts;
             std::string token;
 
             while (ss >> token) {
-                BE_Vertex vert{};
+                Vertex vert{};
                 int vi = 0, vti = 0, vni = 0;
 
                 if (sscanf(token.c_str(), "%d/%d/%d", &vi, &vti, &vni) == 3) {
@@ -602,7 +604,7 @@ void BE_Mesh::loadOBJ(const std::string& objPath) {
                     vert.texUV    = {0.0f, 0.0f};
 
                 } else {
-                    BE_Message(1, "MESH", "Invalid face token: " + token, objPath.c_str(), lineNum);
+                    Message(1, "MESH", "Invalid face token: " + token, objPath.c_str(), lineNum);
                 }
 
                 faceVerts.push_back(vert);
@@ -624,27 +626,27 @@ void BE_Mesh::loadOBJ(const std::string& objPath) {
 
     this->vertices = std::move(loadedVerts);
     this->indices  = std::move(loadedIndices);
-    this->textures = { BE_Texture("fallback", "diffuse", 4, 4, BE::Default::FallbackTexture) };
+    this->textures = { Texture("fallback", "diffuse", 4, 4, BE::Default::FallbackTexture) };
 
     vao.bind();
     delete vbo;
     delete ebo;
-    vbo = new BE_VBO(this->vertices);
-    ebo = new BE_EBO(this->indices);
+    vbo = new VBO(this->vertices);
+    ebo = new EBO(this->indices);
 
-    vbo->linkVertexAttrib(0, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)0);
-    vbo->linkVertexAttrib(1, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(3 * sizeof(float)));
-    vbo->linkVertexAttrib(2, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(6 * sizeof(float)));
-    vbo->linkVertexAttrib(3, 2, GL_FLOAT, sizeof(BE_Vertex), (void*)(9 * sizeof(float)));
+    vbo->linkVertexAttrib(0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);
+    vbo->linkVertexAttrib(1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(float)));
+    vbo->linkVertexAttrib(2, 3, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(float)));
+    vbo->linkVertexAttrib(3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
 
     vao.unbind();
 
-    BE_Message(0, "MESH", "OBJ loaded successfully", objPath.c_str(), lineNum);
+    Message(0, "MESH", "OBJ loaded successfully", objPath.c_str(), lineNum);
 }
 
-void BE_Mesh::loadOBJSource(const std::string* objSource) {
+void Mesh::loadOBJSource(const std::string* objSource) {
     if (!objSource) {
-        BE_Message(2, "MESH", "Could not find OBJ source", "SOURCE", 1);
+        Message(2, "MESH", "Could not find OBJ source", "SOURCE", 1);
         return;
     }
 
@@ -652,7 +654,7 @@ void BE_Mesh::loadOBJSource(const std::string* objSource) {
     std::vector<glm::vec3> normals;
     std::vector<glm::vec2> uvs;
 
-    std::vector<BE_Vertex> loadedVerts;
+    std::vector<Vertex> loadedVerts;
     std::vector<GLuint> loadedIndices;
 
     std::istringstream file(*objSource);
@@ -688,11 +690,11 @@ void BE_Mesh::loadOBJSource(const std::string* objSource) {
         } else if (line.starts_with("f ")) {
             ss.ignore(2);
 
-            std::vector<BE_Vertex> faceVerts;
+            std::vector<Vertex> faceVerts;
             std::string token;
 
             while (ss >> token) {
-                BE_Vertex vert{};
+                Vertex vert{};
                 int vi = 0, vti = 0, vni = 0;
 
                 if (sscanf(token.c_str(), "%d/%d/%d", &vi, &vti, &vni) == 3) {
@@ -724,7 +726,7 @@ void BE_Mesh::loadOBJSource(const std::string* objSource) {
                     vert.texUV    = {0.0f, 0.0f};
 
                 } else {
-                    BE_Message(1, "MESH", "Invalid face token: " + token, "SOURCE", lineNum);
+                    Message(1, "MESH", "Invalid face token: " + token, "SOURCE", lineNum);
                 }
 
                 faceVerts.push_back(vert);
@@ -744,27 +746,27 @@ void BE_Mesh::loadOBJSource(const std::string* objSource) {
 
     this->vertices = std::move(loadedVerts);
     this->indices  = std::move(loadedIndices);
-    this->textures = { BE_Texture("fallback", "diffuse", 4, 4, BE::Default::FallbackTexture) };
+    this->textures = { Texture("fallback", "diffuse", 4, 4, BE::Default::FallbackTexture) };
 
     vao.bind();
     delete vbo;
     delete ebo;
-    vbo = new BE_VBO(this->vertices);
-    ebo = new BE_EBO(this->indices);
+    vbo = new VBO(this->vertices);
+    ebo = new EBO(this->indices);
 
-    vbo->linkVertexAttrib(0, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)0);
-    vbo->linkVertexAttrib(1, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(3 * sizeof(float)));
-    vbo->linkVertexAttrib(2, 3, GL_FLOAT, sizeof(BE_Vertex), (void*)(6 * sizeof(float)));
-    vbo->linkVertexAttrib(3, 2, GL_FLOAT, sizeof(BE_Vertex), (void*)(9 * sizeof(float)));
+    vbo->linkVertexAttrib(0, 3, GL_FLOAT, sizeof(Vertex), (void*)0);
+    vbo->linkVertexAttrib(1, 3, GL_FLOAT, sizeof(Vertex), (void*)(3 * sizeof(float)));
+    vbo->linkVertexAttrib(2, 3, GL_FLOAT, sizeof(Vertex), (void*)(6 * sizeof(float)));
+    vbo->linkVertexAttrib(3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
 
     vao.unbind();
 
-    BE_Message(0, "MESH", "OBJ loaded successfully", "SOURCE", lineNum);
+    Message(0, "MESH", "OBJ loaded successfully", "SOURCE", lineNum);
 }
 
 // ========================================================================
 
-BE_Light::BE_Light(float type, const glm::vec3 pos, const glm::vec3 dir, const glm::vec3 col, float inten, float pad1_ ) {
+Light::Light(float type, const glm::vec3 pos, const glm::vec3 dir, const glm::vec3 col, float inten, float pad1_ ) {
     position = glm::vec4(pos, (float)type);
     color = glm::vec4(col, inten);
     direction = glm::vec4(dir, pad1_);
@@ -772,21 +774,21 @@ BE_Light::BE_Light(float type, const glm::vec3 pos, const glm::vec3 dir, const g
     shadowMatrices[1] = glm::mat4(1.0f);
 }
 
-BE_LightManager::BE_LightManager(size_t maxLights) 
+LightManager::LightManager(size_t maxLights) 
     : maxLights(maxLights) {
 
-    // lightMesh = new BE_Mesh("Light Mesh", {}, {}, {});
+    // lightMesh = new Mesh("Light Mesh", {}, {}, {});
     // lightMesh.loadOBJ("res/models/cube.obj");
     
     glGenBuffers(1, &lightSSBO);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
-    glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(BE_Light) * maxLights, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    glBufferStorage(GL_SHADER_STORAGE_BUFFER, sizeof(Light) * maxLights, nullptr, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO);
-    mappedPtr = (BE_Light*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(BE_Light) * maxLights, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
+    mappedPtr = (Light*)glMapBufferRange(GL_SHADER_STORAGE_BUFFER, 0, sizeof(Light) * maxLights, GL_MAP_WRITE_BIT | GL_MAP_PERSISTENT_BIT | GL_MAP_COHERENT_BIT);
     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 }
 
-BE_LightManager::~BE_LightManager() {
+LightManager::~LightManager() {
     if (lightSSBO) {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
@@ -794,13 +796,13 @@ BE_LightManager::~BE_LightManager() {
     }
 }
 
-void BE_LightManager::bind() { glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO); }
+void LightManager::bind() { glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO); }
 
-void BE_LightManager::updateGPU() { std::memcpy(mappedPtr, lights.data(), lights.size() * sizeof(BE_Light)); }
+void LightManager::updateGPU() { std::memcpy(mappedPtr, lights.data(), lights.size() * sizeof(Light)); }
 
-void BE_LightManager::uploadToShader(GLuint shaderID) { glUniform1i(glGetUniformLocation(shaderID, "numLights"), (int)lights.size()); } // from glUniform1i(glGetUniformLocation(shaderID, "numLights"), (int)activeLights.size());
+void LightManager::uploadToShader(GLuint shaderID) { glUniform1i(glGetUniformLocation(shaderID, "numLights"), (int)lights.size()); } // from glUniform1i(glGetUniformLocation(shaderID, "numLights"), (int)activeLights.size());
 
-// void BE_LightManager::updateActiveLightsForObject(const glm::vec3& objPos, float objRadius) {
+// void LightManager::updateActiveLightsForObject(const glm::vec3& objPos, float objRadius) {
 //     activeLights.clear();
 //
 //     for (auto& light : lights) {
@@ -816,11 +818,11 @@ void BE_LightManager::uploadToShader(GLuint shaderID) { glUniform1i(glGetUniform
 //     }
 //
 //     glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
-//     std::memcpy(mappedPtr, activeLights.data(), activeLights.size() * sizeof(BE_Light));
+//     std::memcpy(mappedPtr, activeLights.data(), activeLights.size() * sizeof(Light));
 //     glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
 // }
 
-void BE_LightManager::generateMatrices(BE_Light& light) {
+void LightManager::generateMatrices(Light& light) {
     glm::vec3 pos = glm::vec3(light.position);
     glm::vec3 dir = glm::vec3(light.direction);
 
@@ -853,14 +855,14 @@ void BE_LightManager::generateMatrices(BE_Light& light) {
 
 }
 
-void BE_LightManager::generateAllMatrices() {
+void LightManager::generateAllMatrices() {
     for (auto& light : lights) {
         generateMatrices(light);
     }
     updateGPU();
 }
 
-void BE_LightManager::draw(BE_Shader& shader, BE_Mesh& mesh, BE_Camera& camera) {
+void LightManager::draw(Shader& shader, Mesh& mesh, Camera& camera) {
     
     // shader.activate();
     // camera.uploadToShader(shader.ID);
@@ -880,8 +882,8 @@ void BE_LightManager::draw(BE_Shader& shader, BE_Mesh& mesh, BE_Camera& camera) 
     // }
 }
 
-size_t BE_LightManager::addLight(const std::string& name, int type, const std::source_location& loc) {
-    BE_Light light(type);
+size_t LightManager::addLight(const std::string& name, int type, const std::source_location& loc) {
+    Light light(type);
     if (lights.size() < maxLights) {
         size_t index = lights.size();
         lights.push_back(light);
@@ -889,11 +891,11 @@ size_t BE_LightManager::addLight(const std::string& name, int type, const std::s
         lightLookup[name] = index;
         return index;
     }
-    BE_Message(1, "LIGHT", "No space left for light '" + name + "' in light manager", loc.file_name(), loc.line());
+    Message(1, "LIGHT", "No space left for light '" + name + "' in light manager", loc.file_name(), loc.line());
     return SIZE_MAX;
 }
 
-void BE_LightManager::removeLight(const std::string& name, int type, const std::source_location& loc) {
+void LightManager::removeLight(const std::string& name, int type, const std::source_location& loc) {
     auto it = lightLookup.find(name);
     if (it != lightLookup.end()) {
         size_t index = it->second;
@@ -906,58 +908,58 @@ void BE_LightManager::removeLight(const std::string& name, int type, const std::
 
         updateGPU();
     } else {
-        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
     }   
 }
 
-void BE_LightManager::setLightPosition(const std::string& name, const glm::vec3& position, const std::source_location& loc) {
+void LightManager::setLightPosition(const std::string& name, const glm::vec3& position, const std::source_location& loc) {
     auto it = lightLookup.find(name);
     if (it != lightLookup.end()) {
         lights[it->second].position = glm::vec4(position, lights[it->second].position.w);
         generateMatrices(lights[it->second]);
         updateGPU();
     } else {
-        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
     }
 }
 
-void BE_LightManager::setLightColor(const std::string& name, const glm::vec3& color, const std::source_location& loc) {
+void LightManager::setLightColor(const std::string& name, const glm::vec3& color, const std::source_location& loc) {
     auto it = lightLookup.find(name);
     if (it != lightLookup.end()) {
         lights[it->second].color = glm::vec4(color, lights[it->second].color.w);
         updateGPU();
     } else {
-        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
     }
 }
 
-void BE_LightManager::setLightIntensity(const std::string& name, float intensity, const std::source_location& loc) {
+void LightManager::setLightIntensity(const std::string& name, float intensity, const std::source_location& loc) {
     auto it = lightLookup.find(name);
     if (it != lightLookup.end()) {
         lights[it->second].color[3] = intensity;
         updateGPU();
     } else {
-        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
     }
 }
 
-void BE_LightManager::setLightDirection(const std::string& name, const glm::vec3& direction, const std::source_location& loc) {
+void LightManager::setLightDirection(const std::string& name, const glm::vec3& direction, const std::source_location& loc) {
     auto it = lightLookup.find(name);
     if (it != lightLookup.end()) {
         lights[it->second].direction = glm::vec4(direction, lights[it->second].direction.w);
         generateMatrices(lights[it->second]);
         updateGPU();
     } else {
-        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
     }
 }
 
-BE_Light* BE_LightManager::getLight(const std::string& name, const std::source_location& loc) {
+Light* LightManager::getLight(const std::string& name, const std::source_location& loc) {
     auto it = lightLookup.find(name);
     if (it != lightLookup.end()) {
         return &lights[it->second];
     } else {
-        BE_Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "LIGHT", "Could not find light '" + name + "'", loc.file_name(), loc.line());
         return nullptr;
     }
 }
@@ -980,148 +982,148 @@ BE_Light* BE_LightManager::getLight(const std::string& name, const std::source_l
 
 // ========================================================================
 
-std::shared_ptr<BE_Mesh> BE_ResourceManager::loadMesh(const std::string& name, const std::vector<BE_Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<BE_Texture>& texs, const std::source_location& loc) {
+std::shared_ptr<Mesh> ResourceManager::loadMesh(const std::string& name, const std::vector<Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<Texture>& texs, const std::source_location& loc) {
     auto it = meshes.find(name);
     if (it != meshes.end()) {
-        BE_Message(1, "RESOURCE", "Mesh '" + name + "' already exists", loc.file_name(), loc.line());
+        Message(1, "RESOURCE", "Mesh '" + name + "' already exists", loc.file_name(), loc.line());
         return it->second;
     }
     
-    auto mesh = std::make_shared<BE_Mesh>(name, verts, inds, texs);
+    auto mesh = std::make_shared<Mesh>(name, verts, inds, texs);
     meshes[name] = mesh;
     return mesh;
 }
 
-std::shared_ptr<BE_Mesh> BE_ResourceManager::loadMesh(const std::string& name, const std::string& objPath, const std::source_location& loc) {
+std::shared_ptr<Mesh> ResourceManager::loadMesh(const std::string& name, const std::string& objPath, const std::source_location& loc) {
     auto it = meshes.find(name);
     if (it != meshes.end()) {
-        BE_Message(1, "RESOURCE", "Mesh '" + name + "' already exists", loc.file_name(), loc.line());
+        Message(1, "RESOURCE", "Mesh '" + name + "' already exists", loc.file_name(), loc.line());
         return it->second;
     }
     
-    auto mesh = std::make_shared<BE_Mesh>(name, objPath);
+    auto mesh = std::make_shared<Mesh>(name, objPath);
     meshes[name] = mesh;
     return mesh;
 }
 
-std::shared_ptr<BE_Mesh> BE_ResourceManager::loadMesh(const std::string& name, const std::string* objSource, const std::source_location& loc) {
+std::shared_ptr<Mesh> ResourceManager::loadMesh(const std::string& name, const std::string* objSource, const std::source_location& loc) {
     auto it = meshes.find(name);
     if (it != meshes.end()) {
-        BE_Message(1, "RESOURCE", "Mesh '" + name + "' already exists", loc.file_name(), loc.line());
+        Message(1, "RESOURCE", "Mesh '" + name + "' already exists", loc.file_name(), loc.line());
         return it->second;
     }
     
-    auto mesh = std::make_shared<BE_Mesh>(name, objSource);
+    auto mesh = std::make_shared<Mesh>(name, objSource);
     meshes[name] = mesh;
     return mesh;
 }
 
-void BE_ResourceManager::removeMesh(const std::string& name, const std::source_location& loc) {
+void ResourceManager::removeMesh(const std::string& name, const std::source_location& loc) {
     auto it = meshes.find(name);
     if (it != meshes.end()) {
         meshes.erase(it);
     } else {
-        BE_Message(2, "RESOURCE", "Could not find mesh '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "RESOURCE", "Could not find mesh '" + name + "'", loc.file_name(), loc.line());
     }    
 }
 
-std::shared_ptr<BE_Mesh> BE_ResourceManager::getMesh(const std::string& name, const std::source_location& loc) {
+std::shared_ptr<Mesh> ResourceManager::getMesh(const std::string& name, const std::source_location& loc) {
     auto it = meshes.find(name);
     if (it != meshes.end()) {
         return it->second;
     } else {
-        BE_Message(2, "RESOURCE", "Could not find mesh '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "RESOURCE", "Could not find mesh '" + name + "'", loc.file_name(), loc.line());
         return nullptr;
     }
 }
 
-std::shared_ptr<BE_Shader> BE_ResourceManager::loadShader(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath, const std::source_location& loc) {
+std::shared_ptr<Shader> ResourceManager::loadShader(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath, const std::source_location& loc) {
     auto it = shaders.find(name);
     if (it != shaders.end()) {
-        BE_Message(1, "RESOURCE", "Shader '" + name + "' already exists", loc.file_name(), loc.line());
+        Message(1, "RESOURCE", "Shader '" + name + "' already exists", loc.file_name(), loc.line());
         return it->second;
     }
     
-    auto shader = std::make_shared<BE_Shader>(name, vertexPath, fragmentPath, geometryPath, computePath);
+    auto shader = std::make_shared<Shader>(name, vertexPath, fragmentPath, geometryPath, computePath);
     shaders[name] = shader;
     return shader;
 }
 
-std::shared_ptr<BE_Shader> BE_ResourceManager::loadShader(const std::string& name, const std::string* vertexSource, const std::string* fragmentSource, const std::string* geometrySource, const std::string* computeSource, const std::source_location& loc) {
+std::shared_ptr<Shader> ResourceManager::loadShader(const std::string& name, const std::string* vertexSource, const std::string* fragmentSource, const std::string* geometrySource, const std::string* computeSource, const std::source_location& loc) {
     auto it = shaders.find(name);
     if (it != shaders.end()) {
-        BE_Message(1, "RESOURCE", "Shader '" + name + "' already exists", loc.file_name(), loc.line());
+        Message(1, "RESOURCE", "Shader '" + name + "' already exists", loc.file_name(), loc.line());
         return it->second;
     }
     
-    auto shader = std::make_shared<BE_Shader>(name, vertexSource, fragmentSource, geometrySource, computeSource);
+    auto shader = std::make_shared<Shader>(name, vertexSource, fragmentSource, geometrySource, computeSource);
     shaders[name] = shader;
     return shader;
 }
 
-void BE_ResourceManager::removeShader(const std::string& name, const std::source_location& loc) {
+void ResourceManager::removeShader(const std::string& name, const std::source_location& loc) {
     auto it = shaders.find(name);
     if (it != shaders.end()) {
         shaders.erase(it);
     } else {
-        BE_Message(2, "RESOURCE", "Could not find shader '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "RESOURCE", "Could not find shader '" + name + "'", loc.file_name(), loc.line());
     }    
 }
 
-std::shared_ptr<BE_Shader> BE_ResourceManager::getShader(const std::string& name, const std::source_location& loc) {
+std::shared_ptr<Shader> ResourceManager::getShader(const std::string& name, const std::source_location& loc) {
     auto it = shaders.find(name);
     if (it != shaders.end()) {
         return it->second;
     } else {
-        BE_Message(2, "RESOURCE", "Could not find shader '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "RESOURCE", "Could not find shader '" + name + "'", loc.file_name(), loc.line());
         return nullptr;
     }
 }
 
-std::shared_ptr<BE_Texture> BE_ResourceManager::loadTexture(const std::string& name, const std::string& imagePath, const std::string& texType, GLuint slot, const std::source_location& loc) {
+std::shared_ptr<Texture> ResourceManager::loadTexture(const std::string& name, const std::string& imagePath, const std::string& texType, GLuint slot, const std::source_location& loc) {
     auto it = textures.find(name);
     if (it != textures.end()) {
-        BE_Message(1, "RESOURCE", "Texture '" + name + "' already exists", loc.file_name(), loc.line());
+        Message(1, "RESOURCE", "Texture '" + name + "' already exists", loc.file_name(), loc.line());
         return it->second;
     }
     
-    auto texture = std::make_shared<BE_Texture>(name, imagePath, texType, slot);
+    auto texture = std::make_shared<Texture>(name, imagePath, texType, slot);
     textures[name] = texture;
     return texture;
 }
 
-std::shared_ptr<BE_Texture> BE_ResourceManager::loadTexture(const std::string& name, const std::string& texType, int width, int height, const std::string& rawData, const std::source_location& loc) {
+std::shared_ptr<Texture> ResourceManager::loadTexture(const std::string& name, const std::string& texType, int width, int height, const std::string& rawData, const std::source_location& loc) {
     auto it = textures.find(name);
     if (it != textures.end()) {
-        BE_Message(1, "RESOURCE", "Texture '" + name + "' already exists", loc.file_name(), loc.line());
+        Message(1, "RESOURCE", "Texture '" + name + "' already exists", loc.file_name(), loc.line());
         return it->second;
     }
     
-    auto texture = std::make_shared<BE_Texture>(name, texType, width, height, rawData);
+    auto texture = std::make_shared<Texture>(name, texType, width, height, rawData);
     textures[name] = texture;
     return texture;
 }
 
-void BE_ResourceManager::removeTexture(const std::string& name, const std::source_location& loc) {
+void ResourceManager::removeTexture(const std::string& name, const std::source_location& loc) {
     auto it = textures.find(name);
     if (it != textures.end()) {
         textures.erase(it);
     } else {
-        BE_Message(2, "RESOURCE", "Could not find texture '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "RESOURCE", "Could not find texture '" + name + "'", loc.file_name(), loc.line());
     }    
 }
 
-std::shared_ptr<BE_Texture> BE_ResourceManager::getTexture(const std::string& name, const std::source_location& loc) {
+std::shared_ptr<Texture> ResourceManager::getTexture(const std::string& name, const std::source_location& loc) {
     auto it = textures.find(name);
     if (it != textures.end()) {
         return it->second;
     } else {
-        BE_Message(2, "RESOURCE", "Could not find texture '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "RESOURCE", "Could not find texture '" + name + "'", loc.file_name(), loc.line());
         return nullptr;
     }
 }
 
-void BE_ResourceManager::loadDefaults() {
+void ResourceManager::loadDefaults() {
     loadMesh("Default_Cube", "include/BEngine/meshes/cube.obj");
     loadShader("Default_Scene", "include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_core_default.frag");
     loadShader("Default_Light", "include/BEngine/shaders/core/sh_core_default.vert", "include/BEngine/shaders/core/sh_color_uniform.frag");
@@ -1130,38 +1132,38 @@ void BE_ResourceManager::loadDefaults() {
 
 // ========================================================================
 
-BE_Scene::BE_Scene() : lightManager(128) { addCamera("Camera1"); }
+Scene::Scene() : lightManager(128) { addCamera("Camera1"); }
 
-std::shared_ptr<BE_Camera> BE_Scene::addCamera(const std::string& name, const std::source_location& loc) {
+std::shared_ptr<Camera> Scene::addCamera(const std::string& name, const std::source_location& loc) {
     auto it = cameras.find(name);
     if (it != cameras.end()) {
-        BE_Message(1, "RESOURCE", "Camera '" + name + "' already exists", loc.file_name(), loc.line());
+        Message(1, "RESOURCE", "Camera '" + name + "' already exists", loc.file_name(), loc.line());
         return it->second;
     }
     
-    auto camera = std::make_shared<BE_Camera>(name);
+    auto camera = std::make_shared<Camera>(name);
     cameras[name] = camera;
     activeCamera = camera;
     return camera;
 }
 
-void BE_Scene::removeCamera(const std::string& name, const std::source_location& loc) {
+void Scene::removeCamera(const std::string& name, const std::source_location& loc) {
     auto it = cameras.find(name);
     if (it != cameras.end()) {
         // if (activeCamera == cameras[index]) activeCamera = nullptr;
         cameras.erase(it);
         // activeCamera = cameras[0];
     } else {
-        BE_Message(2, "RESOURCE", "Could not find camera '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "RESOURCE", "Could not find camera '" + name + "'", loc.file_name(), loc.line());
     }   
 }
 
-std::shared_ptr<BE_Camera> BE_Scene::getCamera(const std::string& name, const std::source_location& loc) {
+std::shared_ptr<Camera> Scene::getCamera(const std::string& name, const std::source_location& loc) {
     auto it = cameras.find(name);
     if (it != cameras.end()) {
         return it->second;
     } else {
-        BE_Message(2, "RESOURCE", "Could not find camera '" + name + "'", loc.file_name(), loc.line());
+        Message(2, "RESOURCE", "Could not find camera '" + name + "'", loc.file_name(), loc.line());
         return nullptr;
     }
 }
@@ -1169,21 +1171,21 @@ std::shared_ptr<BE_Camera> BE_Scene::getCamera(const std::string& name, const st
 // ========================================================================
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
-    BE_Engine* engine = static_cast<BE_Engine*>(glfwGetWindowUserPointer(window));
+    Engine* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
     if (!engine) return;
 
     engine->setSize(width, height);
 
-    // BE_Message(0, "ENGINE", "Framebuffer resized", __FILE__, __LINE__);
+    // Message(0, "ENGINE", "Framebuffer resized", __FILE__, __LINE__);
 }
 
-static BE_Engine* g_boundEngine = nullptr;
+static Engine* g_boundEngine = nullptr;
 
-BE_Engine::BE_Engine(const std::string& title, int width, int height, const std::source_location& loc) 
+Engine::Engine(const std::string& title, int width, int height, const std::source_location& loc) 
     : title(title.empty() ? "new engine" : title), width(width), height(height), running(true), window(nullptr) {
     
     if (!glfwInit()) {
-        BE_Message(3, "ENGINE", "Failed to initialize GLFW", loc.file_name(), loc.line());
+        Message(3, "ENGINE", "Failed to initialize GLFW", loc.file_name(), loc.line());
     }
 
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
@@ -1196,12 +1198,12 @@ BE_Engine::BE_Engine(const std::string& title, int width, int height, const std:
 
     window = glfwCreateWindow(width, height, title.c_str(), nullptr, nullptr);
     if (!window) {
-        BE_Message(3, "ENGINE", "Failed to create GLFW window", loc.file_name(), loc.line());
+        Message(3, "ENGINE", "Failed to create GLFW window", loc.file_name(), loc.line());
     }
     glfwMakeContextCurrent(window);
 
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        BE_Message(3, "ENGINE", "Failed to initialize GLAD", loc.file_name(), loc.line());
+        Message(3, "ENGINE", "Failed to initialize GLAD", loc.file_name(), loc.line());
     }
     
     // initial scene / resources
@@ -1226,23 +1228,23 @@ BE_Engine::BE_Engine(const std::string& title, int width, int height, const std:
 
 }
 
-BE_Engine::~BE_Engine() {
+Engine::~Engine() {
     if (window) glfwDestroyWindow(window);
     if (g_boundEngine == this) g_boundEngine = nullptr;
     glfwTerminate();
 }
 
-void BE_Engine::bind() { g_boundEngine = this; }
+void Engine::bind() { g_boundEngine = this; }
 
-bool BE_Engine::isRunning() const {
+bool Engine::isRunning() const {
     return running && !glfwWindowShouldClose(window);
 }
 
-void BE_Engine::closeWindow() {
+void Engine::closeWindow() {
     running = false;
 }
 
-void BE_Engine::beginFrame() {
+void Engine::beginFrame() {
 
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
@@ -1254,10 +1256,12 @@ void BE_Engine::beginFrame() {
     //set listener position to camera
 }
 
-void BE_Engine::beginRender() {
+void Engine::beginRender() {
     glViewport(0, 0, width, height);
     glClearColor(0,0,0,0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
-void BE_Engine::endFrame() { glfwSwapBuffers(window); }
+void Engine::endFrame() { glfwSwapBuffers(window); }
+
+} // BE namespace

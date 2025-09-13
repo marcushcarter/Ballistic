@@ -5,10 +5,10 @@
 
 int main() {
 
-    BE_Engine engine("Unordered Maps and Scenes");
+    BE::Engine engine("Unordered Maps and Scenes");
     engine.bind();
 
-    BE_Scene scene;
+    BE::Scene scene;
 
     engine.resources().loadMesh("Test Scene", "res/models/scene.obj");
 
