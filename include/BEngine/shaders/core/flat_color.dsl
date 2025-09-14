@@ -21,7 +21,7 @@ uniform vec4 uColor;
 out vec4 FragColor;
 
 void main() {
-    FragColor = vec4(uColor.rgb, uColor.a);
+    FragColor = vec4(uColor.rgb, clamp(uColor.a, 0.0, 1.0));
 }
 
 @end

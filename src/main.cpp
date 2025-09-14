@@ -8,6 +8,8 @@ int main() {
     BE::Engine engine("DSL file shader loading :-0");
     engine.bind();
 
+    BE::Framebuffer framebuffer(1440, 900);
+
     BE::Scene scene;
 
     engine.resources().loadMesh("Test Scene", "res/models/scene.obj");
@@ -27,7 +29,7 @@ int main() {
         scene.activeCamera->updateViewMatrix();
 
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) {
-            engine.resources().loadShaderDSL("include/BEngine/shaders/core/flat_color.dsl");
+            engine.resources().loadShaderDSL("include/BEngine/shaders/post/blit.dsl");
         }
 
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_1) == GLFW_PRESS) {
@@ -37,9 +39,14 @@ int main() {
         // updates
 
         scene.lights().getLight("light1")->setIntensity(std::sinf(glfwGetTime()) + 1.0f);
+        // scene.lights().getLight("light1")->setDirection(glm::vec3(0, std::sinf(glfwGetTime()), 0));
         scene.lights().updateGPU();
         
         engine.beginRender();
+
+        framebuffer.bind();
+        glClearColor(0.1,0.1,0.1,1);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         // rendering
 
@@ -56,15 +63,15 @@ int main() {
 
         { // drawing lights
             auto shader = engine.resources().getShader("flat_color");
-            auto mesh = engine.resources().getMesh("Default_Cube");
+            auto mesh = engine.resources().getMesh("__cube");
 
             shader->activate();
             scene.activeCamera->uploadToShader(shader->ID);
             GLuint colorLoc = glGetUniformLocation(shader->ID, "uColor");
+
             for (int i = 0; i < scene.lights().lights.size(); i++) {
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(scene.lights().lights[i].position[0], scene.lights().lights[i].position[1], scene.lights().lights[i].position[2]));
-                model = glm::scale(model, glm::vec3(0.1f));    
+                const auto& light = scene.lights().lights[i];
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(light.position)) * glm::eulerAngleXYZ(light.direction.x, light.direction.y, light.direction.z) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));   
                 glUniform4fv(colorLoc, 1, glm::value_ptr(scene.lights().lights[i].color));
                 mesh->draw(*shader, model);
             }
@@ -73,18 +80,29 @@ int main() {
         { // drawing cameras
             glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
             auto shader = engine.resources().getShader("flat_color");
-            auto mesh = engine.resources().getMesh("Default_Cube");
+            auto mesh = engine.resources().getMesh("__camera");
 
             shader->activate();
             scene.activeCamera->uploadToShader(shader->ID);
             glUniform4fv(glGetUniformLocation(shader->ID, "uColor"), 1, glm::value_ptr(glm::vec4(1)));
             for (auto& [key, camera] : scene.cameras) {
-                glm::mat4 model = glm::mat4(1.0f);
-                model = glm::translate(model, glm::vec3(camera->position[0], camera->position[1], camera->position[2]));
-                model = glm::scale(model, glm::vec3(0.25f));
+                glm::mat4 model = glm::translate(glm::mat4(1.0f), camera->position) * glm::mat4_cast(camera->orientation) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f));
                 mesh->draw(*shader, model);
             }
             glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+        }
+
+        framebuffer.unbind();
+        
+        engine.beginRender();
+
+        { // framebuffer loading
+            auto shader = engine.resources().getShader("blit");
+            auto mesh = engine.resources().getMesh("__quad");
+
+            framebuffer.bindTexture(shader->ID, "screenTexture", 3);
+            mesh->draw(*shader, glm::mat4(1));
+
         }
 
         engine.endFrame();

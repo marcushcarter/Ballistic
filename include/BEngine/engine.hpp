@@ -9,8 +9,9 @@
 #include <BEngine/glm/gtc/quaternion.hpp>
 #include <BEngine/glm/gtx/quaternion.hpp>
 #include <BEngine/glm/gtc/type_ptr.hpp>
+#include <BEngine/glm/gtx/euler_angles.hpp>
 
-#include <BEngine/stb_image/stb_image.h>
+#include <BEngine/stb/stb_image.h>
 
 #include <string>
 #include <source_location>
@@ -252,6 +253,30 @@ public:
     size_t addLight(const std::string& name, int type, const std::source_location& loc = std::source_location::current());
     void removeLight(const std::string& name, int type, const std::source_location& loc = std::source_location::current());
     Light* getLight(const std::string& name, const std::source_location& loc = std::source_location::current());
+};
+
+class Framebuffer {
+public:
+    Framebuffer(int width, int height);
+    ~Framebuffer();
+
+    void bind();
+    void bindTexture(GLuint shaderID, const char* uniform, int unit);
+    void unbind();
+    
+    GLuint texture = 0;
+
+    void resize(int newWidth, int newHeight);
+
+private:
+    GLuint fbo = 0;
+    GLuint rbo = 0;
+
+    int width;
+    int height;
+    
+    void createFramebuffer();
+    void destroyFramebuffer();
 };
 
 class Scene {
