@@ -11,6 +11,10 @@ int main() {
     BE::Scene scene;
 
     engine.resources().loadMesh("Test Scene", "res/models/scene.obj");
+    
+    engine.resources().loadShaderDSL("shaders/customShader.dsl");
+
+    scene.setShader(engine.resources().getShader("scene"));
 
     scene.lights().addLight("light1", 1);
     scene.lights().getLight("light1")->setPosition(glm::vec3(0,0.5,0));
@@ -26,18 +30,15 @@ int main() {
         scene.activeCamera->handleInputs(engine.getWindow(), engine.frameTime.dt);
         scene.activeCamera->updateViewMatrix();
 
-        if (glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) { engine.resources().loadShaderDSL("include/BEngine/shaders/post/blit.dsl"); }
-        if (glfwGetKey(engine.getWindow(), GLFW_KEY_1) == GLFW_PRESS) { /* scene.addCamera("Camera2"); */ scene.framebuffer.resize(engine.width, engine.height); }
-        if (glfwGetKey(engine.getWindow(), GLFW_KEY_2) == GLFW_PRESS) { scene.framebuffer.resize(720, 450); }
-        if (glfwGetKey(engine.getWindow(), GLFW_KEY_3) == GLFW_PRESS) { scene.framebuffer.resize(144, 90); }
+        if (glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) { engine.resources().loadShaderDSL("shaders/customShader.dsl"); }
+        if (glfwGetKey(engine.getWindow(), GLFW_KEY_1) == GLFW_PRESS) { scene.removeShader(); }
+        if (glfwGetKey(engine.getWindow(), GLFW_KEY_2) == GLFW_PRESS) { scene.setShader(engine.resources().getShader("scene")); }
 
         // updates
 
         scene.lights().getLight("light1")->setIntensity(std::sinf(glfwGetTime()) + 1.0f);
         scene.lights().getLight("light1")->setDirection(glm::vec3(0, std::sinf(glfwGetTime()), 0));
         scene.lights().updateGPU();
-
-        // engine.beginRender();
 
         scene.render(engine.resources(), true);
         

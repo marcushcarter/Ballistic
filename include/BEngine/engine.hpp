@@ -332,9 +332,14 @@ public:
     
     Scene();
 
-    // Shader* customShader = nullptr;
-    // setShader(Shader* shader) { setShader(std::shared_ptr<Shader>(shader)); }
-    // setShader(std::shared_ptr<Shader> shader) { customShader = shader; }
+    std::shared_ptr<Shader> customShader = nullptr;
+    // ResourceManager* resourceManager;
+
+    void setShader(Shader* shader) { setShader(std::shared_ptr<Shader>(shader)); }
+    void setShader(std::shared_ptr<Shader> shader) { customShader = shader; }
+    void removeShader() { customShader = nullptr; }
+
+    // void setManager(ResourceManager* manager) { resourceManager = manager; }
 
     void render(ResourceManager& resources, bool renderToFB = false);
 

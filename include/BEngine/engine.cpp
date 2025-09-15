@@ -1328,7 +1328,7 @@ void Scene::render(ResourceManager& resources, bool renderToFB) {
 
     // GAME OBJECTS
 
-    shader = resources.getShader("__scene");
+    if (customShader) shader = customShader; else shader = resources.getShader("__scene");
     mesh = resources.getMesh("Test Scene");
 
     shader->activate();
@@ -1478,6 +1478,58 @@ Engine::~Engine() {
     glfwTerminate();
 }
 
+
+
+
+
+// std::shared_ptr<Scene> Engine::addScene(const std::string& name, const std::source_location& loc) {
+//     auto it = scenes.find(name);
+//     if (it != scenes.end()) {
+//         Message(1, "ENGINE", "Scene '" + name + "' already exists", loc.file_name(), loc.line());
+//         return it->second;
+//     }
+//
+//     auto scene = std::make_shared<Scene>(name);
+//     scenes[name] = scene;
+//     return scene;
+// }
+
+// void Engine::removeScene(const std::string& name, const std::source_location& loc) {
+//     auto it = scenes.find(name);
+//     if (it != scenes.end()) {
+//         scenes.erase(it);
+//     } else {
+//         Message(2, "ENGINE", "Could not find scene '" + name + "'", loc.file_name(), loc.line());
+//     }   
+// }
+
+// std::shared_ptr<Scene> Engine::getScene(const std::string& name, const std::source_location& loc) {
+//     auto it = scenes.find(name);
+//     if (it != scenes.end()) {
+//         return it->second;
+//     } else {
+//         Message(2, "ENGINE", "Could not find scene '" + name + "'", loc.file_name(), loc.line());
+//         return nullptr;
+//     }
+// }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 void Engine::bind() { g_boundEngine = this; }
 
 bool Engine::isRunning() const {
@@ -1498,12 +1550,6 @@ void Engine::beginFrame() {
     frameTime.update();
     // update audio engine
     //set listener position to camera
-}
-
-void Engine::beginRender() {
-    glViewport(0, 0, width, height);
-    glClearColor(0,0,0,0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 } // BE namespace
