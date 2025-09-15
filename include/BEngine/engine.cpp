@@ -154,8 +154,8 @@ void Framebuffer::createFramebuffer() {
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
@@ -189,9 +189,10 @@ void Framebuffer::bindTexture(GLuint shaderID, const char* uniform, int unit) {
     glUniform1i(glGetUniformLocation(shaderID, uniform), unit);
 }
 
-void Framebuffer::resize(int newWidth, int newHeight) {
+void Framebuffer::resize(int newWidth, int newHeight, bool linearFilter) {
     width = newWidth;
     height = newHeight;
+    filter = linearFilter ? GL_LINEAR : GL_NEAREST;
     destroyFramebuffer();
     createFramebuffer();
 }
@@ -1221,23 +1222,6 @@ LightManager::~LightManager() {
         glBindBuffer(GL_SHADER_STORAGE_BUFFER, lightSSBO);
         glUnmapBuffer(GL_SHADER_STORAGE_BUFFER);
         glDeleteBuffers(1, &lightSSBO);
-    }
-}
-
-void LightManager::draw(Shader& shader, Mesh& mesh, Camera& camera) {
-    
-    // auto shader = engine.resources().getShader("__flat_color");
-    // auto mesh = engine.resources().getMesh("__cube");
-
-    shader.activate();
-    camera.uploadToShader(shader.ID);
-    GLuint colorLoc = glGetUniformLocation(shader.ID, "uColor");
-
-    for (int i = 0; i < lights.size(); i++) {
-        const auto& light = lights[i];
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(light.position)) * glm::eulerAngleXYZ(light.direction.x, light.direction.y, light.direction.z) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));   
-        glUniform4fv(colorLoc, 1, glm::value_ptr(light.color));
-        mesh.draw(shader, model);
     }
 }
 

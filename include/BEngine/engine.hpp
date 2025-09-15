@@ -101,7 +101,7 @@ public:
     
     GLuint texture = 0;
 
-    void resize(int newWidth, int newHeight);
+    void resize(int newWidth, int newHeight, bool linearFilter = false);
 
 private:
     GLuint fbo = 0;
@@ -109,6 +109,7 @@ private:
 
     int width;
     int height;
+    GLenum filter;
     
     void createFramebuffer();
     void destroyFramebuffer();
@@ -317,8 +318,6 @@ public:
     // void updateActiveLightsForObject(const glm::vec3& objPos, float objRadius);
     void generateAllMatrices();
 
-    void draw(Shader& shader, Mesh& mesh, Camera& camera);
-
     size_t addLight(const std::string& name, int type, const std::source_location& loc = std::source_location::current());
     void removeLight(const std::string& name, int type, const std::source_location& loc = std::source_location::current());
     Light* getLight(const std::string& name, const std::source_location& loc = std::source_location::current());
@@ -366,13 +365,6 @@ public:
     //     auto scene = std::make_shared<Scene>();
     //     scenes.push_back(scene);
     //     if (!activeScene) activeScene = scene;
-    // }
-
-    // Camera* activeCamera = nullptr;
-    // std::unique_ptr<Camera> freeCamera;
-    // void updateActiveCamera() {
-    //     if (false) {}
-    //     else { activeCamera = freeCamera.get(); }
     // }
 
     /** hello */

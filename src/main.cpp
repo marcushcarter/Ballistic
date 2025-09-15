@@ -5,7 +5,7 @@
 
 int main() {
 
-    BE::Engine engine("DSL file shader loading :-0");
+    BE::Engine engine("Engine");
     engine.bind();
 
     BE::Scene scene;
@@ -29,6 +29,7 @@ int main() {
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) { engine.resources().loadShaderDSL("include/BEngine/shaders/post/blit.dsl"); }
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_1) == GLFW_PRESS) { /* scene.addCamera("Camera2"); */ scene.framebuffer.resize(engine.width, engine.height); }
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_2) == GLFW_PRESS) { scene.framebuffer.resize(720, 450); }
+        if (glfwGetKey(engine.getWindow(), GLFW_KEY_3) == GLFW_PRESS) { scene.framebuffer.resize(144, 90); }
 
         // updates
 
