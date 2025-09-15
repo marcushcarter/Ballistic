@@ -901,7 +901,7 @@ std::shared_ptr<Shader> ResourceManager::loadShader(const std::string& name, con
     auto shader = std::make_shared<Shader>(name, vertexPath, fragmentPath, geometryPath, computePath, tessControlPath, tessEvaluationPath);
     shaders[name] = shader;
     
-    Message(0, "RESOURCE", "Shader '" + name + "' loaded successfully from PATHS", loc.file_name(), loc.line());
+    // Message(0, "RESOURCE", "Shader '" + name + "' loaded successfully from PATHS", loc.file_name(), loc.line());
 
     return shader;
 }
@@ -916,7 +916,7 @@ std::shared_ptr<Shader> ResourceManager::loadShader(const std::string& name, con
     auto shader = std::make_shared<Shader>(name, vertexSource, fragmentSource, geometrySource, computeSource, tessControlSource, tessEvaluationSource);
     shaders[name] = shader;
     
-    Message(0, "RESOURCE", "Shader '" + name + "' loaded successfully from STRINGS", loc.file_name(), loc.line());
+    // Message(0, "RESOURCE", "Shader '" + name + "' loaded successfully from STRINGS", loc.file_name(), loc.line());
 
     return shader;
 }

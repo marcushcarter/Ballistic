@@ -55,5 +55,5 @@ void main() {
         finalColor += lightColor * diff;
     }
 
-    FragColor = vec4(texColor * finalColor, 1.0);
+    FragColor = vec4(1.0);
 }

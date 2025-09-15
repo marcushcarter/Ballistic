@@ -226,10 +226,7 @@ public:
     std::unordered_map<std::string, std::shared_ptr<Shader>> shaders;
     std::unordered_map<std::string, std::shared_ptr<Texture>> textures;
 
-    enum class ShaderType {
-        Legacy = 1,
-        DSL = 2
-    };
+    enum class ShaderType { Legacy, DSL };
 
     struct ShaderPaths {
         std::string name;
@@ -240,7 +237,7 @@ public:
         std::string tessControl;
         std::string tessEvaluation;
         std::string dslPath;
-        ShaderType type; // 0 = paths, 1 = dsl
+        ShaderType type;
     };
     
     std::unordered_map<std::string, ShaderPaths> shaderPaths;

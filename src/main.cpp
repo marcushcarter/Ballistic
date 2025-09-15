@@ -35,6 +35,7 @@ int main() {
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_1) == GLFW_PRESS) { scene.removeShader(); }
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_2) == GLFW_PRESS) { scene.setShader(engine.resources().getShader("scene")); }
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_3) == GLFW_PRESS) { engine.resources().recompileShaders(); }
+        if (glfwGetKey(engine.getWindow(), GLFW_KEY_4) == GLFW_PRESS) { engine.resources().removeShader("scene"); }
 
         // updates
 
