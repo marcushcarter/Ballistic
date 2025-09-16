@@ -101,6 +101,8 @@ public:
     void unbind();
     
     GLuint texture = 0;
+    int width;
+    int height;
 
     void resize(int newWidth, int newHeight, bool linearFilter = false);
 
@@ -108,8 +110,6 @@ private:
     GLuint fbo = 0;
     GLuint rbo = 0;
 
-    int width;
-    int height;
     GLenum filter;
     
     void createFramebuffer();
@@ -212,7 +212,7 @@ public:
     void clearInstances();
     void uploadInstances();
 
-    void draw(Shader& shader, const glm::mat4& modelMatrix);
+    void draw(Shader& shader, const glm::mat4& modelMatrix = glm::mat4(1));
     void drawInstanced(Shader& shader);
 
     void loadOBJ(const std::string& objPath);
@@ -246,7 +246,6 @@ public:
     std::shared_ptr<Mesh> loadMesh(const std::string& name, const std::string& objPath, const std::source_location& loc = std::source_location::current());
     std::shared_ptr<Mesh> loadMesh(const std::string& name, const std::string* objSource, const std::source_location& loc = std::source_location::current());
     void removeMesh(const std::string& name, const std::source_location& loc = std::source_location::current());
-    std::shared_ptr<Mesh> getMesh(const std::string& name, const std::source_location& loc = std::source_location::current());
 
     std::shared_ptr<Shader> loadShader(
         const std::string& name,
@@ -269,7 +268,6 @@ public:
         const std::source_location& loc = std::source_location::current()
     );
     void removeShader(const std::string& name, const std::source_location& loc = std::source_location::current());
-    std::shared_ptr<Shader> getShader(const std::string& name, const std::source_location& loc = std::source_location::current());
     void recompileShaders(const std::source_location& loc = std::source_location::current());
 
     void loadShaderDSL(const std::string& filePath, const std::source_location& loc = std::source_location::current());
@@ -277,7 +275,6 @@ public:
     std::shared_ptr<Texture> loadTexture(const std::string& name, const std::string& imagePath, const std::string& texType, GLuint slot, const std::source_location& loc = std::source_location::current());
     std::shared_ptr<Texture> loadTexture(const std::string& name, const std::string& texType, int width, int height, const std::string& rawData, const std::source_location& loc = std::source_location::current());
     void removeTexture(const std::string& name, const std::source_location& loc = std::source_location::current());
-    std::shared_ptr<Texture> getTexture(const std::string& name, const std::source_location& loc = std::source_location::current());
     
     void loadDefaults();
 };
@@ -366,25 +363,15 @@ public:
 
 class Scene {
 public:
-    Framebuffer framebuffer;
-
     std::unordered_map<std::string, std::shared_ptr<Camera>> cameras;
     std::shared_ptr<Camera> activeCamera;
     
+    std::shared_ptr<Shader> customShader = nullptr;
+    
     Scene();
 
-    std::shared_ptr<Shader> customShader = nullptr;
-    // ResourceManager* resourceManager;
-
-    void setShader(Shader* shader) { setShader(std::shared_ptr<Shader>(shader)); }
     void setShader(std::shared_ptr<Shader> shader) { customShader = shader; }
     void removeShader() { customShader = nullptr; }
-
-    // void setManager(ResourceManager* manager) { resourceManager = manager; }
-
-    void render(ResourceManager& resources, bool renderToFB = false);
-
-    // void render(Shader& shader, Mesh& mesh);
 
     std::shared_ptr<Camera> addCamera(const std::string& name, const std::source_location& loc = std::source_location::current());
     void removeCamera(const std::string& name, const std::source_location& loc = std::source_location::current());
@@ -394,7 +381,21 @@ public:
     
 private:
     LightManager lightManager;
+};
 
+class Viewport {
+public:
+    std::shared_ptr<Scene> scene;
+    std::shared_ptr<Camera> camera;
+    Framebuffer framebuffer;
+
+    int width = 720;
+    int height = 450;
+
+    void resize(int newWidth, int newHeight) {
+        width = newWidth;
+        height = newHeight;
+    }
 };
 
 class Engine {
@@ -418,17 +419,19 @@ public:
     ~Engine();
     void bind();
 
+    // scene stuff
+    void renderViewport(Viewport& vp);
+
     bool isRunning() const;
     void closeWindow();
-
     void beginFrame();
-    void beginRender();
-
     void setSize(int w, int h) {
         width = w;
         height = h;
         glViewport(0, 0, w, h);
     }
+
+
 
     GLFWwindow* getWindow() { return window; }
     ResourceManager& resources() { return resourceManager; }

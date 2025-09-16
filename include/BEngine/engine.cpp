@@ -143,7 +143,7 @@ void EBO::unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
 // ========================================================================
 
-Framebuffer::Framebuffer(int w, int h) : width(w), height(h) { createFramebuffer(); }
+Framebuffer::Framebuffer(int w, int h) : width(w), height(h) { filter = GL_NEAREST; createFramebuffer(); }
 
 Framebuffer::~Framebuffer() { destroyFramebuffer(); }
 
@@ -870,16 +870,6 @@ void ResourceManager::removeMesh(const std::string& name, const std::source_loca
     }    
 }
 
-std::shared_ptr<Mesh> ResourceManager::getMesh(const std::string& name, const std::source_location& loc) {
-    auto it = meshes.find(name);
-    if (it != meshes.end()) {
-        return it->second;
-    } else {
-        Message(2, "RESOURCE", "Could not find mesh '" + name + "'", loc.file_name(), loc.line());
-        return nullptr;
-    }
-}
-
 std::shared_ptr<Shader> ResourceManager::loadShader(const std::string& name, const std::string& vertexPath, const std::string& fragmentPath, const std::string& geometryPath, const std::string& computePath, const std::string& tessControlPath, const std::string& tessEvaluationPath, const std::source_location& loc) {
     auto it = shaders.find(name);
     if (it != shaders.end()) {
@@ -1059,7 +1049,7 @@ void ResourceManager::loadShaderDSL(const std::string& filePath, const std::sour
 
                 auto it = shaders.find(programName);
                 if (it != shaders.end()) {
-                    getShader(programName)->recompile(vsSrc, fsSrc, gsSrc, csSrc, tcsSrc, tesSrc);
+                    shaders[programName]->recompile(vsSrc, fsSrc, gsSrc, csSrc, tcsSrc, tesSrc);
                 } else {
                     loadShader(programName, vsSrc, fsSrc, gsSrc, csSrc, tcsSrc, tesSrc, loc);
                 }
@@ -1095,20 +1085,10 @@ void ResourceManager::removeShader(const std::string& name, const std::source_lo
     }    
 }
 
-std::shared_ptr<Shader> ResourceManager::getShader(const std::string& name, const std::source_location& loc) {
-    auto it = shaders.find(name);
-    if (it != shaders.end()) {
-        return it->second;
-    } else {
-        Message(2, "RESOURCE", "Could not find shader '" + name + "'", loc.file_name(), loc.line());
-        return nullptr;
-    }
-}
-
 void ResourceManager::recompileShaders(const std::source_location& loc) {
     for (const auto& [key, shader] : shaderPaths) {
         if (shader.type == ShaderType::Legacy) {
-            if (getShader(shader.name, loc)) getShader(shader.name, loc)->recompile(shader.vertex, shader.fragment, shader.geometry, shader.compute, shader.tessControl, shader.tessEvaluation);
+            if (shaders.contains(shader.name)) shaders[shader.name]->recompile(shader.vertex, shader.fragment, shader.geometry, shader.compute, shader.tessControl, shader.tessEvaluation);
         } else if (shader.type == ShaderType::DSL) {
             loadShaderDSL(shader.dslPath, loc);
         }
@@ -1146,16 +1126,6 @@ void ResourceManager::removeTexture(const std::string& name, const std::source_l
     } else {
         Message(2, "RESOURCE", "Could not find texture '" + name + "'", loc.file_name(), loc.line());
     }    
-}
-
-std::shared_ptr<Texture> ResourceManager::getTexture(const std::string& name, const std::source_location& loc) {
-    auto it = textures.find(name);
-    if (it != textures.end()) {
-        return it->second;
-    } else {
-        Message(2, "RESOURCE", "Could not find texture '" + name + "'", loc.file_name(), loc.line());
-        return nullptr;
-    }
 }
 
 void ResourceManager::loadDefaults() {
@@ -1448,65 +1418,7 @@ Light* LightManager::getLight(const std::string& name, const std::source_locatio
 
 // ========================================================================
 
-Scene::Scene() : lightManager(128) { addCamera("Camera1"); framebuffer.resize(720, 450); }
-
-void Scene::render(ResourceManager& resources, bool renderToFB) {
-    if (renderToFB) {
-        framebuffer.bind();
-        glClearColor(0.1,0.1,0.1,1);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    }
-
-    std::shared_ptr<Shader> shader = nullptr;
-    std::shared_ptr<Mesh> mesh = nullptr;
-
-    // GAME OBJECTS
-
-    if (customShader) shader = customShader; else shader = resources.getShader("__scene");
-    mesh = resources.getMesh("Test Scene");
-
-    shader->activate();
-    lights().uploadToShader(shader->ID);
-    activeCamera->uploadToShader(shader->ID);
-    glm::mat4 model = glm::mat4(1.0f);
-    mesh->draw(*shader, model);
-
-    // CAMERAS
-
-    shader = resources.getShader("__flat_color");
-    mesh = resources.getMesh("__camera");
-
-    shader->activate();
-    activeCamera->uploadToShader(shader->ID);
-    glUniform4fv(glGetUniformLocation(shader->ID, "uColor"), 1, glm::value_ptr(glm::vec4(1)));
-    
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    for (auto& [key, camera] : cameras) {
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), camera->position) * glm::mat4_cast(camera->orientation) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f));
-        mesh->draw(*shader, model);
-    }
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    // LIGHTS
-
-    shader = resources.getShader("__flat_color");
-    mesh = resources.getMesh("__cube");
-
-    shader->activate();
-    activeCamera->uploadToShader(shader->ID);
-    GLuint colorLoc = glGetUniformLocation(shader->ID, "uColor");
-
-    for (int i = 0; i < lights().lights.size(); i++) {
-        const auto& light = lights().lights[i];
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(light.position)) * glm::eulerAngleXYZ(light.direction.x, light.direction.y, light.direction.z) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));   
-        glUniform4fv(colorLoc, 1, glm::value_ptr(light.color));
-        mesh->draw(*shader, model);
-    }
-
-    if (renderToFB) framebuffer.unbind();
-}
+Scene::Scene() : lightManager(128) { addCamera("Camera1"); }
 
 std::shared_ptr<Camera> Scene::addCamera(const std::string& name, const std::source_location& loc) {
     auto it = cameras.find(name);
@@ -1530,16 +1442,6 @@ void Scene::removeCamera(const std::string& name, const std::source_location& lo
     } else {
         Message(2, "RESOURCE", "Could not find camera '" + name + "'", loc.file_name(), loc.line());
     }   
-}
-
-std::shared_ptr<Camera> Scene::getCamera(const std::string& name, const std::source_location& loc) {
-    auto it = cameras.find(name);
-    if (it != cameras.end()) {
-        return it->second;
-    } else {
-        Message(2, "RESOURCE", "Could not find camera '" + name + "'", loc.file_name(), loc.line());
-        return nullptr;
-    }
 }
 
 // ========================================================================
@@ -1642,6 +1544,72 @@ Engine::~Engine() {
 //         return nullptr;
 //     }
 // }
+
+void Engine::renderViewport(Viewport& vp) {
+
+    vp.framebuffer.bind();
+    
+    if ((vp.framebuffer.width != vp.width) || (vp.framebuffer.height != vp.height) && vp.width > 0 && vp.height > 0) 
+        vp.framebuffer.resize(vp.width, vp.height);
+
+    glViewport(0, 0, vp.framebuffer.width, vp.framebuffer.height);
+    // glClearColor(0.1,0.1,0.1,1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    vp.camera->width = vp.framebuffer.width;
+    vp.camera->height = vp.framebuffer.height;
+
+    std::shared_ptr<Shader> shader = nullptr;
+    std::shared_ptr<Mesh> mesh = nullptr;
+
+    // GAME OBJECTS
+
+    if (vp.scene->customShader) shader = vp.scene->customShader; 
+    else shader = resources().shaders["__scene"];
+    mesh = resources().meshes["Test Scene"];
+
+    shader->activate();
+    vp.scene->lights().uploadToShader(shader->ID);
+    vp.camera->uploadToShader(shader->ID);
+    glm::mat4 model = glm::mat4(1.0f);
+    mesh->draw(*shader, model);
+
+    // CAMERAS
+
+    shader = resources().shaders["__flat_color"];
+    mesh = resources().meshes["__cube"];
+
+    shader->activate();
+    vp.camera->uploadToShader(shader->ID);
+    glUniform4fv(glGetUniformLocation(shader->ID, "uColor"), 1, glm::value_ptr(glm::vec4(1)));
+    
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+
+    for (auto& [key, camera] : vp.scene->cameras) {
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), camera->position) * glm::mat4_cast(camera->orientation) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f));
+        mesh->draw(*shader, model);
+    }
+
+    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+    // LIGHTS
+
+    shader = resources().shaders["__flat_color"];
+    mesh = resources().meshes["__cube"];
+
+    shader->activate();
+    vp.camera->uploadToShader(shader->ID);
+    GLuint colorLoc = glGetUniformLocation(shader->ID, "uColor");
+
+    for (int i = 0; i < vp.scene->lights().lights.size(); i++) {
+        const auto& light = vp.scene->lights().lights[i];
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), glm::vec3(light.position)) * glm::eulerAngleXYZ(light.direction.x, light.direction.y, light.direction.z) * glm::scale(glm::mat4(1.0f), glm::vec3(0.1f));   
+        glUniform4fv(colorLoc, 1, glm::value_ptr(light.color));
+        mesh->draw(*shader, model);
+    }
+
+    vp.framebuffer.unbind();
+}
 
 void Engine::bind() { g_boundEngine = this; }
 
