@@ -8,7 +8,7 @@ Editor::Editor(Engine* enginePtr) : engine(enginePtr) {
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
     ImGui::StyleColorsDark();
 
@@ -42,8 +42,6 @@ void Editor::beginFrame() {
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f));
     ImGui::End();
-        
-    // setupDockSpace(); 
 }
 
 void Editor::showPanels() {
@@ -62,11 +60,13 @@ void Editor::endFrame() {
     glViewport(0, 0, engine->width, engine->height);
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
-    // ImGuiIO& io = ImGui::GetIO();
-    // if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-    //     ImGui::UpdatePlatformWindows();
-    //     ImGui::RenderPlatformWindowsDefault();
-    // }
+    ImGuiIO& io = ImGui::GetIO();
+    if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+        GLFWwindow* backup_current_context = glfwGetCurrentContext();
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+        glfwMakeContextCurrent(backup_current_context);
+    }
 }
 
 }; // BE namespace
