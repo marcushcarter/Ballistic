@@ -1,0 +1,23 @@
+#pragma once
+
+#include "BEngine/engine.hpp"
+
+#include "BEngine/imgui/imgui.h"
+#include "BEngine/imgui/imgui_impl_glfw.h"
+#include "BEngine/imgui/imgui_impl_opengl3.h"
+
+namespace BE {
+
+class Editor {
+public:
+    Editor(Engine* enginePtr);
+
+    void beginFrame();
+    void showPanels();
+    void endFrame();
+
+private:
+    Engine* engine;
+};
+
+}; // BE namespace

@@ -420,7 +420,7 @@ public:
     void bind();
 
     // scene stuff
-    void renderViewport(Viewport& vp);
+    void renderViewportTexture(Viewport& vp);
 
     bool isRunning() const;
     void closeWindow();

@@ -1,8 +1,5 @@
 #include "BEngine/engine.hpp"
-
-#include "BEngine/imgui/imgui.h"
-#include "BEngine/imgui/imgui_impl_glfw.h"
-#include "BEngine/imgui/imgui_impl_opengl3.h"
+#include "BEngine/engine_editor.hpp"
 
 #include <iostream>
 #include <cmath>
@@ -10,17 +7,7 @@
 int main() {
 
     BE::Engine engine("Engine");
-    engine.bind();
-    
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplGlfw_InitForOpenGL(engine.getWindow(), true);
-    ImGui_ImplOpenGL3_Init("#version 460");
+    BE::Editor editor(&engine);
 
     std::shared_ptr<BE::Scene> scene = std::make_shared<BE::Scene>();
 
@@ -33,9 +20,6 @@ int main() {
 
     scene->lights().addLight("light1", 1);
     scene->lights().getLight("light1")->setPosition(glm::vec3(0,0.5,0));
-
-    scene->addCamera("camcam");
-    scene->activeCamera = scene->cameras["Camera1"];
     
     bool show_demo_window = true;
 
@@ -51,27 +35,18 @@ int main() {
         scene->activeCamera->updateViewMatrix();
 
         if (glfwGetKey(engine.getWindow(), GLFW_KEY_0) == GLFW_PRESS) { engine.resources().recompileShaders(); }
-        if (glfwGetKey(engine.getWindow(), GLFW_KEY_1) == GLFW_PRESS) { scene->activeCamera = scene->cameras["camcam"]; }
-        if (glfwGetKey(engine.getWindow(), GLFW_KEY_2) == GLFW_PRESS) { scene->activeCamera = scene->cameras["Camera1"]; }
-
-        // updates
 
         scene->lights().getLight("light1")->setIntensity(std::sinf(glfwGetTime()) + 1.0f);
         scene->lights().getLight("light1")->setDirection(glm::vec3(0, std::sinf(glfwGetTime()), 0));
         scene->lights().updateGPU();
 
-        engine.renderViewport(vp1);
+        engine.renderViewportTexture(vp1);
         
-        glViewport(0, 0, engine.width, engine.height);
-        glClearColor(0,0,0,0);
-        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        vp1.framebuffer.bindTexture(engine.resources().shaders["__blit"]->ID, "screenTexture", 3);
-        engine.resources().meshes["__quad"]->draw(*engine.resources().shaders["__blit"], false);
+        // vp1.framebuffer.bindTexture(engine.resources().shaders["__blit"]->ID, "screenTexture", 3);
+        // engine.resources().meshes["__quad"]->draw(*engine.resources().shaders["__blit"], false);
 
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
-        
+        editor.beginFrame();
+
         ImGui::ShowDemoWindow(&show_demo_window);
 
         ImGui::Begin("Hello, ImGui!");
@@ -81,9 +56,9 @@ int main() {
         if (ImGui::Button("Click Me!")) {}
         ImGui::End();
 
-        ImGui::Render();
-        glViewport(0, 0, engine.width, engine.height);
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+        editor.showPanels();
+
+        editor.endFrame();
 
         glfwSwapBuffers(engine.getWindow());
     }

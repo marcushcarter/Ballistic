@@ -1548,7 +1548,7 @@ Engine::~Engine() {
 //     }
 // }
 
-void Engine::renderViewport(Viewport& vp) {
+void Engine::renderViewportTexture(Viewport& vp) {
 
     vp.framebuffer.bind();
     
@@ -1614,6 +1614,8 @@ void Engine::renderViewport(Viewport& vp) {
     vp.framebuffer.unbind();
 }
 
+// void Engine::drawTexture(Texture& texture, int x, int y, int width, int height) {}
+
 void Engine::bind() { g_boundEngine = this; }
 
 bool Engine::isRunning() const {
@@ -1634,6 +1636,10 @@ void Engine::beginFrame() {
     frameTime.update();
     // update audio engine
     //set listener position to camera
+
+    glViewport(0, 0, width, height);
+    glClearColor(0,0,0,0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
 
 } // BE namespace
