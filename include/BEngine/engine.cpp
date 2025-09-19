@@ -1372,9 +1372,10 @@ size_t LightManager::addLight(const std::string& name, int type, const std::sour
         lights.push_back(light);
         lights.back().generateMatrices();
         lightLookup[name] = index;
+        updateGPU();
         return index;
     }
-    Message(1, "LIGHT", "No space left for light '" + name + "' in light manager", loc.file_name(), loc.line());
+    Message(1, "LIGHT", "No space left for light '" + name + "' in light manager", loc.file_name(), loc.line());\
     return SIZE_MAX;
 }
 

@@ -26,6 +26,9 @@ int main() {
 
         engine.activeScene->activeCamera->updateViewMatrix();
 
+        vp1.scene = engine.activeScene;
+        vp1.camera = engine.activeScene->activeCamera;
+
         engine.renderViewportTexture(vp1);
         
         // vp1.framebuffer.bindTexture(engine.resources().shaders["__blit"]->ID, "screenTexture", 3);
@@ -35,13 +38,19 @@ int main() {
         editor.showPanels();
 
         ImGui::Begin("Inspector");
-        if (ImGui::InputFloat("Type", &engine.activeScene->lights().getLight("light1")->position.w)) { engine.activeScene->lights().updateGPU(); }
-        if (ImGui::DragFloat3("Position", &engine.activeScene->lights().getLight("light1")->position.x, 0.01f, -3.0f, 3.0f)) { engine.activeScene->lights().updateGPU(); } // this runs whenever a value is changed
-        if (ImGui::DragFloat3("Direction", &engine.activeScene->lights().getLight("light1")->direction.x, 0.01f, -3.1416f, 3.1416f)) { engine.activeScene->lights().updateGPU(); }
-        if (ImGui::ColorEdit3("Color", &engine.activeScene->lights().getLight("light1")->color.x)) { engine.activeScene->lights().updateGPU(); }
-        if (ImGui::DragFloat("intensity", &engine.activeScene->lights().getLight("light1")->color.w, 0.01f, 0.0f, 5.0f)) { engine.activeScene->lights().updateGPU(); }
-        // if (ImGui::Button("Set Cam")) vp1.camera = engine.activeScene->cameras["Camera1"].get();
-        // if (ImGui::Button("Set Scene")) vp1.scene = engine.activeScene;
+        for (int i = 0; i < engine.activeScene->lights().lights.size(); i++) {
+            auto& light = engine.activeScene->lights().lights[i];
+
+            ImGui::Text("Item##" + i);
+            if (ImGui::InputFloat("Type##" + i, &light.position.w)) { engine.activeScene->lights().updateGPU(); }
+            if (ImGui::DragFloat3("Position##" + i, &light.position.x, 0.01f, -3.0f, 3.0f)) { engine.activeScene->lights().updateGPU(); } // this runs whenever a value is changed
+            if (ImGui::DragFloat3("Direction##" + i, &light.direction.x, 0.01f, -3.1416f, 3.1416f)) { engine.activeScene->lights().updateGPU(); }
+            if (ImGui::ColorEdit3("Color##" + i, &light.color.x)) { engine.activeScene->lights().updateGPU(); }
+            if (ImGui::DragFloat("intensity##" + i, &light.color.w, 0.01f, 0.0f, 5.0f)) { engine.activeScene->lights().updateGPU(); }
+
+            ImGui::Separator();
+            ImGui::Separator();
+        }
         ImGui::End();
 
         ImGui::Begin("Hello, ImGui!");
