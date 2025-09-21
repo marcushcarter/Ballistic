@@ -20,6 +20,8 @@ Editor::Editor(Engine* enginePtr) : engine(enginePtr) {
 
     ImGui_ImplGlfw_InitForOpenGL(engine->getWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 460");
+
+    meshPreviewFB.resize(128, 128);
 }
 
 Editor::~Editor() {
@@ -67,29 +69,11 @@ void Editor::beginFrame() {
 
 void Editor::showPanels() {
 
-    // === TOP PANEL === //
-
-    if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("File")) {
-            if (ImGui::MenuItem("Exit")) { engine->closeWindow(); }
-            ImGui::EndMenu(); 
-        };
-        if (ImGui::BeginMenu("Edit")) {
-            // if (ImGui::MenuItem("Add Scene")) { std::string label = "Scene" + std::to_string(engine->scenes.size()+1); engine->addScene(label); }
-            if (ImGui::MenuItem("Add Camera")) { std::string label = "Camera" + std::to_string(engine->activeScene->cameras.size()+1); engine->activeScene->addCamera(label); }
-            if (ImGui::MenuItem("Add Light")) { std::string label = "Light" + std::to_string(engine->activeScene->lights().lights.size()+1);  engine->activeScene->lights().addLight(label, 1); }
-            ImGui::EndMenu(); 
-        };
-        if (ImGui::BeginMenu("View")) { ImGui::EndMenu(); };
-        if (ImGui::BeginMenu("Window")) { ImGui::EndMenu(); };
-        if (ImGui::BeginMenu("Debug")) {
-            if (ImGui::MenuItem("Recompile Shaders")) { engine->resources().recompileShaders(); }
-            if (ImGui::MenuItem("Update GPU")) { engine->viewport->scene->lights().updateGPU(); }
-            ImGui::EndMenu(); 
-        };
-        ImGui::EndMainMenuBar();
-
-    }
+    Menu();
+    Viewport();
+    Heirarchy();
+    Resources();
+    Inspector();
 
     // === PERFORMANCE == //
 
@@ -97,54 +81,7 @@ void Editor::showPanels() {
     ImGui::Begin("Performance Overlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking );
     ImGui::Text("ENGINE FPS %.1f MS %.2f", engine->frameTime.fps, engine->frameTime.ms);
     ImGui::Text("IMGUI FPS %.1f MS %.2f", ImGui::GetIO().Framerate, 1000.0f/ImGui::GetIO().Framerate);
-    ImGui::End();
-
-    ImPlot::ShowDemoWindow();
-
-    // === TERMINAL === //
-
-    // === HEIRARCHY === //
-
-    // === INSPECTOR === //
-
-    // ImGui::ShowDemoWindow(nullptr);
-
-    // ImGui::Begin("Hello, ImGui!");
-    // ImGui::Text("This is a test window!");
-    // ImVec2 size = ImGui::GetContentRegionAvail();
-    // // ImGui::Image((void*)(intptr_t)vp1.framebuffer.texture, size, ImVec2(0, 1), ImVec2(1, 0));
-    // if (ImGui::Button("Click Me!")) {}
-    // ImGui::End();
-
-    // ImGui::Begin("Scene View");
-    // ImGui::Text("Scene renders here");
-    // ImGui::End();
-    
-    // ImGui::Begin("Console");
-    // ImGui::Text("Logs Go Here");
-    // ImGui::End();
-}
-
-void Editor::showHeirarchy() {
-    ImGui::Begin("Heirarchy");
-    for (BE::Anchor a : engine->activeScene->anchors) {
-        
-        bool anchor_open = ImGui::TreeNode((void*)(intptr_t)a, "Anchor %d", a);
-        if (!anchor_open) continue;
-
-        if (engine->activeScene->registry.transforms.find(a) != engine->activeScene->registry.transforms.end()) {
-            BE::TransformComponent& t = engine->activeScene->registry.transforms[a];
-            if (ImGui::CollapsingHeader("Transform")) {
-                ImGui::DragFloat3("Position##" + a, glm::value_ptr(t.position), 0.1f);
-                ImGui::DragFloat3("Rotation##" + a, glm::value_ptr(t.rotation), 0.1f);
-                ImGui::DragFloat3("Scale##" + a, glm::value_ptr(t.scale), 0.1f);
-            }
-
-        }
-
-        ImGui::TreePop();
-        ImGui::Separator();
-    }
+    ImGui::Text("SELECTED ANCHOR %d", selectedAnchor);
     ImGui::End();
 }
 
@@ -163,6 +100,156 @@ void Editor::endFrame() {
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
     }
+}
+
+void Editor::Frame() {
+    
+    beginFrame();
+    showPanels();
+    endFrame();
+}
+
+// === Panels === //
+
+void Editor::Menu() {
+
+    if (ImGui::BeginMainMenuBar()) {
+        if (ImGui::BeginMenu("File")) {
+            if (ImGui::MenuItem("Exit")) { engine->closeWindow(); }
+            ImGui::EndMenu(); 
+        };
+        if (ImGui::BeginMenu("Edit")) {
+            // if (ImGui::MenuItem("Add Scene")) { std::string label = "Scene" + std::to_string(engine->scenes.size()+1); engine->addScene(label); }
+            if (ImGui::MenuItem("Add Camera")) { std::string label = "Camera" + std::to_string(engine->activeScene->cameras.size()+1); engine->activeScene->addCamera(label); }
+            if (ImGui::MenuItem("Add Light")) { std::string label = "Light" + std::to_string(engine->activeScene->lights().lights.size()+1);  engine->activeScene->lights().addLight(label, 1); }
+            if (ImGui::MenuItem("Create Anchor")) { engine->activeScene->createAnchor(); }
+            ImGui::EndMenu(); 
+        };
+        if (ImGui::BeginMenu("View")) { ImGui::EndMenu(); };
+        if (ImGui::BeginMenu("Window")) { ImGui::EndMenu(); };
+        if (ImGui::BeginMenu("Debug")) {
+            if (ImGui::MenuItem("Recompile Shaders")) { engine->resources().recompileShaders(); }
+            if (ImGui::MenuItem("Update GPU")) { engine->viewport->scene->lights().updateGPU(); }
+            ImGui::EndMenu(); 
+        };
+        ImGui::EndMainMenuBar();
+    }
+
+}
+
+void Editor::Viewport() {
+
+    ImGui::Begin("Hello, ImGui!");
+    static ImVec2 lastSize = ImGui::GetWindowSize();
+    ImVec2 size = ImGui::GetContentRegionAvail();
+    bool resizing = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && ImGui::IsMouseDown(ImGuiMouseButton_Left);
+    if (!resizing) engine->viewport.get()->resize(size.x/2, size.y/2);
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) engine->activeScene->activeCamera->handleInputs(engine->getWindow(), engine->frameTime.dt);
+    ImGui::Image((void*)(intptr_t) engine->viewport.get()->framebuffer.texture, size, ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::End();
+}
+
+void Editor::Heirarchy() {
+    
+    ImGui::Begin("Heirarchy");
+    for (Anchor a : engine->activeScene->anchors) {
+        std::string name = "Anchor" + std::to_string(a);
+        if (ImGui::Button(name.c_str())) selectedAnchor = a;
+    }
+    ImGui::End();
+}
+
+void Editor::Resources() {
+    
+    ImGui::Begin("Resources");
+    for (auto& [key, mesh] : engine->resources().meshes) {
+        if (ImGui::Selectable(key.c_str())) {}
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload("MESH", key.c_str(), key.size() + 1);
+            ImGui::Text("Dragging %s", key.c_str());
+            ImGui::EndDragDropSource();
+        }
+    }
+    for (auto& [key, shader] : engine->resources().shaders) {
+        if (ImGui::Selectable(key.c_str())) {}
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload("SHADER", key.c_str(), key.size() + 1);
+            ImGui::Text("Dragging %s", key.c_str());
+            ImGui::EndDragDropSource();
+        }
+    }
+    for (auto& [key, texture] : engine->resources().textures) {
+        if (ImGui::Selectable(key.c_str())) {}
+        if (ImGui::BeginDragDropSource()) {
+            ImGui::SetDragDropPayload("TEXTURE", key.c_str(), key.size() + 1);
+            ImGui::Text("Dragging %s", key.c_str());
+            ImGui::EndDragDropSource();
+        }
+    }
+    ImGui::End();
+}
+
+void Editor::Inspector() {
+    
+    ImGui::Begin("Inspector");
+    if (selectedAnchor != -1) {
+
+        // TRANSFORM COMPONENT
+        if (engine->activeScene->registry.transforms.find(selectedAnchor) != engine->activeScene->registry.transforms.end()) {
+            TransformComponent& t = engine->activeScene->registry.transforms[selectedAnchor];
+            if (ImGui::CollapsingHeader("Transform")) {
+                ImGui::DragFloat3("Position", glm::value_ptr(t.position), 0.1f);
+                ImGui::DragFloat3("Rotation", glm::value_ptr(t.rotation), 0.1f);
+                ImGui::DragFloat3("Scale", glm::value_ptr(t.scale), 0.1f);
+                ImGui::Separator();
+            }
+        } else {
+            if (ImGui::Button("Add Transform Component")) {
+                engine->activeScene->registry.transforms[selectedAnchor] = TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}};
+            }
+        }
+
+        // MESH COMPONENT
+        if (engine->activeScene->registry.meshes.find(selectedAnchor) != engine->activeScene->registry.meshes.end()) {
+            MeshComponent& m = engine->activeScene->registry.meshes[selectedAnchor];
+            if (ImGui::CollapsingHeader("Material")) {
+                ImGui::Text("Mesh Preview");
+                
+                if (m.mesh != nullptr) m.mesh->makePreview(meshPreviewFB, *engine->resources().shaders["__mesh_preview"].get(), engine->frameTime.dt);
+
+                ImGui::Image((void*)(intptr_t)meshPreviewFB.texture, ImVec2(128, 128), ImVec2(0, 1), ImVec2(1, 0));
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* meshPayload = ImGui::AcceptDragDropPayload("MESH")) {
+                        const char* meshName = (const char*)meshPayload->Data;
+                        auto it = engine->resources().meshes.find(meshName);
+                        if (it != engine->resources().meshes.end()) {
+                            m.mesh = it->second;
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+                
+                if (ImGui::BeginDragDropTarget()) {
+                    if (const ImGuiPayload* shaderPayload = ImGui::AcceptDragDropPayload("SHADER")) {
+                        const char* shaderName = (const char*)shaderPayload->Data;
+                        auto it = engine->resources().shaders.find(shaderName);
+                        if (it != engine->resources().shaders.end()) {
+                            m.shader = it->second;
+                        }
+                    }
+                    ImGui::EndDragDropTarget();
+                }
+
+                ImGui::Separator();
+            }
+        } else {
+            if (ImGui::Button("Add Mesh Component")) {
+                engine->activeScene->registry.meshes[selectedAnchor] = MeshComponent{nullptr, nullptr};
+            }
+        }
+    
+    }
+    ImGui::End();
 }
 
 }; // BE namespace

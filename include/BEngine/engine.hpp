@@ -215,6 +215,8 @@ public:
     void draw(Shader& shader, const glm::mat4& modelMatrix = glm::mat4(1), bool textures = true);
     void drawInstanced(Shader& shader);
 
+    void makePreview(Framebuffer& fb, Shader& shader, float dt = 0.0025f);
+
     void loadOBJ(const std::string& objPath);
     void loadOBJSource(const std::string* objSource);
 
@@ -369,8 +371,14 @@ struct TransformComponent {
     glm::vec3 scale {1.0f};
 };
 
+struct MeshComponent {
+    std::shared_ptr<Mesh> mesh;
+    std::shared_ptr<Shader> shader;
+};
+
 struct Registry {
     std::unordered_map<Anchor, TransformComponent> transforms;
+    std::unordered_map<Anchor, MeshComponent> meshes;
 };
 
 class Scene {

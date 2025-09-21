@@ -574,6 +574,46 @@ void Mesh::drawInstanced(Shader& shader) {
 
 }
 
+void Mesh::makePreview(Framebuffer& fb, Shader& shader, float dt) {
+
+    static float angle = 0.0f;
+
+    angle += glm::radians(15.0f) * dt;
+    if (angle > glm::two_pi<float>()) angle -= glm::two_pi<float>();
+
+    fb.bind();
+    glClearColor(0.05,0.05,0.05,1);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glm::vec3 minBounds(FLT_MAX);
+    glm::vec3 maxBounds(-FLT_MAX);
+
+    for (auto& v : vertices) {
+        minBounds = glm::min(minBounds, v.position);
+        maxBounds = glm::max(maxBounds, v.position);
+    }
+
+    glm::vec3 center = (minBounds + maxBounds) * 0.5f;
+    glm::vec3 extents = maxBounds - minBounds;
+    float maxExtent = glm::compMax(extents);
+
+    const float padding = 1.2f;
+    float scaleFactor = 2.0f / (maxExtent * padding);
+
+    glm::mat4 model = glm::translate(glm::mat4(1.0f), -center) * glm::scale(glm::mat4(1), glm::vec3(1.0f)) * glm::rotate(glm::mat4(1.0f), angle, glm::vec3(0,1,0));
+    glm::mat4 view = glm::lookAt(glm::normalize(glm::vec3(2,2,2)) * (maxExtent * 2.0f), glm::vec3(0), glm::vec3(0,1,0));
+    glm::mat4 proj = glm::perspective(glm::radians(45.0f), 1.0f, 0.1f, maxExtent * 10.0f);
+
+    shader.activate();
+
+    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "uView"), 1, GL_FALSE, &view[0][0]);
+    glUniformMatrix4fv(glGetUniformLocation(shader.ID, "uProjection"), 1, GL_FALSE, &proj[0][0]);
+
+    draw(shader, model, false);
+
+    fb.unbind();
+}
+
 int GetOrAddVertex(std::vector<Vertex>& vertices, const Vertex& v) {
     for (size_t i = 0; i < vertices.size(); i++) {
         if (memcmp(&vertices[i], &v, sizeof(Vertex)) == 0) {
@@ -1136,6 +1176,7 @@ void ResourceManager::loadDefaults() {
     loadMesh("__quad", "include/BEngine/meshes/quad.obj");
     loadMesh("__camera", "include/BEngine/meshes/quad.obj");
 
+    loadShaderDSL("include/BEngine/shaders/core/mesh_preview.dsl");
     loadShaderDSL("include/BEngine/shaders/core/default_scene.dsl");
     loadShaderDSL("include/BEngine/shaders/core/flat_color.dsl");
     loadShaderDSL("include/BEngine/shaders/post/blit.dsl");
@@ -1612,14 +1653,18 @@ void Engine::renderViewportTexture(Viewport& vp) {
     // mesh->draw(*shader, model, false);
 
     for (Anchor a : vp.scene->anchors) {
-        auto it = vp.scene->registry.transforms.find(a);
-        if (it == vp.scene->registry.transforms.end()) continue;
+        if (vp.scene->registry.transforms.find(a) == vp.scene->registry.transforms.end()) continue;
 
-        TransformComponent& t = it->second;
+        TransformComponent& t = vp.scene->registry.transforms.find(a)->second;
+        MeshComponent& m = vp.scene->registry.meshes.find(a)->second;
 
         glm::mat4 model22 = glm::translate(glm::mat4(1.0f), t.position) * glm::eulerAngleXYZ(t.rotation.x, t.rotation.y, t.rotation.z) * glm::scale(glm::mat4(1.0f), t.scale);
+
+        if (vp.scene->registry.meshes.find(a) != vp.scene->registry.meshes.end() && m.mesh != nullptr && m.shader != nullptr) {
+            m.mesh->draw(*m.shader, model22, false);
+            continue;
+        }
         
-        mesh->draw(*shader, model22, false);
     }
 
     // CAMERAS

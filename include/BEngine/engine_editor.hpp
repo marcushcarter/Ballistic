@@ -11,16 +11,27 @@ namespace BE {
 
 class Editor {
 public:
+    Anchor selectedAnchor = -1;
+
     Editor(Engine* enginePtr);
     ~Editor();
 
     void beginFrame();
     void showPanels();
-    void showHeirarchy();
     void endFrame();
+    
+    void Frame();
+
+    void Menu();
+    void Viewport();
+    void Heirarchy();
+    void Resources();
+    void Inspector();
 
 private:
     Engine* engine;
+
+    Framebuffer meshPreviewFB;
 };
 
 }; // BE namespace
