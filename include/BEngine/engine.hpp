@@ -20,6 +20,8 @@
 #include <vector>
 #include <memory>
 #include <unordered_map>
+#include <filesystem>
+#include <cctype>
 
 #include "BEngine/engine_default.hpp"
 

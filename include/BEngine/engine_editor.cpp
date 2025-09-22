@@ -63,8 +63,6 @@ void Editor::beginFrame() {
     ImGuiID dockspace_id = ImGui::GetID("MyDockSpace");
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f));
     ImGui::End();
-    
-    // ImGui::PopStyleColor();
 }
 
 void Editor::showPanels() {
@@ -162,7 +160,44 @@ void Editor::Heirarchy() {
 void Editor::Resources() {
     
     ImGui::Begin("Resources");
+
+    static char searchBuffer[128] = "";
+
+    float buttonSize = ImGui::GetFrameHeight();
+    float padding = ImGui::GetStyle().ItemSpacing.x * 2;
+    float searchWidth = ImGui::GetContentRegionAvail().x - (buttonSize + padding);
+
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+    ImGui::PushItemWidth(searchWidth);
+    ImGui::InputTextWithHint("##SearchResources", "Search...", searchBuffer, sizeof(searchBuffer));
+    ImGui::PopItemWidth();
+    ImGui::PopStyleVar();
+
+    ImGui::SameLine();
+    ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 8.0f);
+    if (ImGui::Button("+", ImVec2(ImGui::GetFrameHeight(), ImGui::GetFrameHeight()))) {
+        ImGui::OpenPopup("AddResourcePopup");
+    }
+    ImGui::PopStyleVar();
+
+    ImGui::Separator();
+
+    if (ImGui::BeginPopup("AddResourcePopup")) {
+        if (ImGui::MenuItem("Add Mesh")) {}
+        if (ImGui::MenuItem("Add Shader")) {}
+        if (ImGui::MenuItem("Add Texture")) {}
+        if (ImGui::MenuItem("Add Material")) {}
+        ImGui::EndPopup();
+    }
+
+    auto MatchesSearch = [&](const std::string& name) {
+        return strlen(searchBuffer) == 0 || name.find(searchBuffer) != std::string::npos;
+    };
+
+    ImGui::SeparatorText("Meshes");
     for (auto& [key, mesh] : engine->resources().meshes) {
+        if (!MatchesSearch(key) && !MatchesSearch("Meshes")) continue;
+
         if (ImGui::Selectable(key.c_str())) {}
         if (ImGui::BeginDragDropSource()) {
             ImGui::SetDragDropPayload("MESH", key.c_str(), key.size() + 1);
@@ -170,7 +205,11 @@ void Editor::Resources() {
             ImGui::EndDragDropSource();
         }
     }
+    
+    ImGui::SeparatorText("Materials");
     for (auto& [key, material] : engine->resources().materials) {
+        if (!MatchesSearch(key) && !MatchesSearch("Materials")) continue;
+
         if (ImGui::Selectable(key.c_str())) {}
         if (ImGui::BeginDragDropSource()) {
             ImGui::SetDragDropPayload("MATERIAL", key.c_str(), key.size() + 1);
@@ -178,7 +217,11 @@ void Editor::Resources() {
             ImGui::EndDragDropSource();
         }
     }
+    
+    ImGui::SeparatorText("Shaders");
     for (auto& [key, shader] : engine->resources().shaders) {
+        if (!MatchesSearch(key) && !MatchesSearch("Shaders")) continue;
+
         if (ImGui::Selectable(key.c_str())) {}
         if (ImGui::BeginDragDropSource()) {
             ImGui::SetDragDropPayload("SHADER", key.c_str(), key.size() + 1);
@@ -186,7 +229,11 @@ void Editor::Resources() {
             ImGui::EndDragDropSource();
         }
     }
+    
+    ImGui::SeparatorText("Textures");
     for (auto& [key, texture] : engine->resources().textures) {
+        if (!MatchesSearch(key) && !MatchesSearch("Textures")) continue;
+
         if (ImGui::Selectable(key.c_str())) {}
         if (ImGui::BeginDragDropSource()) {
             ImGui::SetDragDropPayload("TEXTURE", key.c_str(), key.size() + 1);

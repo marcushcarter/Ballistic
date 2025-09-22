@@ -19,9 +19,6 @@ int main() {
         *engine.resources().shaders["__scene"].get()
     );
 
-    // BE::Anchor light = engine.activeScene->createAnchor();
-    // engine.activeScene->registry.transforms[light] = BE::TransformComponent{{-1,0,0}, {0,0,0}, {0.5,0.5,0.5}};
-
     // OLD
 
     engine.activeScene->lights().addLight("light1", 1);

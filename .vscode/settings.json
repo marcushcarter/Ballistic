@@ -58,7 +58,8 @@
         "ratio": "cpp",
         "iomanip": "cpp",
         "fstream": "cpp",
-        "set": "cpp"
+        "set": "cpp",
+        "codecvt": "cpp"
     },
     "C_Cpp.errorSquiggles": "disabled"
 }
