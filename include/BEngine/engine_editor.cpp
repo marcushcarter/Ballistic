@@ -107,12 +107,9 @@ void Editor::Frame() {
     endFrame();
 }
 
-
 // === Custom ImGui === //
 
 namespace UI {
-
-} // UI namespace
 
 bool DragFloat3(const char *label, float *v, float v_speed = (1.0f), float v_min = (0.0f), float v_max = (0.0f)) {
 
@@ -129,6 +126,8 @@ bool DragFloat3(const char *label, float *v, float v_speed = (1.0f), float v_min
     return changed;
 
 }
+
+} // UI namespace
 
 // === Panels === //
 
@@ -286,7 +285,7 @@ void Editor::Inspector() {
                 ImGui::DragFloat3("Position", glm::value_ptr(t.position), 0.1f);
                 ImGui::DragFloat3("Rotation", glm::value_ptr(t.rotation), 0.1f);
                 ImGui::DragFloat3("Scale", glm::value_ptr(t.scale), 0.1f);
-                // DragFloat3("Posiasoia", glm::value_ptr(t.position), 0.1f);
+                // UI::DragFloat3("Posiasoia", glm::value_ptr(t.position), 0.1f);
                 ImGui::Separator();
 
                 ImGui::EndGroup();
@@ -302,7 +301,7 @@ void Editor::Inspector() {
                 
                 static glm::vec2 rotation(0.0f);
                 
-                if (m.mesh != nullptr) m.mesh->makePreview(meshPreviewFB, *engine->resources().shaders["__mesh_preview"].get(), rotation);
+                if (m.mesh != nullptr) m.mesh->makePreview(meshPreviewFB, *engine->resources().shaders["default_uv"].get(), rotation);
 
                 ImGui::BeginGroup();
 
@@ -369,8 +368,10 @@ void Editor::Inspector() {
                     ImGui::BeginDisabled(false);
                     if (ImGui::SliderFloat("Metallic", &m.material->metallic, 0.0f, 1.0f)) {}
                     if (ImGui::SliderFloat("Roughness", &m.material->roughness, 0.0f, 1.0f)) {}
-                    if (ImGui::ColorEdit4("Diffuse Color", &m.material->diffuseColor.x)) {}
+                    // if (ImGui::ColorEdit4("Diffuse Color", &m.material->diffuseColor.x)) {}
+                    if (ImGui::ColorPicker4("Diffuse Color", &m.material->diffuseColor.x)) {}
                     if (ImGui::Checkbox("Cull Faces?", &m.material->cull)) {}
+                    ImGui::SameLine();
                     if (ImGui::Checkbox("Transparent?", &m.material->transparent)) {}
                     ImGui::EndDisabled();
                     
@@ -424,7 +425,7 @@ void Editor::Inspector() {
 
             }
         } else if (ImGui::Button("Add Mesh Component")) 
-            engine->activeScene->registry.meshes[selectedAnchor] = MeshComponent{engine->resources().meshes["__cube"], engine->resources().materials["__default_material"], engine->resources().shaders["__scene"]};
+            engine->activeScene->registry.meshes[selectedAnchor] = MeshComponent{nullptr, nullptr, nullptr};
 
         if (ImGui::CollapsingHeader("Materia")) {}
     

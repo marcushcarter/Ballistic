@@ -11,9 +11,9 @@ int main() {
 
     engine.resources().loadMesh("Test Scene", "res/models/scene.obj");
 
-    BE::Anchor cube = engine.activeScene->createAnchor();
-    engine.activeScene->registry.transforms[cube] = BE::TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}};
-    engine.activeScene->registry.meshes[cube] = BE::MeshComponent{engine.resources().meshes["__cube"], nullptr, engine.resources().shaders["__scene"]};
+    editor.selectedAnchor = engine.activeScene->createAnchor();
+    engine.activeScene->registry.transforms[editor.selectedAnchor] = BE::TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}};
+    engine.activeScene->registry.meshes[editor.selectedAnchor] = BE::MeshComponent{engine.resources().meshes["default_cube"], nullptr, nullptr};
 
     // OLD
 
@@ -32,12 +32,7 @@ int main() {
         engine.viewport->scene->lights().updateGPU();
         engine.renderViewportTexture(*engine.viewport.get());
 
-        // engine.activeScene->lights().updateGPU();
-
         engine.viewport->scene->lights().updateGPU();
-        
-        // engine.viewport.get()->framebuffer.bindTexture(engine.resources().shaders["__blit"]->ID, "screenTexture", 3);
-        // engine.resources().meshes["__quad"]->draw(*engine.resources().shaders["__blit"], false);
 
         editor.Frame();
 

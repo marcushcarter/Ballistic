@@ -8,6 +8,7 @@
 #include <source_location>
 #include <chrono>
 #include <cstring>
+#include <stack>
 
 namespace BE {
 
@@ -443,9 +444,9 @@ void Texture::unbind() { glBindTexture(GL_TEXTURE_2D, 0); }
 
 // ========================================================================
 
-bool g_cullEnabled = false;
+static bool g_cullEnabled = false;
 
-void setCullFace(bool enable) {
+void enableCull(bool enable) {
     if (enable && !g_cullEnabled) {
         glEnable(GL_CULL_FACE);
         g_cullEnabled = true;
@@ -454,6 +455,32 @@ void setCullFace(bool enable) {
         g_cullEnabled = false;
     }
 }
+
+static bool g_depthEnabled = false;
+
+void enableDepthTest(bool enable) {
+    if (enable && !g_depthEnabled) {
+        glEnable(GL_DEPTH_TEST);
+        g_depthEnabled = true;
+    } else if (!enable && g_depthEnabled) {
+        glDisable(GL_DEPTH_TEST);
+        g_depthEnabled = false;
+    }
+}
+
+static bool g_blendEnabled = false;
+
+void enableBlend(bool enable) {
+    if (enable && !g_blendEnabled) {
+        glEnable(GL_BLEND);
+        g_blendEnabled = true;
+    } else if (!enable && g_blendEnabled) {
+        glDisable(GL_BLEND);
+        g_blendEnabled = false;
+    }
+}
+
+// ========================================================================
 
 Material::Material(const std::string mtlPath) {
 
@@ -523,7 +550,7 @@ Material::Material(const std::string mtlPath) {
 void Material::uploadToShader(Shader& shader) {
     shader.activate();
 
-    setCullFace(cull);
+    enableCull(cull);
 
     // this->diffuseColor;
     // this->metallic;
@@ -535,6 +562,8 @@ void Material::uploadToShader(Shader& shader) {
     if (diffuseMap) {
         diffuseMap->setUniformUnit(shader.ID, "diffuseMap", 0);
         diffuseMap->bind(0);
+    } else {
+        // backup white color
     }
 
     if (normalMap) {
@@ -589,6 +618,8 @@ void Mesh::draw(Shader& shader, const glm::mat4& modelMatrix) {
     shader.activate();
     vao.bind();
 
+    enableDepthTest(true);
+
     glUniformMatrix4fv(glGetUniformLocation(shader.ID, "uModel"), 1, GL_FALSE, glm::value_ptr(modelMatrix));
     glDrawElements(GL_TRIANGLES, static_cast<GLsizei>(indices.size()), GL_UNSIGNED_INT, 0);
 
@@ -597,7 +628,7 @@ void Mesh::draw(Shader& shader, const glm::mat4& modelMatrix) {
 
 void Mesh::makePreview(Framebuffer& fb, Shader& shader, glm::vec2 rotation) {
 
-    setCullFace(false);
+    enableCull(false);
 
     fb.bind();
     glClearColor(0.05,0.05,0.05,1);
@@ -1216,25 +1247,26 @@ void ResourceManager::removeTexture(const std::string& name, const std::source_l
 }
 
 void ResourceManager::loadDefaults() {
-    loadMesh("__cube", "include/BEngine/meshes/cube.obj");
-    loadMesh("__quad", "include/BEngine/meshes/quad.obj");
+    loadMesh("default_cube", "include/BEngine/meshes/cube.obj");
+    loadMesh("default_quad", "include/BEngine/meshes/quad.obj");
 
-    loadShaderDSL("include/BEngine/shaders/core/mesh_preview.dsl");
+    loadShaderDSL("include/BEngine/shaders/core/default_uv.dsl");
     loadShaderDSL("include/BEngine/shaders/core/default_scene.dsl");
+    loadShaderDSL("include/BEngine/shaders/core/default_color.dsl");
 
     auto texture = std::make_shared<Texture>("diffuse", 4, 4, BE::Default::FallbackTexture);
-    textures["Fallback"] = texture;
+    textures["default_texture"] = texture;
 
     loadTexture("Box", "res/textures/box.png", "diffuse");
     loadTexture("Box_specular", "res/textures/box_specular.png", "diffuse");
 
-    materials["__default_material"] = std::make_shared<Material>();
-    materials["__default_material"]->diffuseMap = textures["Fallback"].get();
+    materials["default_material"] = std::make_shared<Material>();
+    materials["default_material"]->diffuseMap = textures["default_texture"].get();
     
-    materials["material bond"] = std::make_shared<Material>();
-    materials["material bond"]->diffuseMap = textures["Box"].get();
-    materials["material bond"]->normalMap = textures["Box_specular"].get();
-    materials["material bond"]->cull = true;
+    materials["box material"] = std::make_shared<Material>();
+    materials["box material"]->diffuseMap = textures["Box"].get();
+    materials["box material"]->normalMap = textures["Box_specular"].get();
+    materials["box material"]->cull = true;
 }
 
 // ========================================================================
@@ -1613,15 +1645,12 @@ Engine::Engine(const std::string& title, int width, int height, const std::sourc
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
-    glEnable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-    g_cullEnabled = false;
     glCullFace(GL_FRONT);
     glFrontFace(GL_CCW);
     glDepthFunc(GL_LESS);
-
-    glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    enableBlend(true);
     
     glfwSwapInterval(0);
 
@@ -1668,26 +1697,17 @@ void Engine::renderViewportTexture(Viewport& vp) {
         vp.framebuffer.resize(vp.width, vp.height);
 
     glViewport(0, 0, vp.framebuffer.width, vp.framebuffer.height);
-    // glClearColor(0.1,0.1,0.1,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     vp.camera->width = vp.framebuffer.width;
     vp.camera->height = vp.framebuffer.height;
 
+    // ANCHORS
+
+    static std::vector<GLuint> updatedShaders;
+    updatedShaders.clear();
+
     std::shared_ptr<Shader> shader = nullptr;
-    std::shared_ptr<Mesh> mesh = nullptr;
-
-    // GAME OBJECTS
-
-    if (vp.scene->customShader) shader = vp.scene->customShader; 
-    else shader = resources().shaders["__scene"];
-    mesh = resources().meshes["Test Scene"];
-
-    shader->activate();
-    vp.scene->lights().uploadToShader(shader->ID);
-    vp.camera->uploadToShader(shader->ID);
-    glm::mat4 model = glm::mat4(1.0f);
-    // mesh->draw(*shader, model, false);
 
     for (Anchor a : vp.scene->anchors) {
         if (vp.scene->registry.transforms.find(a) == vp.scene->registry.transforms.end()) continue;
@@ -1697,13 +1717,22 @@ void Engine::renderViewportTexture(Viewport& vp) {
 
         glm::mat4 model = glm::translate(glm::mat4(1.0f), t.position) * glm::eulerAngleXYZ(t.rotation.x, t.rotation.y, t.rotation.z) * glm::scale(glm::mat4(1.0f), t.scale);
 
-        if (vp.scene->registry.meshes.find(a) != vp.scene->registry.meshes.end() && m.mesh != nullptr && m.shader != nullptr) {
-            
-            if (m.material != nullptr) m.material->uploadToShader(*m.shader); 
-            else resources().materials["__default_material"]->uploadToShader(*m.shader);
+        if (vp.scene->registry.meshes.find(a) != vp.scene->registry.meshes.end() && m.mesh != nullptr) {
 
-            m.mesh->draw(*m.shader, model);
-            continue;
+            if (m.shader != nullptr) shader = m.shader;
+            else shader = resources().shaders["default_basic"];
+
+            if (std::find(updatedShaders.begin(), updatedShaders.end(), shader->ID) == updatedShaders.end()) {
+                shader->activate();
+                vp.camera->uploadToShader(shader->ID);
+                vp.scene->lights().uploadToShader(shader->ID);
+                updatedShaders.push_back(shader->ID);
+            }
+            
+            if (m.material != nullptr) m.material->uploadToShader(*shader); 
+            else resources().materials["default_material"]->uploadToShader(*shader);
+
+            m.mesh->draw(*shader, model);
         }
         
     }
@@ -1711,7 +1740,7 @@ void Engine::renderViewportTexture(Viewport& vp) {
     // CAMERAS
 
     // shader = resources().shaders["__flat_color"];
-    // mesh = resources().meshes["__cube"];
+    // mesh = resources().meshes["default_cube"];
 
     // shader->activate();
     // vp.camera->uploadToShader(shader->ID);
@@ -1729,7 +1758,7 @@ void Engine::renderViewportTexture(Viewport& vp) {
     // LIGHTS
 
     // shader = resources().shaders["__flat_color"];
-    // mesh = resources().meshes["__cube"];
+    // mesh = resources().meshes["default_cube"];
 
     // shader->activate();
     // vp.camera->uploadToShader(shader->ID);
