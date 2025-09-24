@@ -75,12 +75,12 @@ void Editor::showPanels() {
 
     // === PERFORMANCE == //
 
-    ImGui::SetNextWindowBgAlpha(0.35f);
-    ImGui::Begin("Performance Overlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking );
-    ImGui::Text("ENGINE FPS %.1f MS %.2f", engine->frameTime.fps, engine->frameTime.ms);
-    ImGui::Text("IMGUI FPS %.1f MS %.2f", ImGui::GetIO().Framerate, 1000.0f/ImGui::GetIO().Framerate);
-    ImGui::Text("SELECTED ANCHOR %d", selectedAnchor);
-    ImGui::End();
+    // ImGui::SetNextWindowBgAlpha(0.35f);
+    // ImGui::Begin("Performance Overlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking );
+    // ImGui::Text("ENGINE FPS %.1f MS %.2f", engine->frameTime.fps, engine->frameTime.ms);
+    // ImGui::Text("IMGUI FPS %.1f MS %.2f", ImGui::GetIO().Framerate, 1000.0f/ImGui::GetIO().Framerate);
+    // ImGui::Text("SELECTED ANCHOR %d", selectedAnchor);
+    // ImGui::End();
 }
 
 void Editor::endFrame() {
@@ -173,8 +173,20 @@ void Editor::Heirarchy() {
     
     ImGui::Begin("Heirarchy");
     for (Anchor a : engine->activeScene->anchors) {
-        std::string name = "Anchor" + std::to_string(a);
+
+        std::string name = "Anchor" + std::to_string(a) + "##" + std::to_string(a);
+        if (engine->activeScene->registry.tags.find(selectedAnchor) != engine->activeScene->registry.tags.end()) {
+            if (!engine->activeScene->registry.tags[a].name.empty()) {
+                name = engine->activeScene->registry.tags[a].name + "##" + std::to_string(a);
+            }
+        }
+
         if (ImGui::Button(name.c_str())) selectedAnchor = a;
+        ImGui::SameLine();
+        if (ImGui::Button(std::string("x##" + name).c_str())) {
+            engine->activeScene->removeAnchor(a);
+            selectedAnchor = -1;
+        }
     }
     ImGui::End();
 }
@@ -275,6 +287,28 @@ void Editor::Inspector() {
 
         float avialWidth = ImGui::GetContentRegionAvail().x;
 
+        // TAG COMPONENT
+
+        if (engine->activeScene->registry.tags.find(selectedAnchor) != engine->activeScene->registry.tags.end()) {
+            TagComponent& t = engine->activeScene->registry.tags[selectedAnchor];
+
+            char buffer[256];
+            std::strncpy(buffer, t.name.c_str(), sizeof(buffer));
+            buffer[sizeof(buffer) - 1] = '\0';
+            if (ImGui::InputText("Name", buffer, sizeof(buffer))) {
+                t.name = buffer;
+            }
+
+            const char* typeLabels[] = { "None", "Player" };
+            int currentType = static_cast<int>(t.type);
+            if (ImGui::Combo("Type", &currentType, typeLabels, IM_ARRAYSIZE(typeLabels))) {
+                t.type = static_cast<AnchorType>(currentType);
+            }
+
+            ImGui::Separator();
+        } else if (ImGui::Button("Add Tag Component")) 
+            engine->activeScene->registry.tags[selectedAnchor] = TagComponent{std::string("Anchor" + std::to_string(selectedAnchor)).c_str(), AnchorType::None};
+
         // TRANSFORM COMPONENT
 
         if (engine->activeScene->registry.transforms.find(selectedAnchor) != engine->activeScene->registry.transforms.end()) {
@@ -300,10 +334,33 @@ void Editor::Inspector() {
             if (ImGui::CollapsingHeader("Material")) {
                 
                 static glm::vec2 rotation(0.0f);
+                static bool cullPreview = false;
                 
-                if (m.mesh != nullptr) m.mesh->makePreview(meshPreviewFB, *engine->resources().shaders["default_uv"].get(), rotation);
+                if (m.mesh != nullptr) m.mesh->makePreview(meshPreviewFB, *engine->resources().shaders["default_uv"].get(), rotation, cullPreview);
 
                 ImGui::BeginGroup();
+
+                const char* meshName = m.mesh ? "Unknown" : "None";
+                for (auto& [key, mesh] : engine->resources().meshes) {
+                    if (m.mesh == mesh) {
+                        meshName = key.c_str();
+                        break;
+                    }
+                }
+
+                if (ImGui::BeginCombo("Mesh##Dropdown", meshName)) {
+                    for (auto& [key, mesh] : engine->resources().meshes) {
+                        bool isSelected = (m.mesh == mesh);
+                        if (ImGui::Selectable(key.c_str(), isSelected)) {
+                            m.mesh = mesh;
+                            rotation = glm::vec2(0, 0);
+                        }
+                        if (isSelected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
 
                 if (m.mesh) {
                     ImGui::Text("Mesh Preview:");
@@ -342,6 +399,7 @@ void Editor::Inspector() {
                         }
                     }
 
+                    ImGui::Checkbox("View with Culling", &cullPreview);
                     ImGui::Text("Vertices: %d", m.mesh->vertices.size());
                     ImGui::Text("Indices: %d", m.mesh->indices.size());
                     ImGui::Text("Triangles: %d", m.mesh->indices.size()/3);
@@ -349,7 +407,28 @@ void Editor::Inspector() {
             
                     ImGui::Separator();
 
-                } else ImGui::Text("Drag in a Mesh");
+                }
+                
+                const char* materialName = m.material ? "Unknown" : "None";
+                for (auto& [key, material] : engine->resources().materials) {
+                    if (m.material == material) {
+                        materialName = key.c_str();
+                        break;
+                    }
+                }
+
+                if (ImGui::BeginCombo("Material##Dropdown", materialName)) {
+                    for (auto& [key, material] : engine->resources().materials) {
+                        bool isSelected = (m.material == material);
+                        if (ImGui::Selectable(key.c_str(), isSelected)) {
+                            m.material = material;
+                        }
+                        if (isSelected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
 
                 if (m.material) {
 
@@ -365,13 +444,11 @@ void Editor::Inspector() {
                     else ImGui::Dummy(ImVec2(avialWidth/4, avialWidth/4));
 
                     ImGui::Text("Material Properties:");
-                    ImGui::BeginDisabled(false);
+                    ImGui::BeginDisabled(m.material == engine->resources().materials["default_material"]);
                     if (ImGui::SliderFloat("Metallic", &m.material->metallic, 0.0f, 1.0f)) {}
                     if (ImGui::SliderFloat("Roughness", &m.material->roughness, 0.0f, 1.0f)) {}
-                    // if (ImGui::ColorEdit4("Diffuse Color", &m.material->diffuseColor.x)) {}
                     if (ImGui::ColorPicker4("Diffuse Color", &m.material->diffuseColor.x)) {}
                     if (ImGui::Checkbox("Cull Faces?", &m.material->cull)) {}
-                    ImGui::SameLine();
                     if (ImGui::Checkbox("Transparent?", &m.material->transparent)) {}
                     ImGui::EndDisabled();
                     
@@ -379,13 +456,34 @@ void Editor::Inspector() {
             
                     ImGui::Separator();
                 
-                } else ImGui::Text("Drag in a Material");
+                }
+                
+                const char* shaderName = m.shader ? "Unknown" : "None";
+                for (auto& [key, shader] : engine->resources().shaders) {
+                    if (m.shader == shader) {
+                        shaderName = key.c_str();
+                        break;
+                    }
+                }
+                
+                if (ImGui::BeginCombo("Shader##Dropdown", shaderName)) {
+                    for (auto& [key, shader] : engine->resources().shaders) {
+                        bool isSelected = (m.shader == shader);
+                        if (ImGui::Selectable(key.c_str(), isSelected)) {
+                            m.shader = shader;
+                        }
+                        if (isSelected) {
+                            ImGui::SetItemDefaultFocus();
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
 
                 if (m.shader) {
                     if (ImGui::Button("Remove Shader")) { m.shader = nullptr; }
             
                     ImGui::Separator();
-                } else ImGui::Text("Drag in a Shader");
+                }
         
                 ImGui::EndGroup();
 
@@ -426,8 +524,6 @@ void Editor::Inspector() {
             }
         } else if (ImGui::Button("Add Mesh Component")) 
             engine->activeScene->registry.meshes[selectedAnchor] = MeshComponent{nullptr, nullptr, nullptr};
-
-        if (ImGui::CollapsingHeader("Materia")) {}
     
     }
     ImGui::End();

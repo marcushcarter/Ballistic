@@ -207,20 +207,19 @@ class Mesh {
 public:
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
-    std::vector<Texture> textures;
     
     VAO vao;
     VBO* vbo = nullptr;
     EBO* ebo = nullptr;
 
     Mesh() = default;
-    Mesh(const std::vector<Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<Texture>& texs);
+    Mesh(const std::vector<Vertex>& verts, const std::vector<GLuint>& inds);
     Mesh(const std::string& objPath);
     Mesh(const std::string* objSource);
     ~Mesh();
 
     void draw(Shader& shader, const glm::mat4& modelMatrix = glm::mat4(1));
-    void makePreview(Framebuffer& fb, Shader& shader, glm::vec2 rotation);
+    void makePreview(Framebuffer& fb, Shader& shader, glm::vec2 rotation, bool cull = false);
 
     void loadOBJ(const std::string& objPath);
     void loadOBJSource(const std::string* objSource);
@@ -250,7 +249,7 @@ public:
     
     std::unordered_map<std::string, ShaderPaths> shaderPaths;
 
-    std::shared_ptr<Mesh> loadMesh(const std::string& name, const std::vector<Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<Texture>& texs, const std::source_location& loc = std::source_location::current());
+    std::shared_ptr<Mesh> loadMesh(const std::string& name, const std::vector<Vertex>& verts, const std::vector<GLuint>& inds, const std::source_location& loc = std::source_location::current());
     std::shared_ptr<Mesh> loadMesh(const std::string& name, const std::string& objPath, const std::source_location& loc = std::source_location::current());
     std::shared_ptr<Mesh> loadMesh(const std::string& name, const std::string* objSource, const std::source_location& loc = std::source_location::current());
     void removeMesh(const std::string& name, const std::source_location& loc = std::source_location::current());
@@ -374,6 +373,15 @@ public:
 
 using Anchor = uint32_t;
 
+enum class AnchorType {
+    None, Player
+};
+
+struct TagComponent {
+    std::string name = "Anchor";
+    AnchorType type = AnchorType::None;
+};
+
 struct TransformComponent {
     glm::vec3 position {0.0f};
     glm::vec3 rotation {0.0f};
@@ -387,6 +395,7 @@ struct MeshComponent {
 };
 
 struct Registry {
+    std::unordered_map<Anchor, TagComponent> tags;
     std::unordered_map<Anchor, TransformComponent> transforms;
     std::unordered_map<Anchor, MeshComponent> meshes;
 };
@@ -399,11 +408,8 @@ public:
     std::vector<Anchor> anchors;
     Registry registry;
 
-    Anchor createAnchor() {
-        Anchor a = nextAnchorID++;
-        anchors.push_back(a);
-        return a;
-    }
+    Anchor createAnchor();
+    void removeAnchor(Anchor a);
 
     // OLD
 

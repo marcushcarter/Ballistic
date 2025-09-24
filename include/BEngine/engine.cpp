@@ -579,8 +579,8 @@ void Material::uploadToShader(Shader& shader) {
 
 // ========================================================================
 
-Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<Texture>& texs)
-    : vertices(verts), indices(inds), textures(texs) {
+Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<GLuint>& inds)
+    : vertices(verts), indices(inds) {
 
     vao.bind();
 
@@ -596,22 +596,18 @@ Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<GLuint>& inds, co
 }
 
 Mesh::Mesh(const std::string& objPath)
-    : vertices(), indices(), textures() {
+    : vertices(), indices() {
     loadOBJ(objPath.c_str());
 }
 
 Mesh::Mesh(const std::string* objSource)
-    : vertices(), indices(), textures() {
+    : vertices(), indices() {
     loadOBJSource(objSource);
 }
 
 Mesh::~Mesh() {
     delete vbo;
     delete ebo;
-    
-    for (auto& tex : textures) {
-        tex.~Texture();
-    }
 }
 
 void Mesh::draw(Shader& shader, const glm::mat4& modelMatrix) {
@@ -626,9 +622,9 @@ void Mesh::draw(Shader& shader, const glm::mat4& modelMatrix) {
     vao.unbind();
 }
 
-void Mesh::makePreview(Framebuffer& fb, Shader& shader, glm::vec2 rotation) {
+void Mesh::makePreview(Framebuffer& fb, Shader& shader, glm::vec2 rotation, bool cull) {
 
-    enableCull(false);
+    enableCull(cull);
 
     fb.bind();
     glClearColor(0.05,0.05,0.05,1);
@@ -784,7 +780,6 @@ void Mesh::loadOBJ(const std::string& objPath) {
 
     this->vertices = std::move(loadedVerts);
     this->indices  = std::move(loadedIndices);
-    this->textures = { Texture("diffuse", 4, 4, BE::Default::FallbackTexture) };
 
     vao.bind();
     delete vbo;
@@ -902,7 +897,6 @@ void Mesh::loadOBJSource(const std::string* objSource) {
 
     this->vertices = std::move(loadedVerts);
     this->indices  = std::move(loadedIndices);
-    this->textures = { Texture("diffuse", 4, 4, BE::Default::FallbackTexture) };
 
     vao.bind();
     delete vbo;
@@ -922,14 +916,14 @@ void Mesh::loadOBJSource(const std::string* objSource) {
 
 // ========================================================================
 
-std::shared_ptr<Mesh> ResourceManager::loadMesh(const std::string& name, const std::vector<Vertex>& verts, const std::vector<GLuint>& inds, const std::vector<Texture>& texs, const std::source_location& loc) {
+std::shared_ptr<Mesh> ResourceManager::loadMesh(const std::string& name, const std::vector<Vertex>& verts, const std::vector<GLuint>& inds, const std::source_location& loc) {
     auto it = meshes.find(name);
     if (it != meshes.end()) {
         Message(1, "RESOURCE", "Mesh '" + name + "' already exists", loc.file_name(), loc.line());
         return it->second;
     }
     
-    auto mesh = std::make_shared<Mesh>(verts, inds, texs);
+    auto mesh = std::make_shared<Mesh>(verts, inds);
     meshes[name] = mesh;
     return mesh;
 }
@@ -1544,6 +1538,20 @@ Light* LightManager::getLight(const std::string& name, const std::source_locatio
 // ========================================================================
 
 Scene::Scene() : lightManager(128) { addCamera("Camera1"); }
+
+Anchor Scene::createAnchor() {
+    Anchor a = nextAnchorID++;
+    anchors.push_back(a);
+    return a;
+}
+
+void Scene::removeAnchor(Anchor a) {
+    anchors.erase(std::remove(anchors.begin(), anchors.end(), a), anchors.end());
+    registry.transforms.erase(a);
+    registry.meshes.erase(a);
+}
+
+
 
 Camera* Scene::addCamera(const std::string& name, const std::source_location& loc) {
     auto it = cameras.find(name);
