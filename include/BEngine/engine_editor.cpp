@@ -290,6 +290,22 @@ void Editor::Resources() {
     
     ImGui::Begin("Resources");
 
+    if (ImGui::Button("Test File Dialogue")) {
+        ImGuiFileDialog::Instance()->OpenDialog("ChooseFileDlg", "Choose a File", ".txt,.png,.obj");
+    }
+
+    if (ImGuiFileDialog::Instance()->Display("ChooseFileDlg")) {
+        if (ImGuiFileDialog::Instance()->IsOk()) {
+            std::string filePathName = ImGuiFileDialog::Instance()->GetFilePathName();
+            std::string filePath = ImGuiFileDialog::Instance()->GetCurrentPath();
+
+            // std::cout << filePathName << std::endl;
+
+        }
+
+        ImGuiFileDialog::Instance()->Close();
+    }
+
     static char searchBuffer[128] = "";
 
     float buttonSize = ImGui::GetFrameHeight();
