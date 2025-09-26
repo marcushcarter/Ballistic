@@ -166,9 +166,9 @@ void Framebuffer::createFramebuffer() {
     glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
 
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-        throw std::runtime_error("FRamebuffer not complete");
-    }
+    // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+    //     throw std::runtime_error("FRamebuffer not complete");
+    // }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -1188,6 +1188,142 @@ void ResourceManager::loadShaderDSL(const std::string& filePath, const std::sour
     Message(0, "RESOURCE", "DSL shaders " + namesStr + "loaded successfully", filePath.c_str(), lineNum);
 }
 
+void ResourceManager::loadShaderDSL(const std::string* dslSource, const std::source_location& loc) {
+    if (!dslSource) {
+        Message(2, "SHADER", "Could not find DSL source", "SOURCE", 1);
+        return;
+    }
+    std::istringstream file(*dslSource);
+
+    struct ShaderSource {
+        std::string source;
+        GLenum type;
+    };
+
+    std::unordered_map<std::string, ShaderSource> localShaders;
+    std::vector<std::string> shaderNames;
+
+    ShaderSource currentShader;
+    std::string currentName;
+    bool writingShader = false;
+
+    std::string line;
+    int lineNum = 0;
+
+    while (std::getline(file, line)) {
+        lineNum++;
+
+        line.erase(0, line.find_first_not_of(" \t\r\n"));
+        line.erase(line.find_last_not_of(" \t\r\n") + 1);
+        if (line.empty()) continue;
+
+        if (line[0] == '@') {
+            if (writingShader) {
+                localShaders[currentName] = currentShader;
+                currentShader = {};
+                currentName.clear();
+                writingShader = false;
+            }
+
+            if (line.find("@vs") == 0) {
+                currentName = line.substr(4);
+                currentShader.type = GL_VERTEX_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@fs") == 0) {
+                currentName = line.substr(4);
+                currentShader.type = GL_FRAGMENT_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@gs") == 0) {
+                currentName = line.substr(4);
+                currentShader.type = GL_GEOMETRY_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@cs") == 0) {
+                currentName = line.substr(4);
+                currentShader.type = GL_COMPUTE_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@tcs") == 0) {
+                currentName = line.substr(5);
+                currentShader.type = GL_TESS_CONTROL_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@tes") == 0) {
+                currentName = line.substr(5);
+                currentShader.type = GL_TESS_EVALUATION_SHADER;
+                currentShader.source.clear();
+                writingShader = true;
+            } else if (line.find("@program") == 0) {
+                std::istringstream ss(line.substr(9));
+                std::string programName;
+                ss >> programName;
+
+                std::string vertexName, fragmentName, geometryName, computeName, tessControlName, tessEvaluationName;
+
+                std::unordered_map<GLenum, std::string> usedTypes;
+
+                std::string shaderName;
+                while (ss >> shaderName) {
+                    auto it = localShaders.find(shaderName);
+                    if (it == localShaders.end()) {
+                        Message(2, "SHADER", "Shader '" + shaderName + "' not found in DSL file", "SOURCE", lineNum);
+                        continue;
+                    }
+
+                    GLenum type = it->second.type;
+
+                    if (usedTypes.find(type) != usedTypes.end()) {
+                        Message(1, "SHADER", "Program '" + programName + "' already has a shader of type " + GLTypeToString(type) + " (" + usedTypes[type] + ")", "SOURCE", lineNum);
+                        continue;
+                    }
+
+                    usedTypes[type] = shaderName;
+
+                    if (type == GL_VERTEX_SHADER) vertexName = shaderName;
+                    else if (type == GL_FRAGMENT_SHADER) fragmentName = shaderName;
+                    else if (type == GL_GEOMETRY_SHADER) geometryName = shaderName;
+                    else if (type == GL_COMPUTE_SHADER) computeName = shaderName;
+                    else if (type == GL_TESS_CONTROL_SHADER) tessControlName = shaderName;
+                    else if (type == GL_TESS_EVALUATION_SHADER) tessEvaluationName = shaderName;
+
+                }
+
+                const std::string* vsSrc = vertexName.empty() ? nullptr : &localShaders[vertexName].source;
+                const std::string* fsSrc = fragmentName.empty() ? nullptr : &localShaders[fragmentName].source;
+                const std::string* gsSrc = geometryName.empty() ? nullptr : &localShaders[geometryName].source;
+                const std::string* csSrc = computeName.empty() ? nullptr : &localShaders[computeName].source;
+                const std::string* tcsSrc = tessControlName.empty() ? nullptr : &localShaders[tessControlName].source;
+                const std::string* tesSrc = tessEvaluationName.empty() ? nullptr : &localShaders[tessEvaluationName].source;
+
+                auto it = shaders.find(programName);
+                if (it != shaders.end()) {
+                    shaders[programName]->recompile(vsSrc, fsSrc, gsSrc, csSrc, tcsSrc, tesSrc);
+                } else {
+                    loadShader(programName, vsSrc, fsSrc, gsSrc, csSrc, tcsSrc, tesSrc, loc);
+                }
+
+                shaderNames.push_back(programName);
+            }
+
+        } else if (writingShader) {
+            currentShader.source += line + "\n";
+        }
+    }
+
+    if (writingShader) localShaders[currentName] = currentShader;
+
+    // ShaderPaths sp;
+    // sp.type = ShaderType::DSL;
+    // sp.dslPath = filePath;
+    // shaderPaths[filePath] = sp;
+
+    std::string namesStr = join_names(shaderNames);
+
+    Message(0, "RESOURCE", "DSL shaders " + namesStr + "loaded successfully", "SOURCE", lineNum);
+}
+
 void ResourceManager::removeShader(const std::string& name, const std::source_location& loc) {
     auto it = shaders.find(name);
     if (it != shaders.end()) {
@@ -1241,26 +1377,15 @@ void ResourceManager::removeTexture(const std::string& name, const std::source_l
 }
 
 void ResourceManager::loadDefaults() {
-    loadMesh("default_cube", "include/BEngine/meshes/cube.obj");
-    loadMesh("default_quad", "include/BEngine/meshes/quad.obj");
-
-    loadShaderDSL("include/BEngine/shaders/core/default_uv.dsl");
-    loadShaderDSL("include/BEngine/shaders/core/default_scene.dsl");
-    loadShaderDSL("include/BEngine/shaders/core/default_color.dsl");
+    loadMesh("default_cube", &BE::Default::cube_obj);
+    loadMesh("default_quad", &BE::Default::quad_obj);
+    loadShaderDSL(&BE::Default::defaults_dsl);
 
     auto texture = std::make_shared<Texture>("diffuse", 4, 4, BE::Default::FallbackTexture);
     textures["default_texture"] = texture;
 
-    loadTexture("Box", "res/textures/box.png", "diffuse");
-    loadTexture("Box_specular", "res/textures/box_specular.png", "diffuse");
-
     materials["default_material"] = std::make_shared<Material>();
     materials["default_material"]->diffuseMap = textures["default_texture"].get();
-    
-    materials["box material"] = std::make_shared<Material>();
-    materials["box material"]->diffuseMap = textures["Box"].get();
-    materials["box material"]->normalMap = textures["Box_specular"].get();
-    materials["box material"]->cull = true;
 }
 
 // ========================================================================

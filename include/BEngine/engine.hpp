@@ -281,6 +281,7 @@ public:
     void recompileShaders(const std::source_location& loc = std::source_location::current());
 
     void loadShaderDSL(const std::string& filePath, const std::source_location& loc = std::source_location::current());
+    void loadShaderDSL(const std::string* dslSource, const std::source_location& loc = std::source_location::current());
 
     std::shared_ptr<Texture> loadTexture(const std::string& name, const std::string& imagePath, const std::string& texType, const std::source_location& loc = std::source_location::current());
     std::shared_ptr<Texture> loadTexture(const std::string& name, const std::string& texType, int width, int height, const std::string& rawData, const std::source_location& loc = std::source_location::current());
