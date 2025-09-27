@@ -1,6 +1,6 @@
 # === COMPILE PROJECT ===
 CXX := g++
-CXXFLAGS := -std=c++20 -O2
+CXXFLAGS := -std=c++20 -O2 -DIMGUI_DEFINE_MATH_OPERATORS
 INCLUDES := -Iinclude -Iinclude/BEngine -Iinclude/BEngine/imgui -Iinclude/BEngine/tfd
 LDFLAGS := -Llib -lengine -lopengl32 -lglfw3 -lgdi32 -lole32 -luuid -loleaut32 -lcomdlg32
 SRCS := src/main.cpp include/BEngine/engine.cpp include/BEngine/engine_editor.cpp

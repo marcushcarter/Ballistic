@@ -8,7 +8,7 @@
 #include "BEngine/imgui/imgui_impl_opengl3.h"
 #include "BEngine/imgui/implot.h"
 
-#include "BEngine/imgui/ImGuiFileDialog.h"
+#include "BEngine/imgui/ImGuizmo.h"
 
 #include "BEngine/tfd/tfd.hpp"
 
