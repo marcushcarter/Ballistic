@@ -12,8 +12,8 @@ Editor::Editor(Engine* enginePtr) : engine(enginePtr) {
     ImPlot::SetCurrentContext(ctxpl);
 
     ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.IniFilename = nullptr;
-    ImGui::LoadIniSettingsFromMemory(BE::Default::ini.c_str(), BE::Default::ini.size());
+    // io.IniFilename = nullptr;
+    // ImGui::LoadIniSettingsFromMemory(BE::Default::ini.c_str(), BE::Default::ini.size());
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;

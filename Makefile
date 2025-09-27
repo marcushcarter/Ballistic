@@ -18,6 +18,8 @@ run:
 
 # === SUPPORT LIBRARY ===
 
+LIB_INCLUDES := -Iinclude -Iinclude/BEngine -Iinclude/BEngine/imgui -Iinclude/BEngine/tfd
+
 ENGINE_SRCS := $(wildcard src/BEngine/*.cpp)
 ENGINE_OBJS := $(subst /,\,$(ENGINE_SRCS:.cpp=.o))
 ENGINE_LIB := lib\libengine.a
@@ -25,7 +27,7 @@ ENGINE_LIB := lib\libengine.a
 support-lib: $(ENGINE_LIB)
 
 %.o: %.cpp
-	$(CXX) $(CXXFLAGS) $(INCLUDES) -c $< -o $@
+	$(CXX) $(CXXFLAGS) $(LIB_INCLUDES) -c $< -o $@
 
 $(ENGINE_LIB): $(ENGINE_OBJS)
 	ar rcs $@ $^
