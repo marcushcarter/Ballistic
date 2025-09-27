@@ -700,30 +700,23 @@ void Editor::Inspector() {
 }
 
 void Editor::FileFolders() {
-    const char* filePath = tinyfd_openFileDialog("Open a File", "", 0, nullptr, nullptr, 0); 
-    if (!filePath) return;
+    const char* filePath = tinyfd_openFileDialog("Open a File", "", 0, nullptr, nullptr, 0);
+    
+    if (filePath) {
 
-    std::string path = filePath;
+        std::string fileName = filePath ? std::string(filePath).substr(std::string(filePath).find_last_of("/\\") + 1) : "";
 
-    std::string fileName;
-    if (path.find_last_of("/\\") != std::string::npos) {
-        fileName = path.substr(path.find_last_of("/\\") + 1);
-    } else {
-        fileName = filePath;
-    }
+        std::string extension = fileName.find_last_of('.') != std::string::npos ? fileName.substr(fileName.find_last_of('.') + 1) : "";
 
-    std::string ext;
-    size_t dot = path.find_last_of('.');
-    if (dot != std::string::npos) ext = path.substr(dot + 1);
-
-    if (ext == "obj") {
-        engine->resources().loadMesh(fileName, path);
-    } else if (ext == "dsl" || ext == "besl") {
-        engine->resources().loadShaderDSL(path);
-    } else if (ext == "png" || ext == "jpg") {
-        engine->resources().loadTexture(fileName, path, "diffuse");
-    } else if (ext == "mtl") {
-        engine->resources().loadMaterial(fileName, path);
+        if (extension == "obj") {
+            engine->resources().loadMesh(fileName, filePath);
+        } else if (extension == "dsl" || extension == "besl") {
+            engine->resources().loadShaderDSL(filePath);
+        } else if (extension == "png" || extension == "jpg") {
+            engine->resources().loadTexture(fileName, filePath, "diffuse");
+        } else if (extension == "mtl") {
+            engine->resources().loadMaterial(fileName, filePath);
+        }
     }
 }
 

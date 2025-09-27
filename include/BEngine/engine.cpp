@@ -1614,25 +1614,6 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // Message(0, "ENGINE", "Framebuffer resized", __FILE__, __LINE__);
 }
 
-void drop_callback(GLFWwindow* window, int count, const char** paths) {
-    Engine* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
-    if (!engine) return;
-
-    for (int i = 0; i < count; i++) {
-        std::string path = paths[i];
-        std::string filename = std::filesystem::path(path).stem().string();
-        
-        if (path.ends_with(".obj")) { engine->resources().loadMesh(filename, path); }
-        
-        if (path.ends_with(".dsl") || path.ends_with(".besl")) { engine->resources().loadShaderDSL(path); }
-        
-        if (path.ends_with(".png") || path.ends_with(".jpg")) { engine->resources().loadTexture(filename, path, "diffuse"); }
-        
-        if (path.ends_with(".mtl")) { engine->resources().loadMaterial(filename, path); }
-        
-    }
-}
-
 static Engine* g_boundEngine = nullptr;
 
 Engine::Engine(const std::string& title, int width, int height, const std::source_location& loc) 
@@ -1831,7 +1812,6 @@ void Engine::beginFrame() {
 
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-    glfwSetDropCallback(window, drop_callback);
     
     glfwPollEvents();
     // inputs
