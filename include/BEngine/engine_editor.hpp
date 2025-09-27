@@ -33,6 +33,7 @@ public:
     void Popups();
     void Resources();
     void Inspector();
+    void Settings();
 
     void FileFolders();
 
@@ -40,6 +41,8 @@ private:
     Engine* engine;
 
     Framebuffer meshPreviewFB;
+
+    int previewResolution = 128;
 };
 
 }; // BE namespace

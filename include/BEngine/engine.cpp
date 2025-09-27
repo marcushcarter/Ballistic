@@ -191,6 +191,7 @@ void Framebuffer::bindTexture(GLuint shaderID, const char* uniform, int unit) {
 }
 
 void Framebuffer::resize(int newWidth, int newHeight, bool linearFilter) {
+    if (width != newWidth || height != newHeight || filter != linearFilter) return;
     width = newWidth;
     height = newHeight;
     filter = linearFilter ? GL_LINEAR : GL_NEAREST;
@@ -1563,6 +1564,7 @@ Scene::Scene() { addCamera("Camera1"); }
 Anchor Scene::createAnchor() {
     Anchor a = nextAnchorID++;
     anchors.push_back(a);
+    registry.tags[a] = TagComponent{"New Anchor", AnchorType::None};
     return a;
 }
 

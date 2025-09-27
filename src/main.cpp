@@ -9,17 +9,6 @@ int main() {
     BE::Engine engine("Engine");
     BE::Editor editor(&engine);
 
-    editor.selectedAnchor = engine.activeScene->createAnchor();
-    engine.activeScene->registry.tags[editor.selectedAnchor] = BE::TagComponent{"Cube", BE::AnchorType::None};
-    engine.activeScene->registry.transforms[editor.selectedAnchor] = BE::TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}};
-    engine.activeScene->registry.meshes[editor.selectedAnchor] = BE::MeshComponent{engine.resources().meshes["default_cube"], nullptr, nullptr};
-
-    BE::Anchor light = engine.activeScene->createAnchor();
-    engine.activeScene->registry.tags[light] = BE::TagComponent{"Light", BE::AnchorType::None};
-    engine.activeScene->registry.transforms[light] = BE::TransformComponent{{0,1.3f,0}, {0,0,0}, {0.1,0.1,0.1}};
-    engine.activeScene->registry.meshes[light] = BE::MeshComponent{engine.resources().meshes["default_cube"], nullptr, engine.resources().shaders["default_color"]};
-    engine.activeScene->registry.lights[light] = BE::LightComponent{glm::vec3(1,1,1), 1.0f, 1};
-
     while(engine.isRunning()) {
 
         engine.beginFrame();

@@ -24,6 +24,17 @@ Editor::Editor(Engine* enginePtr) : engine(enginePtr) {
     ImGui_ImplOpenGL3_Init("#version 460");
 
     meshPreviewFB.resize(128, 128);
+
+    selectedAnchor = engine->activeScene->createAnchor();
+    engine->activeScene->registry.tags[selectedAnchor] = BE::TagComponent{"Test Cube", BE::AnchorType::None};
+    engine->activeScene->registry.transforms[selectedAnchor] = BE::TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}};
+    engine->activeScene->registry.meshes[selectedAnchor] = BE::MeshComponent{engine->resources().meshes["default_cube"], nullptr, nullptr};
+
+    BE::Anchor light = engine->activeScene->createAnchor();
+    engine->activeScene->registry.tags[light] = BE::TagComponent{"Point Light", BE::AnchorType::None};
+    engine->activeScene->registry.transforms[light] = BE::TransformComponent{{0,1.3f,0}, {0,0,0}, {0.1,0.1,0.1}};
+    engine->activeScene->registry.meshes[light] = BE::MeshComponent{engine->resources().meshes["default_cube"], nullptr, engine->resources().shaders["default_color"]};
+    engine->activeScene->registry.lights[light] = BE::LightComponent{glm::vec3(1,1,1), 1.0f, 1};
 }
 
 Editor::~Editor() {
@@ -66,15 +77,16 @@ void Editor::showPanels() {
     Heirarchy();
     Resources();
     Inspector();
+    Settings();
 
     // === PERFORMANCE == //
 
-    ImGui::SetNextWindowBgAlpha(0.35f);
-    ImGui::Begin("Performance Overlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking );
-    ImGui::Text("ENGINE FPS %.1f MS %.2f", engine->frameTime.fps, engine->frameTime.ms);
-    ImGui::Text("IMGUI FPS %.1f MS %.2f", ImGui::GetIO().Framerate, 1000.0f/ImGui::GetIO().Framerate);
-    ImGui::Text("SELECTED ANCHOR %d", selectedAnchor);
-    ImGui::End();
+    // ImGui::SetNextWindowBgAlpha(0.35f);
+    // ImGui::Begin("Performance Overlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking );
+    // ImGui::Text("ENGINE FPS %.1f MS %.2f", engine->frameTime.fps, engine->frameTime.ms);
+    // ImGui::Text("IMGUI FPS %.1f MS %.2f", ImGui::GetIO().Framerate, 1000.0f/ImGui::GetIO().Framerate);
+    // ImGui::Text("SELECTED ANCHOR %d", selectedAnchor);
+    // ImGui::End();
 }
 
 void Editor::endFrame() {
@@ -408,16 +420,31 @@ void Editor::Inspector() {
             if (ImGui::InputText("Name", buffer, sizeof(buffer))) {
                 t.name = buffer;
             }
+            ImGui::SameLine();
+            if (ImGui::Button("+")) { ImGui::OpenPopup("AddComponentPopup"); }
 
-            const char* typeLabels[] = { "None", "Player" };
-            int currentType = static_cast<int>(t.type);
-            if (ImGui::Combo("Anchor Type", &currentType, typeLabels, IM_ARRAYSIZE(typeLabels))) {
-                t.type = static_cast<AnchorType>(currentType);
-            }
+            if (ImGui::BeginPopup("AddComponentPopup")) {
 
-            if (ImGui::Button("Remove Name Component")) {
-                engine->activeScene->registry.tags.erase(selectedAnchor);
+                if (engine->activeScene->registry.transforms.find(selectedAnchor) == engine->activeScene->registry.transforms.end()) {
+                    if (ImGui::MenuItem("Add Transform")) { engine->activeScene->registry.transforms[selectedAnchor] = TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}}; }
+                }
+
+                if (engine->activeScene->registry.meshes.find(selectedAnchor) == engine->activeScene->registry.meshes.end()) {
+                    if (ImGui::MenuItem("Add Mesh")) { engine->activeScene->registry.meshes[selectedAnchor] = MeshComponent{nullptr, nullptr, nullptr}; }
+                }
+
+                if (engine->activeScene->registry.lights.find(selectedAnchor) == engine->activeScene->registry.lights.end()) {
+                    if (ImGui::MenuItem("Add Light")) { engine->activeScene->registry.lights[selectedAnchor] = LightComponent{ glm::vec3(1,1,1), 1.0f, 1 }; }
+                }
+
+                ImGui::EndPopup();
             }
+        
+            // const char* typeLabels[] = { "None", "Player" };
+            // int currentType = static_cast<int>(t.type);
+            // if (ImGui::Combo("Anchor Type", &currentType, typeLabels, IM_ARRAYSIZE(typeLabels))) {
+            //     t.type = static_cast<AnchorType>(currentType);
+            // }
 
             ImGui::Separator();
             
@@ -460,7 +487,11 @@ void Editor::Inspector() {
                 static glm::vec2 rotation(0.0f);
                 static bool cullPreview = false;
                 
-                if (m.mesh != nullptr) m.mesh->makePreview(meshPreviewFB, *engine->resources().shaders["default_uv"].get(), rotation, cullPreview);
+
+                if (m.mesh != nullptr) {
+                    meshPreviewFB.resize(previewResolution, previewResolution, false);
+                    m.mesh->makePreview(meshPreviewFB, *engine->resources().shaders["default_uv"].get(), rotation, cullPreview);
+                }
 
                 ImGui::BeginGroup();
 
@@ -555,6 +586,8 @@ void Editor::Inspector() {
                 }
 
                 if (m.material) {
+                    
+                    ImGui::BeginDisabled(true);
 
                     if (m.material->diffuseMap) ImGui::Image((void*)(intptr_t)m.material->diffuseMap->ID, ImVec2(avialWidth/4, avialWidth/4), ImVec2(0, 1), ImVec2(1, 0));
                     else ImGui::Dummy(ImVec2(avialWidth/4, avialWidth/4));
@@ -568,10 +601,9 @@ void Editor::Inspector() {
                     else ImGui::Dummy(ImVec2(avialWidth/4, avialWidth/4));
 
                     ImGui::Text("Material Properties:");
-                    ImGui::BeginDisabled(m.material == engine->resources().materials["default_material"]);
                     if (ImGui::SliderFloat("Metallic", &m.material->metallic, 0.0f, 1.0f)) {}
                     if (ImGui::SliderFloat("Roughness", &m.material->roughness, 0.0f, 1.0f)) {}
-                    if (ImGui::ColorPicker4("Diffuse Color", &m.material->diffuseColor.x)) {}
+                    if (ImGui::ColorEdit4("Diffuse Color", &m.material->diffuseColor.x)) {}
                     if (ImGui::Checkbox("Cull Faces?", &m.material->cull)) {}
                     if (ImGui::Checkbox("Transparent?", &m.material->transparent)) {}
                     ImGui::EndDisabled();
@@ -660,14 +692,11 @@ void Editor::Inspector() {
 
                 LightComponent& l = engine->activeScene->registry.lights[selectedAnchor];
 
-                if (ImGui::ColorPicker3("Light Color", &l.color.x)) {}
-                if (ImGui::DragFloat("Light Intensity", &l.intensity)) {}
-
                 const char* typeLabels[] = { "Directlight", "Pointlight", "Spotlight" };
-                // int currentType = l.type;
-                if (ImGui::Combo("Light Type", &l.type, typeLabels, IM_ARRAYSIZE(typeLabels))) {
-                    // l.type = currentType;
-                }
+                if (ImGui::Combo("Light Type", &l.type, typeLabels, IM_ARRAYSIZE(typeLabels))) {}
+
+                if (ImGui::ColorEdit3("Color", &l.color.x)) {}
+                if (ImGui::DragFloat("Intensity", &l.intensity)) {}
 
                 if (ImGui::Button("Remove Light Component")) {
                     engine->activeScene->registry.lights.erase(selectedAnchor);
@@ -679,43 +708,46 @@ void Editor::Inspector() {
             }
         }
 
-        if (engine->activeScene->registry.tags.find(selectedAnchor) == engine->activeScene->registry.tags.end() ) 
-            if (ImGui::Button("Add Name Component")) 
-                engine->activeScene->registry.tags[selectedAnchor] = TagComponent{std::string("Anchor" + std::to_string(selectedAnchor)).c_str(), AnchorType::None};
-    
-        if (engine->activeScene->registry.transforms.find(selectedAnchor) == engine->activeScene->registry.transforms.end()) 
-            if (ImGui::Button("Add Transform Component"))  
-                engine->activeScene->registry.transforms[selectedAnchor] = TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}};
-
-        if (engine->activeScene->registry.meshes.find(selectedAnchor) == engine->activeScene->registry.meshes.end()) 
-            if (ImGui::Button("Add Mesh Component")) 
-                engine->activeScene->registry.meshes[selectedAnchor] = MeshComponent{nullptr, nullptr, nullptr};
-
-        if (engine->activeScene->registry.lights.find(selectedAnchor) == engine->activeScene->registry.lights.end()) 
-            if (ImGui::Button("Add Light Component")) 
-                engine->activeScene->registry.lights[selectedAnchor] = LightComponent{ glm::vec3(1,1,1), 1.0f, 1 };
-
     }
     ImGui::End();
 }
 
-void Editor::FileFolders() {
-    const char* filePath = tinyfd_openFileDialog("Open a File", "", 0, nullptr, nullptr, 0);
+void Editor::Settings() {
+    ImGui::Begin("Settings");
+
+    ImGui::SliderInt("Preview Resolution", &previewResolution, 1.0f, 256.0f);
     
-    if (filePath) {
+    ImGui::End();
+}
 
-        std::string fileName = filePath ? std::string(filePath).substr(std::string(filePath).find_last_of("/\\") + 1) : "";
+void Editor::FileFolders() {
+    const char* filters[] = { "*.png", "*.cpp" };
+    const char* filePaths = tinyfd_openFileDialog("Open a File", "", 0, nullptr, nullptr, true);
+    
+    if (filePaths) {
 
-        std::string extension = fileName.find_last_of('.') != std::string::npos ? fileName.substr(fileName.find_last_of('.') + 1) : "";
+        std::vector<std::string> files;
+        std::stringstream ss(filePaths);
+        std::string item;
 
-        if (extension == "obj") {
-            engine->resources().loadMesh(fileName, filePath);
-        } else if (extension == "dsl" || extension == "besl") {
-            engine->resources().loadShaderDSL(filePath);
-        } else if (extension == "png" || extension == "jpg") {
-            engine->resources().loadTexture(fileName, filePath, "diffuse");
-        } else if (extension == "mtl") {
-            engine->resources().loadMaterial(fileName, filePath);
+        while (std::getline(ss, item, '|')) {
+            files.push_back(item);
+        }
+
+        for (auto& f : files) {
+            std::string n = f.c_str() ? f.substr(std::string(f).find_last_of("/\\") + 1) : "";
+            std::string ext = n.find_last_of('.') != std::string::npos ? n.substr(n.find_last_of('.') + 1) : "";
+
+            if (ext == "obj") {
+                engine->resources().loadMesh(n, f);
+            } else if (ext == "dsl" || ext == "besl") {
+                engine->resources().loadShaderDSL(f);
+            } else if (ext == "png" || ext == "jpg") {
+                engine->resources().loadTexture(n, f, "diffuse");
+            } else if (ext == "mtl") {
+                engine->resources().loadMaterial(n, f);
+            }
+
         }
     }
 }
