@@ -43,6 +43,9 @@ private:
     Framebuffer meshPreviewFB;
 
     int previewResolution = 128;
+
+    ImGuizmo::OPERATION currentGizmoOperation;
+    ImGuizmo::MODE currentGizmoMode;
 };
 
 }; // BE namespace

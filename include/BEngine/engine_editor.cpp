@@ -23,6 +23,9 @@ Editor::Editor(Engine* enginePtr) : engine(enginePtr) {
     ImGui_ImplGlfw_InitForOpenGL(engine->getWindow(), true);
     ImGui_ImplOpenGL3_Init("#version 460");
 
+    currentGizmoOperation = ImGuizmo::TRANSLATE;
+    currentGizmoMode = ImGuizmo::LOCAL;
+
     meshPreviewFB.resize(128, 128);
 
     selectedAnchor = engine->activeScene->createAnchor();
@@ -48,6 +51,9 @@ void Editor::beginFrame() {
     ImGui_ImplOpenGL3_NewFrame();
     ImGui_ImplGlfw_NewFrame();
     ImGui::NewFrame();
+
+    ImGuizmo::BeginFrame();
+    ImGuizmo::Enable(true);
     
     ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
     const ImGuiViewport* viewport = ImGui::GetMainViewport();
@@ -179,12 +185,58 @@ void Editor::Menu() {
 void Editor::Viewport() {
 
     ImGui::Begin("Hello, ImGui!");
-    static ImVec2 lastSize = ImGui::GetWindowSize();
-    ImVec2 size = ImGui::GetContentRegionAvail();
+
+    ImVec2 windowPos = ImGui::GetWindowPos();
+    ImVec2 contentPos = ImGui::GetCursorScreenPos();
+    ImVec2 windowSize = ImGui::GetContentRegionAvail();
+
     bool resizing = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && ImGui::IsMouseDown(ImGuiMouseButton_Left);
-    if (!resizing) engine->viewport.get()->resize(size.x/2, size.y/2);
+    if (!resizing) engine->viewport.get()->resize(windowSize.x/2, windowSize.y/2);
+    
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) engine->activeScene->activeCamera->handleInputs(engine->getWindow(), engine->frameTime.dt);
-    ImGui::Image((void*)(intptr_t) engine->viewport.get()->framebuffer.texture, size, ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::Image((void*)(intptr_t) engine->viewport.get()->framebuffer.texture, windowSize, ImVec2(0, 1), ImVec2(1, 0));
+
+    ImGuizmo::SetDrawlist();
+    ImGuizmo::SetRect(contentPos.x, contentPos.y, windowSize.x, windowSize.y);
+
+    if (selectedAnchor != -1) {
+        if (engine->activeScene->registry.transforms.find(selectedAnchor) != engine->activeScene->registry.transforms.end()) {
+            TransformComponent& t = engine->activeScene->registry.transforms[selectedAnchor];
+            
+            glm::mat4 translation = glm::translate(glm::mat4(1), t.position);
+            glm::mat4 rotationX = glm::rotate(glm::mat4(1), glm::radians(t.rotation.x), glm::vec3(1,0,0));
+            glm::mat4 rotationY = glm::rotate(glm::mat4(1), glm::radians(t.rotation.y), glm::vec3(0,1,0));
+            glm::mat4 rotationZ = glm::rotate(glm::mat4(1), glm::radians(t.rotation.z), glm::vec3(0,0,1));
+            glm::mat4 rotation = rotationX * rotationY * rotationZ;
+            glm::mat4 scale = glm::scale(glm::mat4(1), t.scale);
+
+            t.model = translation * rotation * scale;
+
+            ImGuizmo::Manipulate(
+                glm::value_ptr(engine->activeScene->activeCamera->viewMatrix),
+                glm::value_ptr(engine->activeScene->activeCamera->projectionMatrix),
+                currentGizmoOperation,
+                currentGizmoMode,
+                glm::value_ptr(t.model)
+            );
+
+            if (ImGuizmo::IsUsing()) {
+                glm::vec3 translation, rotation, scale;
+                ImGuizmo::DecomposeMatrixToComponents(
+                    glm::value_ptr(t.model),
+                    glm::value_ptr(translation),
+                    glm::value_ptr(rotation),
+                    glm::value_ptr(scale)
+                );
+
+                t.position = translation;
+                t.rotation = rotation;
+                t.scale = scale;
+            }
+        }
+
+    }
+
     ImGui::End();
 }
 
@@ -439,6 +491,7 @@ void Editor::Inspector() {
 
         if (engine->activeScene->registry.transforms.find(selectedAnchor) != engine->activeScene->registry.transforms.end()) {
             TransformComponent& t = engine->activeScene->registry.transforms[selectedAnchor];
+
             if (ImGui::CollapsingHeader("Transform")) {
                 ImGui::BeginGroup();
 
