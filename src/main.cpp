@@ -14,10 +14,10 @@ int main() {
         engine.beginFrame();
 
         engine.activeScene->activeCamera->updateViewMatrix();
-
-        engine.viewport.get()->scene = engine.activeScene;
-        engine.viewport.get()->camera = engine.activeScene->activeCamera;
-        engine.renderViewportTexture(*engine.viewport.get());
+        
+        engine.viewport->scene = engine.activeScene;
+        engine.viewport->camera = engine.activeScene->activeCamera;
+        engine.render();
 
         editor.Frame();
 

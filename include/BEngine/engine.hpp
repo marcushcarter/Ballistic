@@ -93,29 +93,40 @@ public:
     void unbind();
 };
 
+struct AttachmentDesc {
+    GLenum attachment;
+    GLenum internalFormat;
+    GLenum format;
+    GLenum type;
+    bool isTexture;
+};
+
 class Framebuffer {
 public:
-    Framebuffer(int width = 1440, int height = 900);
-    ~Framebuffer();
+    GLuint ID = 0;
+    int width, height, samples;
+
+    struct Attachment {
+        GLuint ID;
+        bool isTexture;
+        GLenum attachment;
+    };
+
+    std::vector<Attachment> attachments;
+    std::vector<AttachmentDesc> descriptors;
+    
+    Framebuffer(int width, int height, const std::vector<AttachmentDesc>& descs, int msaaSamples = 1);
 
     void bind();
-    void bindTexture(GLuint shaderID, const char* uniform, int unit);
     void unbind();
-    
-    GLuint texture = 0;
-    int width;
-    int height;
+    void bindTexture(int unit, int index);
+    void resize(int newWidth, int newHeight);
 
-    void resize(int newWidth, int newHeight, bool linearFilter = false);
+    void recreate(const std::vector<AttachmentDesc>& newDescs);
 
 private:
-    GLuint fbo = 0;
-    GLuint rbo = 0;
-
-    GLenum filter;
-    
-    void createFramebuffer();
-    void destroyFramebuffer();
+    void destroy();
+    void create();
 };
 
 class Shader {
@@ -408,17 +419,37 @@ private:
 
 class Viewport {
 public:
+    int width, height;
+    Framebuffer fbo;
+    bool useMSAA;
+
     Scene* scene = nullptr;
     Camera* camera = nullptr;
-    Framebuffer framebuffer;
 
-    int width = 720;
-    int height = 450;
+    Viewport(int w, int h, bool msaa = false) : width(w), height(h), useMSAA(msaa), fbo(w, h, buildAttachments(), msaa ? 4 : 1) {}
 
-    void resize(int newWidth, int newHeight) {
-        width = newWidth;
-        height = newHeight;
+    void resize(int newW, int newH) {
+        if (newW == width && newH == height) return;
+        width = newW;
+        height = newH;
+        fbo.resize(newW, newH);
     }
+
+    void bind() { fbo.bind(); }
+    void unbind() { fbo.unbind(); }
+
+    GLuint getColorTexture(int index = 0) { return fbo.attachments[index].ID; }
+
+private:
+
+    std::vector<AttachmentDesc> buildAttachments() {
+        // default color + depth tex
+        return {
+            { GL_COLOR_ATTACHMENT0, GL_RGBA16F, GL_RGBA, GL_FLOAT, true }, // color
+            { GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, true } // depth
+        };
+    }
+
 };
 
 class Engine {
@@ -441,7 +472,7 @@ public:
     Scene* addScene(const std::string& name, const std::source_location& loc = std::source_location::current());
     void removeScene(const std::string& name, const std::source_location& loc = std::source_location::current());
 
-    void renderViewportTexture(Viewport& vp);
+    void render();
 
     bool isRunning() const;
     void closeWindow();

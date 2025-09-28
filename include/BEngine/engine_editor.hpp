@@ -43,8 +43,8 @@ public:
 private:
     Engine* engine;
 
-    Framebuffer meshPreviewFB;
     int previewResolution = 128;
+    Framebuffer meshPreview;
 
     // picking FB
     GLuint pickingFBO;

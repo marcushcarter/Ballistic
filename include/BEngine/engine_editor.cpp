@@ -2,7 +2,9 @@
 
 namespace BE {
     
-Editor::Editor(Engine* enginePtr) : engine(enginePtr) {
+Editor::Editor(Engine* enginePtr) 
+    : engine(enginePtr), meshPreview(1, 1, {}) {
+    
     IMGUI_CHECKVERSION();
     
     ImGuiContext* ctx = ImGui::CreateContext();
@@ -26,6 +28,13 @@ Editor::Editor(Engine* enginePtr) : engine(enginePtr) {
     currentGizmoOperation = ImGuizmo::TRANSLATE;
     currentGizmoMode = ImGuizmo::LOCAL;
 
+    std::vector<AttachmentDesc> descriptors = {
+        { GL_COLOR_ATTACHMENT0, GL_RGBA16F, GL_RGBA, GL_FLOAT, true },
+        { GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, true }
+    };
+    meshPreview.recreate(descriptors);
+    meshPreview.resize(128, 128);
+
     glGenFramebuffers(1, &pickingFBO);
     glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
 
@@ -44,8 +53,6 @@ Editor::Editor(Engine* enginePtr) : engine(enginePtr) {
     glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depth);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-    meshPreviewFB.resize(128, 128);
 
     // defaults
 
@@ -215,7 +222,8 @@ void Editor::Viewport() {
     if (!resizing) engine->viewport->resize(viewportSize.x/2, viewportSize.y/2);
     
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) engine->viewport->camera->handleInputs(engine->getWindow(), engine->frameTime.dt);
-    ImGui::Image((void*)(intptr_t) engine->viewport->framebuffer.texture, viewportSize, ImVec2(0, 1), ImVec2(1, 0));
+    // ImGui::Image((void*)(intptr_t) engine->viewport->framebuffer.texture, viewportSize, ImVec2(0, 1), ImVec2(1, 0));
+    ImGui::Image((void*)(intptr_t) engine->viewport->getColorTexture(), viewportSize, ImVec2(0, 1), ImVec2(1, 0));
 
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
@@ -551,10 +559,9 @@ void Editor::Inspector() {
                 static glm::vec2 rotation(0.0f);
                 static bool cullPreview = false;
                 
-
                 if (m.mesh != nullptr) {
-                    meshPreviewFB.resize(previewResolution, previewResolution, false);
-                    m.mesh->makePreview(meshPreviewFB, *engine->resources().shaders["default_uv"].get(), rotation, cullPreview);
+                    meshPreview.resize(previewResolution, previewResolution);
+                    m.mesh->makePreview(meshPreview, *engine->resources().shaders["default_uv"].get(), rotation, cullPreview);
                 }
 
                 ImGui::BeginGroup();
@@ -583,7 +590,7 @@ void Editor::Inspector() {
 
                 if (m.mesh) {
                     ImGui::Text("Mesh Preview:");
-                    ImGui::Image((void*)(intptr_t)meshPreviewFB.texture, ImVec2(avialWidth-10, avialWidth-10), ImVec2(0, 1), ImVec2(1, 0));
+                    ImGui::Image((void*)(intptr_t) meshPreview.attachments[0].ID, ImVec2(avialWidth-10, avialWidth-10), ImVec2(0, 1), ImVec2(1, 0));
                     
                     static bool draggingMesh = false;
                     static ImVec2 lastMousePos;

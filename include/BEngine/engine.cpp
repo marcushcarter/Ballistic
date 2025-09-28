@@ -144,59 +144,99 @@ void EBO::unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
 // ========================================================================
 
-Framebuffer::Framebuffer(int w, int h) : width(w), height(h) { filter = GL_NEAREST; createFramebuffer(); }
+Framebuffer::Framebuffer(int w, int h, const std::vector<AttachmentDesc>& descs, int msaaSamples) : width(w), height(h), samples(msaaSamples), descriptors(descs) { create(); }
 
-Framebuffer::~Framebuffer() { destroyFramebuffer(); }
+void Framebuffer::bind() { glBindFramebuffer(GL_FRAMEBUFFER, ID); glViewport(0, 0, width, height); }
 
-void Framebuffer::createFramebuffer() {
-    glGenFramebuffers(1, &fbo);
-    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+void Framebuffer::unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
-    glGenTextures(1, &texture);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA16F, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, filter);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texture, 0);
+void Framebuffer::bindTexture(int unit, int index) {
+    // assert(index < (int)attachments.size());
+    if (!attachments[index].isTexture) return;
+    glActiveTexture(GL_TEXTURE0 + unit);
+    glBindTexture(samples > 1 ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D, attachments[index].ID);
+}
 
-    glGenRenderbuffers(1, &rbo);
-    glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, width, height);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
+void Framebuffer::resize(int newW, int newH) {
+    if (newW == width && newH == height) return;
 
-    // if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
-    //     throw std::runtime_error("FRamebuffer not complete");
-    // }
+    width = newW;
+    height = newH;
+
+    destroy();
+    create();
+}
+
+void Framebuffer::recreate(const std::vector<AttachmentDesc>& newDescs) {
+    descriptors = newDescs;
+    create();
+}
+
+void Framebuffer::destroy() {
+    if (ID) {
+        for (auto& a : attachments) {
+            if (a.ID) {
+                if (a.isTexture) glDeleteTextures(1, &a.ID);
+                else glDeleteRenderbuffers(1, &a.ID);
+            }
+        }
+        attachments.clear();
+        glDeleteFramebuffers(1, &ID);
+        ID = 0;
+    }
+}
+
+void Framebuffer::create() {
+    glGenFramebuffers(1, &ID);
+    glBindFramebuffer(GL_FRAMEBUFFER, ID);
+
+    GLenum texTarget = (samples > 1) ? GL_TEXTURE_BINDING_2D_MULTISAMPLE : GL_TEXTURE_2D;
+    std::vector<GLenum> drawBuffers;
+
+    for (auto& d : descriptors) {
+        Attachment a{};
+        a.isTexture = d.isTexture;
+        a.attachment = d.attachment;
+
+        if (d.isTexture) {
+            glGenTextures(1, &a.ID);
+            glBindTexture(texTarget, a.ID);
+
+            if (samples > 1) {
+                glTexImage2DMultisample(texTarget, samples, d.internalFormat, width, height, GL_TRUE);
+            } else {
+                glTexImage2D(texTarget, 0, d.internalFormat, width, height, 0, d.format, d.type, nullptr);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+                glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+            }
+
+            glFramebufferTexture2D(GL_FRAMEBUFFER, d.attachment, texTarget, a.ID, 0);
+        } else {
+            glGenRenderbuffers(1, &a.ID);
+            glBindRenderbuffer(GL_RENDERBUFFER, a.ID);
+
+            if (samples > 1) 
+                glRenderbufferStorageMultisample(GL_RENDERBUFFER, samples, d.internalFormat, width, height);
+            else
+                glRenderbufferStorage(GL_RENDERBUFFER, d.internalFormat, width, height);
+            
+            glFramebufferRenderbuffer(GL_FRAMEBUFFER, d.attachment, GL_RENDERBUFFER, a.ID);
+        }
+
+        attachments.push_back(a);
+
+        if (d.attachment >= GL_COLOR_ATTACHMENT0 && d.attachment <= GL_COLOR_ATTACHMENT31)
+            drawBuffers.push_back(d.attachment);
+    }
+
+    if (!drawBuffers.empty())
+        glDrawBuffers((GLsizei)drawBuffers.size(), drawBuffers.data());
+    else 
+        glDrawBuffer(GL_NONE);
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-}
-
-void Framebuffer::destroyFramebuffer() {
-    if (rbo) glDeleteRenderbuffers(1, &rbo);
-    if (texture) glDeleteTextures(1, &texture);
-    if (fbo) glDeleteFramebuffers(1, &fbo);
-}
-
-void Framebuffer::bind() { glBindFramebuffer(GL_FRAMEBUFFER, fbo); glViewport(0, 0, width, height); }
-
-void Framebuffer::unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); /* reset veiwport to window size */ }
-
-void Framebuffer::bindTexture(GLuint shaderID, const char* uniform, int unit) {
-    glUseProgram(shaderID);
-    glActiveTexture(GL_TEXTURE0 + unit);
-    glBindTexture(GL_TEXTURE_2D, texture);
-    glUniform1i(glGetUniformLocation(shaderID, uniform), unit);
-}
-
-void Framebuffer::resize(int newWidth, int newHeight, bool linearFilter) {
-    // if (width != newWidth || height != newHeight || filter != linearFilter) return;
-    width = newWidth;
-    height = newHeight;
-    filter = linearFilter ? GL_LINEAR : GL_NEAREST;
-    destroyFramebuffer();
-    createFramebuffer();
 }
 
 // ========================================================================
@@ -650,6 +690,7 @@ void Mesh::makePreview(Framebuffer& fb, Shader& shader, glm::vec2 rotation, bool
     enableCull(cull);
 
     fb.bind();
+
     glClearColor(0.05,0.05,0.05,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1673,12 +1714,12 @@ Engine::Engine(const std::string& title, int width, int height, const std::sourc
 
     resources().loadDefaults();
 
-    addScene("Scene1"); 
+    addScene("Scene1");
 
-    viewport = std::make_unique<Viewport>();
-    viewport.get()->scene = activeScene;
-    viewport.get()->camera = activeScene->activeCamera;
-    viewport.get()->resize(720, 450);
+    viewport = std::make_unique<Viewport>(width, height);
+    viewport->scene = activeScene;
+    viewport->camera = activeScene->activeCamera;
+    viewport->resize(720, 450);
 
     maxLights = 128;
     
@@ -1734,31 +1775,28 @@ void Engine::removeScene(const std::string& name, const std::source_location& lo
     }   
 }
 
-void Engine::renderViewportTexture(Viewport& vp) {
+void Engine::render() {
 
-    if (!vp.camera || !vp.scene) return;
+    if (!viewport->camera || !viewport->scene) return;
 
-    vp.framebuffer.bind();
-    
-    if ((vp.framebuffer.width != vp.width) || (vp.framebuffer.height != vp.height) && vp.width > 0 && vp.height > 0) 
-        vp.framebuffer.resize(vp.width, vp.height);
+    viewport->bind();
 
-    glViewport(0, 0, vp.framebuffer.width, vp.framebuffer.height);
+    glViewport(0, 0, viewport->width, viewport->height);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    vp.camera->width = vp.framebuffer.width;
-    vp.camera->height = vp.framebuffer.height;
+    viewport->camera->width = viewport->width;
+    viewport->camera->height = viewport->height;
 
     // LIGHT UPLOAD
 
     static std::vector<Light> lights;
     lights.clear();
 
-    for (Anchor a : vp.scene->anchors) {
-        if ( vp.scene->registry.transforms.find(a) != vp.scene->registry.transforms.end() && vp.scene->registry.lights.find(a) != vp.scene->registry.lights.end() ) {
+    for (Anchor a : viewport->scene->anchors) {
+        if ( viewport->scene->registry.transforms.find(a) != viewport->scene->registry.transforms.end() && viewport->scene->registry.lights.find(a) != viewport->scene->registry.lights.end() ) {
             
-            TransformComponent& t = vp.scene->registry.transforms.find(a)->second;
-            LightComponent& l = vp.scene->registry.lights.find(a)->second;
+            TransformComponent& t = viewport->scene->registry.transforms.find(a)->second;
+            LightComponent& l = viewport->scene->registry.lights.find(a)->second;
 
             Light gpu(l.type, t.position, t.rotation, l.color, l.intensity, 0.0f);
             gpu.generateMatrices();
@@ -1777,15 +1815,15 @@ void Engine::renderViewportTexture(Viewport& vp) {
 
     std::shared_ptr<Shader> shader = nullptr;
 
-    for (Anchor a : vp.scene->anchors) {
-        if (vp.scene->registry.transforms.find(a) == vp.scene->registry.transforms.end()) continue;
+    for (Anchor a : viewport->scene->anchors) {
+        if (viewport->scene->registry.transforms.find(a) == viewport->scene->registry.transforms.end()) continue;
 
-        TransformComponent& t = vp.scene->registry.transforms.find(a)->second;
-        MeshComponent& m = vp.scene->registry.meshes.find(a)->second;
+        TransformComponent& t = viewport->scene->registry.transforms.find(a)->second;
+        MeshComponent& m = viewport->scene->registry.meshes.find(a)->second;
 
         glm::mat4 model = glm::translate(glm::mat4(1.0f), t.position) * glm::eulerAngleXYZ(t.rotation.x, t.rotation.y, t.rotation.z) * glm::scale(glm::mat4(1.0f), t.scale);
 
-        if (vp.scene->registry.meshes.find(a) != vp.scene->registry.meshes.end() && m.mesh != nullptr) {
+        if (viewport->scene->registry.meshes.find(a) != viewport->scene->registry.meshes.end() && m.mesh != nullptr) {
 
             if (m.shader != nullptr) shader = m.shader;
             else shader = resources().shaders["default_basic"];
@@ -1793,7 +1831,7 @@ void Engine::renderViewportTexture(Viewport& vp) {
             if (std::find(updatedShaders.begin(), updatedShaders.end(), shader->ID) == updatedShaders.end()) {
                 shader->activate();
                 glUniform1i(glGetUniformLocation(shader->ID, "numLights"), numActiveLights);
-                vp.camera->uploadToShader(shader->ID);
+                viewport->camera->uploadToShader(shader->ID);
                 updatedShaders.push_back(shader->ID);
             }
             
@@ -1805,25 +1843,7 @@ void Engine::renderViewportTexture(Viewport& vp) {
         
     }
 
-    // CAMERAS
-
-    // shader = resources().shaders["__flat_color"];
-    // mesh = resources().meshes["default_cube"];
-
-    // shader->activate();
-    // vp.camera->uploadToShader(shader->ID);
-    // glUniform4fv(glGetUniformLocation(shader->ID, "uColor"), 1, glm::value_ptr(glm::vec4(1)));
-    
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-
-    // for (auto& [key, camera] : vp.scene->cameras) {
-    //     glm::mat4 model = glm::translate(glm::mat4(1.0f), camera->position) * glm::mat4_cast(camera->orientation) * glm::scale(glm::mat4(1.0f), glm::vec3(0.25f));
-    //     mesh->draw(*shader, model, false);
-    // }
-
-    // glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-
-    vp.framebuffer.unbind();
+    viewport->unbind();
 }
 
 void Engine::bind() { g_boundEngine = this; }
