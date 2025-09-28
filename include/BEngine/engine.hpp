@@ -207,6 +207,8 @@ class Mesh {
 public:
     std::vector<Vertex> vertices;
     std::vector<GLuint> indices;
+
+    glm::vec3 aabbMin, aabbMax;
     
     VAO vao;
     VBO* vbo = nullptr;
@@ -223,7 +225,8 @@ public:
 
     void loadOBJ(const std::string& objPath);
     void loadOBJSource(const std::string* objSource);
-
+private:
+    void ComputeAABB();
 };
 
 class ResourceManager {
@@ -347,7 +350,7 @@ enum class AnchorType {
     None, Player
 };
 
-struct TagComponent {
+struct NameComponent {
     std::string name = "Anchor";
     AnchorType type = AnchorType::None;
 };
@@ -372,7 +375,7 @@ struct LightComponent {
 };
 
 struct Registry {
-    std::unordered_map<Anchor, TagComponent> tags;
+    std::unordered_map<Anchor, NameComponent> tags;
     std::unordered_map<Anchor, TransformComponent> transforms;
     std::unordered_map<Anchor, MeshComponent> meshes;
     std::unordered_map<Anchor, LightComponent> lights;

@@ -580,6 +580,26 @@ void Material::uploadToShader(Shader& shader) {
 
 // ========================================================================
 
+void Mesh::ComputeAABB() {
+    if (vertices.empty()) return;
+
+    glm::vec3 min(FLT_MAX);
+    glm::vec3 max(-FLT_MAX);
+
+    for (const auto& v : vertices) {
+        min.x = std::min(min.x, v.position.x);
+        min.y = std::min(min.y, v.position.y);
+        min.z = std::min(min.z, v.position.z);
+
+        max.x = std::max(max.x, v.position.x);
+        max.y = std::max(max.y, v.position.y);
+        max.z = std::max(max.z, v.position.z);
+    }
+
+    aabbMin = min;
+    aabbMax = max;
+}
+
 Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<GLuint>& inds)
     : vertices(verts), indices(inds) {
 
@@ -594,6 +614,8 @@ Mesh::Mesh(const std::vector<Vertex>& verts, const std::vector<GLuint>& inds)
     vbo->linkVertexAttrib(3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
     
     vao.unbind();
+
+    ComputeAABB();
 }
 
 Mesh::Mesh(const std::string& objPath)
@@ -795,6 +817,8 @@ void Mesh::loadOBJ(const std::string& objPath) {
 
     vao.unbind();
 
+    ComputeAABB();
+
     Message(0, "MESH", "OBJ loaded successfully", objPath.c_str(), lineNum);
 }
 
@@ -911,6 +935,8 @@ void Mesh::loadOBJSource(const std::string* objSource) {
     vbo->linkVertexAttrib(3, 2, GL_FLOAT, sizeof(Vertex), (void*)(9 * sizeof(float)));
 
     vao.unbind();
+
+    ComputeAABB();
 
     Message(0, "MESH", "OBJ loaded successfully", "SOURCE", lineNum);
 }
@@ -1564,7 +1590,7 @@ Scene::Scene() { addCamera("Camera1"); }
 Anchor Scene::createAnchor() {
     Anchor a = nextAnchorID++;
     anchors.push_back(a);
-    registry.tags[a] = TagComponent{"New Anchor", AnchorType::None};
+    registry.tags[a] = NameComponent{"New Anchor", AnchorType::None};
     return a;
 }
 

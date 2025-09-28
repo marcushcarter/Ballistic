@@ -118,9 +118,22 @@ void main() {
 
 @end
 
+@fs picking_fragment
+
+#version 460 core
+#extension GL_ARB_gpu_shader_int64 : enable
+layout(location = 0) out uint FragID;
+uniform uint objectID;
+void main() {
+    FragID = objectID;
+}
+
+@end
+
 @program default_basic vertex_shader scene_fragment
 @program default_uv vertex_shader uv_fragment
 @program default_color vertex_shader color_fragment
+@program default_picking vertex_shader picking_fragment
 
 )";
 

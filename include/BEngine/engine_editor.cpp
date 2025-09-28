@@ -26,15 +26,36 @@ Editor::Editor(Engine* enginePtr) : engine(enginePtr) {
     currentGizmoOperation = ImGuizmo::TRANSLATE;
     currentGizmoMode = ImGuizmo::LOCAL;
 
+    glGenFramebuffers(1, &pickingFBO);
+    glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
+
+    glGenTextures(1, &pickingTexture);
+    glBindTexture(GL_TEXTURE_2D, pickingTexture);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, pickingRes, pickingRes, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pickingTexture, 0);
+
+    GLuint depth;
+    glGenRenderbuffers(1, &depth);
+    glBindRenderbuffer(GL_RENDERBUFFER, depth);
+    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, pickingRes, pickingRes);
+    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depth);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
     meshPreviewFB.resize(128, 128);
 
+    // defaults
+
     selectedAnchor = engine->activeScene->createAnchor();
-    engine->activeScene->registry.tags[selectedAnchor] = BE::TagComponent{"Test Cube", BE::AnchorType::None};
+    engine->activeScene->registry.tags[selectedAnchor] = BE::NameComponent{"Test Cube", BE::AnchorType::None};
     engine->activeScene->registry.transforms[selectedAnchor] = BE::TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}};
     engine->activeScene->registry.meshes[selectedAnchor] = BE::MeshComponent{engine->resources().meshes["default_cube"], nullptr, nullptr};
 
     BE::Anchor light = engine->activeScene->createAnchor();
-    engine->activeScene->registry.tags[light] = BE::TagComponent{"Point Light", BE::AnchorType::None};
+    engine->activeScene->registry.tags[light] = BE::NameComponent{"Point Light", BE::AnchorType::None};
     engine->activeScene->registry.transforms[light] = BE::TransformComponent{{0,1.3f,0}, {0,0,0}, {0.1,0.1,0.1}};
     engine->activeScene->registry.meshes[light] = BE::MeshComponent{engine->resources().meshes["default_cube"], nullptr, engine->resources().shaders["default_color"]};
     engine->activeScene->registry.lights[light] = BE::LightComponent{glm::vec3(1,1,1), 1.0f, 1};
@@ -87,12 +108,12 @@ void Editor::showPanels() {
 
     // === PERFORMANCE == //
 
-    // ImGui::SetNextWindowBgAlpha(0.35f);
-    // ImGui::Begin("Performance Overlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking );
-    // ImGui::Text("ENGINE FPS %.1f MS %.2f", engine->frameTime.fps, engine->frameTime.ms);
-    // ImGui::Text("IMGUI FPS %.1f MS %.2f", ImGui::GetIO().Framerate, 1000.0f/ImGui::GetIO().Framerate);
-    // ImGui::Text("SELECTED ANCHOR %d", selectedAnchor);
-    // ImGui::End();
+    ImGui::SetNextWindowBgAlpha(0.35f);
+    ImGui::Begin("Performance Overlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking );
+    ImGui::Text("ENGINE FPS %.1f MS %.2f", engine->frameTime.fps, engine->frameTime.ms);
+    ImGui::Text("IMGUI FPS %.1f MS %.2f", ImGui::GetIO().Framerate, 1000.0f/ImGui::GetIO().Framerate);
+    ImGui::Text("SELECTED ANCHOR %d", selectedAnchor);
+    ImGui::End();
 }
 
 void Editor::endFrame() {
@@ -186,18 +207,18 @@ void Editor::Viewport() {
 
     ImGui::Begin("Hello, ImGui!");
 
-    ImVec2 windowPos = ImGui::GetWindowPos();
-    ImVec2 contentPos = ImGui::GetCursorScreenPos();
-    ImVec2 windowSize = ImGui::GetContentRegionAvail();
+    ImVec2 viewportPos = ImGui::GetCursorScreenPos();
+    ImVec2 viewportSize = ImGui::GetContentRegionAvail();
+    ImVec2 mousePos = ImGui::GetMousePos();
 
     bool resizing = ImGui::IsWindowHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) && ImGui::IsMouseDown(ImGuiMouseButton_Left);
-    if (!resizing) engine->viewport.get()->resize(windowSize.x/2, windowSize.y/2);
+    if (!resizing) engine->viewport->resize(viewportSize.x/2, viewportSize.y/2);
     
-    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) engine->activeScene->activeCamera->handleInputs(engine->getWindow(), engine->frameTime.dt);
-    ImGui::Image((void*)(intptr_t) engine->viewport.get()->framebuffer.texture, windowSize, ImVec2(0, 1), ImVec2(1, 0));
+    if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) engine->viewport->camera->handleInputs(engine->getWindow(), engine->frameTime.dt);
+    ImGui::Image((void*)(intptr_t) engine->viewport->framebuffer.texture, viewportSize, ImVec2(0, 1), ImVec2(1, 0));
 
     ImGuizmo::SetDrawlist();
-    ImGuizmo::SetRect(contentPos.x, contentPos.y, windowSize.x, windowSize.y);
+    ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
 
     if (selectedAnchor != -1) {
         if (engine->activeScene->registry.transforms.find(selectedAnchor) != engine->activeScene->registry.transforms.end()) {
@@ -213,8 +234,8 @@ void Editor::Viewport() {
             t.model = translation * rotation * scale;
 
             ImGuizmo::Manipulate(
-                glm::value_ptr(engine->activeScene->activeCamera->viewMatrix),
-                glm::value_ptr(engine->activeScene->activeCamera->projectionMatrix),
+                glm::value_ptr(engine->viewport->camera->viewMatrix),
+                glm::value_ptr(engine->viewport->camera->projectionMatrix),
                 currentGizmoOperation,
                 currentGizmoMode,
                 glm::value_ptr(t.model)
@@ -234,6 +255,12 @@ void Editor::Viewport() {
                 t.scale = scale;
             }
         }
+
+        // if mouse clicked
+        // cast ray
+        // check if it hits an object
+        // if true set selectedacnhor to that object id
+        // else return
 
     }
 
@@ -446,7 +473,7 @@ void Editor::Inspector() {
         // NAME COMPONENT
 
         if (engine->activeScene->registry.tags.find(selectedAnchor) != engine->activeScene->registry.tags.end()) {
-            TagComponent& t = engine->activeScene->registry.tags[selectedAnchor];
+            NameComponent& t = engine->activeScene->registry.tags[selectedAnchor];
 
             ImGui::BeginGroup();
 

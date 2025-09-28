@@ -27,6 +27,9 @@ public:
     
     void Frame();
 
+    void pickingPass();
+    void PickObject(ImVec2 local, ImVec2 size);
+
     void Menu();
     void Viewport();
     void Heirarchy();
@@ -41,8 +44,12 @@ private:
     Engine* engine;
 
     Framebuffer meshPreviewFB;
-
     int previewResolution = 128;
+
+    // picking FB
+    GLuint pickingFBO;
+    GLuint pickingTexture;
+    int pickingRes = 128;
 
     ImGuizmo::OPERATION currentGizmoOperation;
     ImGuizmo::MODE currentGizmoMode;
