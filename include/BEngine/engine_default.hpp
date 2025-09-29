@@ -33,15 +33,19 @@ void main() {
 
 #version 460 core
 
+layout(location = 0) out vec4 FragColor;
+layout(location = 1) out uint outID;
+
 in vec2 TexCoord;
 in vec3 Normal;
 in vec3 FragPos;
-out vec4 FragColor;
 
 uniform sampler2D diffuseMap;
 uniform sampler2D normalMap;
 uniform sampler2D roughnessMap;
 uniform vec4 diffuseColor;
+
+uniform uint objectID;
 
 uniform int numLights;
 struct Light {
@@ -92,6 +96,7 @@ void main() {
     }
 
     FragColor = vec4(texColor * finalColor, 1.0) * diffuseColor;
+    outID = objectID + 1;
 }
 
 @end

@@ -43,13 +43,8 @@ public:
 private:
     Engine* engine;
 
-    int previewResolution = 128;
     Framebuffer meshPreview;
-
-    // picking FB
-    GLuint pickingFBO;
-    GLuint pickingTexture;
-    int pickingRes = 128;
+    int previewResolution = 128;
 
     ImGuizmo::OPERATION currentGizmoOperation;
     ImGuizmo::MODE currentGizmoMode;

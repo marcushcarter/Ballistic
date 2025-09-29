@@ -146,7 +146,20 @@ void EBO::unbind() { glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0); }
 
 Framebuffer::Framebuffer(int w, int h, const std::vector<AttachmentDesc>& descs, int msaaSamples) : width(w), height(h), samples(msaaSamples), descriptors(descs) { create(); }
 
-void Framebuffer::bind() { glBindFramebuffer(GL_FRAMEBUFFER, ID); glViewport(0, 0, width, height); }
+void Framebuffer::bind() {
+    glBindFramebuffer(GL_FRAMEBUFFER, ID); 
+    glViewport(0, 0, width, height);
+
+    std::vector<GLenum> drawBuffers;
+    for (auto& desc : descriptors) {
+            drawBuffers.push_back(desc.type);
+        if (desc.type != GL_DEPTH_ATTACHMENT) {
+            drawBuffers.push_back(desc.type);
+        }
+    }
+
+    glDrawBuffers(drawBuffers.size(), drawBuffers.data());
+}
 
 void Framebuffer::unbind() { glBindFramebuffer(GL_FRAMEBUFFER, 0); }
 
@@ -235,6 +248,10 @@ void Framebuffer::create() {
         glDrawBuffers((GLsizei)drawBuffers.size(), drawBuffers.data());
     else 
         glDrawBuffer(GL_NONE);
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE) {
+        std::cerr << "Framebuffer incomplete" << std::endl;
+    }
 
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
@@ -1835,6 +1852,10 @@ void Engine::render() {
                 updatedShaders.push_back(shader->ID);
             }
             
+            GLuint num = a;
+            shader->activate();
+            glUniform1ui(glGetUniformLocation(shader->ID, "objectID"), a);
+
             if (m.material != nullptr) m.material->uploadToShader(*shader); 
             else resources().materials["default_material"]->uploadToShader(*shader);
 

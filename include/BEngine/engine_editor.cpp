@@ -1,9 +1,11 @@
 #include "BEngine/engine_editor.hpp"
 
+#include <iostream>
+
 namespace BE {
     
 Editor::Editor(Engine* enginePtr) 
-    : engine(enginePtr), meshPreview(1, 1, {}) {
+    : engine(enginePtr), meshPreview(1, 1, {{ GL_COLOR_ATTACHMENT0, GL_RGBA16F, GL_RGBA, GL_FLOAT, true }} ) {
     
     IMGUI_CHECKVERSION();
     
@@ -29,30 +31,11 @@ Editor::Editor(Engine* enginePtr)
     currentGizmoMode = ImGuizmo::LOCAL;
 
     std::vector<AttachmentDesc> descriptors = {
-        { GL_COLOR_ATTACHMENT0, GL_RGBA16F, GL_RGBA, GL_FLOAT, true },
-        { GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, true }
+        { GL_COLOR_ATTACHMENT0, GL_RGBA16F, GL_RGBA, GL_FLOAT, true }, 
+        { GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, false }
     };
     meshPreview.recreate(descriptors);
     meshPreview.resize(128, 128);
-
-    glGenFramebuffers(1, &pickingFBO);
-    glBindFramebuffer(GL_FRAMEBUFFER, pickingFBO);
-
-    glGenTextures(1, &pickingTexture);
-    glBindTexture(GL_TEXTURE_2D, pickingTexture);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_R32UI, pickingRes, pickingRes, 0, GL_RED_INTEGER, GL_UNSIGNED_INT, nullptr);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, pickingTexture, 0);
-
-    GLuint depth;
-    glGenRenderbuffers(1, &depth);
-    glBindRenderbuffer(GL_RENDERBUFFER, depth);
-    glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, pickingRes, pickingRes);
-    glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, depth);
-
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
     // defaults
 
@@ -64,7 +47,7 @@ Editor::Editor(Engine* enginePtr)
     BE::Anchor light = engine->activeScene->createAnchor();
     engine->activeScene->registry.tags[light] = BE::NameComponent{"Point Light", BE::AnchorType::None};
     engine->activeScene->registry.transforms[light] = BE::TransformComponent{{0,1.3f,0}, {0,0,0}, {0.1,0.1,0.1}};
-    engine->activeScene->registry.meshes[light] = BE::MeshComponent{engine->resources().meshes["default_cube"], nullptr, engine->resources().shaders["default_color"]};
+    engine->activeScene->registry.meshes[light] = BE::MeshComponent{engine->resources().meshes["default_cube"], nullptr, nullptr};
     engine->activeScene->registry.lights[light] = BE::LightComponent{glm::vec3(1,1,1), 1.0f, 1};
 }
 
@@ -222,11 +205,14 @@ void Editor::Viewport() {
     if (!resizing) engine->viewport->resize(viewportSize.x/2, viewportSize.y/2);
     
     if (ImGui::IsWindowFocused(ImGuiFocusedFlags_RootAndChildWindows)) engine->viewport->camera->handleInputs(engine->getWindow(), engine->frameTime.dt);
-    // ImGui::Image((void*)(intptr_t) engine->viewport->framebuffer.texture, viewportSize, ImVec2(0, 1), ImVec2(1, 0));
     ImGui::Image((void*)(intptr_t) engine->viewport->getColorTexture(), viewportSize, ImVec2(0, 1), ImVec2(1, 0));
+
+    ImVec2 relativePos = ImVec2(mousePos.x - viewportPos.x, mousePos.y - viewportPos.y);
 
     ImGuizmo::SetDrawlist();
     ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
+
+    bool picking = false;
 
     if (selectedAnchor != -1) {
         if (engine->activeScene->registry.transforms.find(selectedAnchor) != engine->activeScene->registry.transforms.end()) {
@@ -261,15 +247,24 @@ void Editor::Viewport() {
                 t.position = translation;
                 t.rotation = rotation;
                 t.scale = scale;
+
+                picking = true;
             }
         }
 
-        // if mouse clicked
-        // cast ray
-        // check if it hits an object
-        // if true set selectedacnhor to that object id
-        // else return
+    }
 
+    if (!picking && ImGui::IsItemHovered() && ImGui::IsItemClicked(ImGuiMouseButton_Left) && !ImGuizmo::IsOver()) {
+        int texX = int((relativePos.x / viewportSize.x) * engine->viewport->width);
+        int texY = int((1.0f - (relativePos.y / viewportSize.y)) * engine->viewport->height);
+
+        GLuint id = 0;
+        engine->viewport->fbo.bind();
+        glReadBuffer(GL_COLOR_ATTACHMENT1);
+        glReadPixels(texX, texY, 1, 1, GL_RED_INTEGER, GL_UNSIGNED_INT, &id);
+        engine->viewport->fbo.unbind();
+
+        selectedAnchor = id - 1;
     }
 
     ImGui::End();
@@ -281,7 +276,7 @@ void Editor::Heirarchy() {
     for (Anchor a : engine->activeScene->anchors) {
 
         std::string name = "Anchor" + std::to_string(a) + "##" + std::to_string(a);
-        if (engine->activeScene->registry.tags.find(selectedAnchor) != engine->activeScene->registry.tags.end()) {
+        if (engine->activeScene->registry.tags.find(a) != engine->activeScene->registry.tags.end()) {
             if (!engine->activeScene->registry.tags[a].name.empty()) {
                 name = engine->activeScene->registry.tags[a].name + "##" + std::to_string(a);
             }

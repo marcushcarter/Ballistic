@@ -352,9 +352,6 @@ public:
     void generateMatrices();
 };
 
-
-
-
 using Anchor = uint32_t;
 
 enum class AnchorType {
@@ -395,15 +392,11 @@ struct Registry {
 class Scene {
 public:
 
-    // NEW
-
     std::vector<Anchor> anchors;
     Registry registry;
 
     Anchor createAnchor();
     void removeAnchor(Anchor a);
-
-    // OLD
 
     std::unordered_map<std::string, std::unique_ptr<Camera>> cameras;
     Camera* activeCamera;
@@ -443,10 +436,12 @@ public:
 private:
 
     std::vector<AttachmentDesc> buildAttachments() {
-        // default color + depth tex
+        // default color + ID + depth tex
         return {
             { GL_COLOR_ATTACHMENT0, GL_RGBA16F, GL_RGBA, GL_FLOAT, true }, // color
-            { GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, true } // depth
+            // { GL_COLOR_ATTACHMENT1, GL_RGBA16F, GL_RGBA, GL_FLOAT, true }, // color
+            { GL_COLOR_ATTACHMENT1, GL_R32UI, GL_RED_INTEGER, GL_UNSIGNED_INT, true }, // ID
+            { GL_DEPTH_ATTACHMENT, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT, GL_FLOAT, false } // depth
         };
     }
 
