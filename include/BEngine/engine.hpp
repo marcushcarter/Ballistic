@@ -468,6 +468,7 @@ public:
 
     Scene* scene = nullptr;
     Camera* camera = nullptr;
+    TEMPCamera camera2;
 
     Viewport(int w, int h, bool msaa = false) : width(w), height(h), useMSAA(msaa), fbo(w, h, buildAttachments(), msaa ? 4 : 1) {}
 

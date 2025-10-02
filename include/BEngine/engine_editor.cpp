@@ -241,8 +241,8 @@ void Editor::Viewport() {
             t.model = translation * rotation * scale;
 
             ImGuizmo::Manipulate(
-                glm::value_ptr(engine->viewport->camera->viewMatrix),
-                glm::value_ptr(engine->viewport->camera->projectionMatrix),
+                glm::value_ptr(engine->viewport->camera2.viewMatrix),
+                glm::value_ptr(engine->viewport->camera2.projectionMatrix),
                 currentGizmoOperation,
                 currentGizmoMode,
                 glm::value_ptr(t.model)

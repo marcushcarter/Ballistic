@@ -1902,10 +1902,10 @@ void Engine::render() {
     viewport->camera->height = viewport->height;
 
     // CAMERA UPLOAD
-    
-    // viewport->camera->updateViewMatrix();
 
-    TEMPCamera camera(viewport->camera->position, glm::eulerAngles(viewport->camera->orientation), viewport->camera->fov, viewport->camera->nearPlane, viewport->camera->farPlane, !glfwGetKey(this->getWindow(), GLFW_KEY_3), ((float)viewport->width / (float)viewport->height));
+    viewport->camera2 = TEMPCamera(viewport->camera->position, glm::eulerAngles(viewport->camera->orientation), viewport->camera->fov, viewport->camera->nearPlane, viewport->camera->farPlane, !glfwGetKey(this->getWindow(), GLFW_KEY_3), ((float)viewport->width / (float)viewport->height));
+
+    // TEMPCamera camera(viewport->camera->position, glm::eulerAngles(viewport->camera->orientation), viewport->camera->fov, viewport->camera->nearPlane, viewport->camera->farPlane, !glfwGetKey(this->getWindow(), GLFW_KEY_3), ((float)viewport->width / (float)viewport->height));
 
     for (Anchor a : viewport->scene->anchors) {
         
@@ -1914,7 +1914,7 @@ void Engine::render() {
             TransformComponent& t = viewport->scene->registry.transforms.find(a)->second;
             CameraComponent& c = viewport->scene->registry.cameras.find(a)->second;
 
-            if (c.isMain) camera = TEMPCamera(t, c, ((float)viewport->width / (float)viewport->height));
+            if (c.isMain) viewport->camera2 = TEMPCamera(t, c, ((float)viewport->width / (float)viewport->height));
         }
 
     }
@@ -1964,7 +1964,7 @@ void Engine::render() {
                 glUniform1i(glGetUniformLocation(shader->ID, "numLights"), numActiveLights);
                 glUniform1f(glGetUniformLocation(shader->ID, "ambientLight"), 0.2f);
                 glUniform1i(glGetUniformLocation(shader->ID, "enableLights"), true);
-                camera.uploadToShader(shader->ID);
+                viewport->camera2.uploadToShader(shader->ID);
                 updatedShaders.push_back(shader->ID);
             }
             
