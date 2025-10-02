@@ -10,53 +10,52 @@
 #include <cstring>
 #include <stack>
 
-
-namespace BE::Math {
-
-glm::quat EulerToQuat(glm::vec3 euler) {
-    float yaw = euler.y;
-    float pitch = euler.x;
-    float roll = euler.z;
-
-    float cy = cosf(yaw * 0.5f);
-    float sy = sinf(yaw * 0.5f);
-    float cp = cosf(pitch * 0.5f);
-    float sp = sinf(pitch * 0.5f);
-    float cr = cosf(roll * 0.5f);
-    float sr = sinf(roll * 0.5f);
-
-    glm::quat q;
-    q.w = cr * cp * cy + sr * sp * sy;
-    q.x = sr * cp * cy + cr * sp * sy;
-    q.y = cr * sp * cy + sr * cp * sy;
-    q.z = cr * cp * sy + sr * sp * cy;
-
-    return q;
-}
-
-glm::vec3 QuatToEuler(glm::quat quat) {
-    glm::vec3 euler;
-
-    float sinr_cosp = 2.0f * (quat.w * quat.x + quat.y * quat.z);
-    float cosr_cosp = 1.0f - 2.0f * (quat.x * quat.x + quat.y * quat.z);
-    euler.x = atan2f(sinr_cosp, cosr_cosp);
-
-    float sinp = 2.0f * (quat.w * quat.y - quat.z * quat.x);
-    if (fabsf(sinp) >= 1)
-        euler.y = copysignf(90.0f, sinp);
-    else 
-        euler.y = asinf(sinp);
-
-    float siny_cosp = 2.0f * (quat.w * quat.z + quat.x * quat.y);
-    float cosy_cosp = 1.0f - 2.0f * (quat.y * quat.y + quat.z * quat.z);
-    euler.x = atan2f(siny_cosp, cosy_cosp);
-    
-    return euler;
-}
-
-};
-
 namespace BE {
+   
+    namespace Math {
+
+    glm::quat EulerToQuat(glm::vec3 euler) {
+        float yaw = euler.y;
+        float pitch = euler.x;
+        float roll = euler.z;
+
+        float cy = cosf(yaw * 0.5f);
+        float sy = sinf(yaw * 0.5f);
+        float cp = cosf(pitch * 0.5f);
+        float sp = sinf(pitch * 0.5f);
+        float cr = cosf(roll * 0.5f);
+        float sr = sinf(roll * 0.5f);
+
+        glm::quat q;
+        q.w = cr * cp * cy + sr * sp * sy;
+        q.x = sr * cp * cy + cr * sp * sy;
+        q.y = cr * sp * cy + sr * cp * sy;
+        q.z = cr * cp * sy + sr * sp * cy;
+
+        return q;
+    }
+
+    glm::vec3 QuatToEuler(glm::quat quat) {
+        glm::vec3 euler;
+
+        float sinr_cosp = 2.0f * (quat.w * quat.x + quat.y * quat.z);
+        float cosr_cosp = 1.0f - 2.0f * (quat.x * quat.x + quat.y * quat.z);
+        euler.x = atan2f(sinr_cosp, cosr_cosp);
+
+        float sinp = 2.0f * (quat.w * quat.y - quat.z * quat.x);
+        if (fabsf(sinp) >= 1)
+            euler.y = copysignf(90.0f, sinp);
+        else 
+            euler.y = asinf(sinp);
+
+        float siny_cosp = 2.0f * (quat.w * quat.z + quat.x * quat.y);
+        float cosy_cosp = 1.0f - 2.0f * (quat.y * quat.y + quat.z * quat.z);
+        euler.x = atan2f(siny_cosp, cosy_cosp);
+        
+        return euler;
+    }
+
+    };
 
 static void Message(int severity, const std::string& module, const std::string& message, const std::string& file = "", int line = 0, const std::source_location& loc = std::source_location::current()) {
     std::string displayFile;
@@ -1572,7 +1571,7 @@ void Light::generateMatrices() {
 
 // ========================================================================
 
-Camera::Camera(const TransformComponent& t, const CameraComponent& c, float aspectRatio) {   
+Camera::Camera(const TransformComponent& t, const CameraComponent& c, float aspectRatio) : editorCamera(false) {   
 
     if (c.isPerspective) {
         projectionMatrix = glm::perspective(
@@ -1600,7 +1599,7 @@ Camera::Camera(const TransformComponent& t, const CameraComponent& c, float aspe
     viewMatrix = glm::lookAt(t.position, target, up);
 }
 
-Camera::Camera(glm::vec3 position, glm::vec3 direction, float fov, float near, float far, bool isPerspective, float aspectRatio) {
+Camera::Camera(glm::vec3 position, glm::vec3 direction, float fov, float near, float far, bool isPerspective, float aspectRatio) : editorCamera(false) {
 
     if (isPerspective) {
         projectionMatrix = glm::perspective(
@@ -1628,7 +1627,7 @@ Camera::Camera(glm::vec3 position, glm::vec3 direction, float fov, float near, f
     viewMatrix = glm::lookAt(position, target, up);
 }
 
-Camera::Camera(glm::vec2 orbit, glm::vec3 target, float radius, float near, float far, float aspectRatio) {
+Camera::Camera(glm::vec2 orbit, glm::vec3 target, float radius, float near, float far, float aspectRatio) : editorCamera(true) {
     
     projectionMatrix = glm::perspective(
         glm::radians(60.0f),
@@ -1646,7 +1645,7 @@ Camera::Camera(glm::vec2 orbit, glm::vec3 target, float radius, float near, floa
     viewMatrix = glm::lookAt(position, target, glm::vec3(0,1,0));
 }
 
-Camera::Camera(EditorCamera& camera, float near, float far, float aspectRatio) {
+Camera::Camera(EditorCamera& camera, float near, float far, float aspectRatio) : editorCamera(true) {
     
     projectionMatrix = glm::perspective(glm::radians(camera.fov), aspectRatio, near, far);
 

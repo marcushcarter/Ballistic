@@ -28,7 +28,7 @@ Editor::Editor(Engine* enginePtr)
     ImGui_ImplOpenGL3_Init("#version 460");
 
     currentGizmoOperation = ImGuizmo::TRANSLATE;
-    currentGizmoMode = ImGuizmo::LOCAL;
+    currentGizmoMode = ImGuizmo::WORLD;
 
     std::vector<AttachmentDesc> descriptors = {
         { GL_COLOR_ATTACHMENT0, GL_RGBA16F, GL_RGBA, GL_FLOAT, true }, 
@@ -58,7 +58,7 @@ Editor::Editor(Engine* enginePtr)
     BE::Anchor camera = engine->activeScene->createAnchor();
     engine->activeScene->registry.tags[camera] = BE::NameComponent{"camera", BE::AnchorType::None};
     engine->activeScene->registry.transforms[camera] = BE::TransformComponent{{-3,3,3}, {-0.6f,-0.8f,0}, {1,1,1}};
-    engine->activeScene->registry.cameras[camera] = BE::CameraComponent{ 45.0f, 0.1f, 100.0f, 1.0f, true, true };
+    engine->activeScene->registry.cameras[camera] = BE::CameraComponent{ 45.0f, 0.1f, 100.0f, 1.0f, false, true };
 
     selectedAnchor = -1;
 }
@@ -97,6 +97,11 @@ void Editor::beginFrame() {
 
     ImGui::DockSpace(ImGui::GetID("MyDockSpace"), ImVec2(0.0f, 0.0f));
     ImGui::End();
+
+    if (glfwGetKey(engine->getWindow(), GLFW_KEY_W)) currentGizmoOperation = ImGuizmo::TRANSLATE;
+    if (glfwGetKey(engine->getWindow(), GLFW_KEY_E)) currentGizmoOperation = ImGuizmo::ROTATE;
+    if (glfwGetKey(engine->getWindow(), GLFW_KEY_R)) currentGizmoOperation = ImGuizmo::SCALE;
+    if (glfwGetKey(engine->getWindow(), GLFW_KEY_T)) currentGizmoOperation = ImGuizmo::UNIVERSAL;
 }
 
 void Editor::showPanels() {

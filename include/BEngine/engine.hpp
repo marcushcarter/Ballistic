@@ -386,8 +386,8 @@ struct CameraComponent {
 };
 
 struct EditorCamera {
-    glm::vec2 orbit = glm::vec2(glm::radians(-45.0f), glm::radians(-30.0f));
-    float radius = 5.0f;
+    glm::vec2 orbit = glm::vec2(glm::radians(-45.0f), glm::radians(30.0f));
+    float radius = 6.0f;
     glm::vec3 target {0, 0, 0};
     float fov = 45.0f;
 
@@ -402,6 +402,8 @@ class Camera {
 public:
     glm::mat4 projectionMatrix;
     glm::mat4 viewMatrix;
+
+    bool editorCamera;
 
     Camera() = default;
     Camera(glm::vec3 position, glm::vec3 direction, float fov, float near, float far, bool isPerspective, float aspectRatio);
