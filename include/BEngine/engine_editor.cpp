@@ -103,6 +103,11 @@ void Editor::showPanels() {
     ImGui::Begin("Performance Overlay", nullptr, ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking );
     ImGui::Text("ENGINE FPS %.1f MS %.2f", engine->frameTime.fps, engine->frameTime.ms);
     ImGui::Text("IMGUI FPS %.1f MS %.2f", ImGui::GetIO().Framerate, 1000.0f/ImGui::GetIO().Framerate);
+    ImGui::BeginDisabled(true);
+    glm::vec3 dire = Math::QuatToEuler(engine->viewport->camera->orientation);
+    glm::vec3 dir = glm::eulerAngles(engine->viewport->camera->orientation);
+    ImGui::DragFloat3("camera direction", glm::value_ptr(dir));
+    ImGui::EndDisabled();
     ImGui::Text("SELECTED ANCHOR %d", selectedAnchor);
     ImGui::End();
 }
@@ -227,9 +232,9 @@ void Editor::Viewport() {
             TransformComponent& t = engine->activeScene->registry.transforms[selectedAnchor];
             
             glm::mat4 translation = glm::translate(glm::mat4(1), t.position);
-            glm::mat4 rotationX = glm::rotate(glm::mat4(1), glm::radians(t.rotation.x), glm::vec3(1,0,0));
-            glm::mat4 rotationY = glm::rotate(glm::mat4(1), glm::radians(t.rotation.y), glm::vec3(0,1,0));
-            glm::mat4 rotationZ = glm::rotate(glm::mat4(1), glm::radians(t.rotation.z), glm::vec3(0,0,1));
+            glm::mat4 rotationX = glm::rotate(glm::mat4(1), glm::radians(t.rotationEuler.x), glm::vec3(1,0,0));
+            glm::mat4 rotationY = glm::rotate(glm::mat4(1), glm::radians(t.rotationEuler.y), glm::vec3(0,1,0));
+            glm::mat4 rotationZ = glm::rotate(glm::mat4(1), glm::radians(t.rotationEuler.z), glm::vec3(0,0,1));
             glm::mat4 rotation = rotationX * rotationY * rotationZ;
             glm::mat4 scale = glm::scale(glm::mat4(1), t.scale);
 
@@ -253,7 +258,7 @@ void Editor::Viewport() {
                 );
 
                 t.position = translation;
-                t.rotation = rotation;
+                t.rotationEuler = rotation;
                 t.scale = scale;
 
                 picking = true;
@@ -441,11 +446,12 @@ void Editor::Inspector() {
     ImGui::Begin("Inspector");
     if (selectedAnchor != -1) {
 
-        float avialWidth = ImGui::GetContentRegionAvail().x;
+        float availWidth = ImGui::GetContentRegionAvail().x;
 
         // NAME COMPONENT
 
-        if (engine->activeScene->registry.tags.find(selectedAnchor) != engine->activeScene->registry.tags.end()) {
+        bool hasName = engine->activeScene->registry.tags.find(selectedAnchor) != engine->activeScene->registry.tags.end();
+        if (hasName) {
             NameComponent& t = engine->activeScene->registry.tags[selectedAnchor];
 
             ImGui::BeginGroup();
@@ -455,25 +461,6 @@ void Editor::Inspector() {
             buffer[sizeof(buffer) - 1] = '\0';
             if (ImGui::InputText("Name", buffer, sizeof(buffer))) {
                 t.name = buffer;
-            }
-            ImGui::SameLine();
-            if (ImGui::Button("+")) { ImGui::OpenPopup("AddComponentPopup"); }
-
-            if (ImGui::BeginPopup("AddComponentPopup")) {
-
-                if (engine->activeScene->registry.transforms.find(selectedAnchor) == engine->activeScene->registry.transforms.end()) {
-                    if (ImGui::MenuItem("Add Transform")) { engine->activeScene->registry.transforms[selectedAnchor] = TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}}; }
-                }
-
-                if (engine->activeScene->registry.meshes.find(selectedAnchor) == engine->activeScene->registry.meshes.end()) {
-                    if (ImGui::MenuItem("Add Mesh")) { engine->activeScene->registry.meshes[selectedAnchor] = MeshComponent{nullptr, nullptr, nullptr}; }
-                }
-
-                if (engine->activeScene->registry.lights.find(selectedAnchor) == engine->activeScene->registry.lights.end()) {
-                    if (ImGui::MenuItem("Add Light")) { engine->activeScene->registry.lights[selectedAnchor] = LightComponent{ glm::vec3(1,1,1), 1.0f, 1 }; }
-                }
-
-                ImGui::EndPopup();
             }
         
             // const char* typeLabels[] = { "None", "Player" };
@@ -489,25 +476,18 @@ void Editor::Inspector() {
 
         // TRANSFORM COMPONENT
 
-        if (engine->activeScene->registry.transforms.find(selectedAnchor) != engine->activeScene->registry.transforms.end()) {
+        bool openTransform = true;
+        bool hasTransform = engine->activeScene->registry.transforms.find(selectedAnchor) != engine->activeScene->registry.transforms.end();
+        if (hasTransform) {
             TransformComponent& t = engine->activeScene->registry.transforms[selectedAnchor];
 
-            if (ImGui::CollapsingHeader("Transform")) {
+            if (ImGui::CollapsingHeader("Transform", &openTransform)) {
+
                 ImGui::BeginGroup();
 
-                if (
-                    ImGui::DragFloat3("Position", glm::value_ptr(t.position), 0.1f) || 
-                    ImGui::DragFloat3("Rotation", glm::value_ptr(t.rotation), 0.1f) &&
-                    engine->activeScene->registry.lights.find(selectedAnchor) != engine->activeScene->registry.lights.end()
-                ) {
-                    // Update GPU
-                }
-
+                ImGui::DragFloat3("Position", glm::value_ptr(t.position), 0.1f);
+                ImGui::DragFloat3("Rotation", glm::value_ptr(t.rotationEuler), 0.1f);
                 ImGui::DragFloat3("Scale", glm::value_ptr(t.scale), 0.1f);
-
-                if (ImGui::Button("Remove Transform Component")) {
-                    engine->activeScene->registry.transforms.erase(selectedAnchor);
-                }
                 
                 ImGui::Separator();
 
@@ -515,11 +495,15 @@ void Editor::Inspector() {
             }
         }
 
+        if (!openTransform) engine->activeScene->registry.transforms.erase(selectedAnchor);
+
         // MESH COMPONENT
 
-        if (engine->activeScene->registry.meshes.find(selectedAnchor) != engine->activeScene->registry.meshes.end()) {
+        bool openMesh = true;
+        bool hasMesh = engine->activeScene->registry.meshes.find(selectedAnchor) != engine->activeScene->registry.meshes.end();
+        if (hasMesh) {
             MeshComponent& m = engine->activeScene->registry.meshes[selectedAnchor];
-            if (ImGui::CollapsingHeader("Material")) {
+            if (ImGui::CollapsingHeader("Material", &openMesh)) {
                 
                 static glm::vec2 rotation(0.0f);
                 static bool cullPreview = false;
@@ -555,7 +539,7 @@ void Editor::Inspector() {
 
                 if (m.mesh) {
                     ImGui::Text("Mesh Preview:");
-                    ImGui::Image((void*)(intptr_t) meshPreview.attachments[0].ID, ImVec2(avialWidth-10, avialWidth-10), ImVec2(0, 1), ImVec2(1, 0));
+                    ImGui::Image((void*)(intptr_t) meshPreview.attachments[0].ID, ImVec2(availWidth-10, availWidth-10), ImVec2(0, 1), ImVec2(1, 0));
                     
                     static bool draggingMesh = false;
                     static ImVec2 lastMousePos;
@@ -625,16 +609,16 @@ void Editor::Inspector() {
                     
                     ImGui::BeginDisabled(false);
 
-                    if (m.material->diffuseMap) ImGui::Image((void*)(intptr_t)m.material->diffuseMap->ID, ImVec2(avialWidth/4, avialWidth/4), ImVec2(0, 1), ImVec2(1, 0));
-                    else ImGui::Dummy(ImVec2(avialWidth/4, avialWidth/4));
+                    if (m.material->diffuseMap) ImGui::Image((void*)(intptr_t)m.material->diffuseMap->ID, ImVec2(availWidth/4, availWidth/4), ImVec2(0, 1), ImVec2(1, 0));
+                    else ImGui::Dummy(ImVec2(availWidth/4, availWidth/4));
                     ImGui::SameLine();
 
-                    if (m.material->normalMap) ImGui::Image((void*)(intptr_t)m.material->normalMap->ID, ImVec2(avialWidth/4, avialWidth/4), ImVec2(0, 1), ImVec2(1, 0));
-                    else ImGui::Dummy(ImVec2(avialWidth/4, avialWidth/4));
+                    if (m.material->normalMap) ImGui::Image((void*)(intptr_t)m.material->normalMap->ID, ImVec2(availWidth/4, availWidth/4), ImVec2(0, 1), ImVec2(1, 0));
+                    else ImGui::Dummy(ImVec2(availWidth/4, availWidth/4));
                     ImGui::SameLine();
                     
-                    if (m.material->roughnessMap) ImGui::Image((void*)(intptr_t)m.material->roughnessMap->ID, ImVec2(avialWidth/4, avialWidth/4), ImVec2(0, 1), ImVec2(1, 0));
-                    else ImGui::Dummy(ImVec2(avialWidth/4, avialWidth/4));
+                    if (m.material->roughnessMap) ImGui::Image((void*)(intptr_t)m.material->roughnessMap->ID, ImVec2(availWidth/4, availWidth/4), ImVec2(0, 1), ImVec2(1, 0));
+                    else ImGui::Dummy(ImVec2(availWidth/4, availWidth/4));
 
                     ImGui::Text("Material Properties:");
                     if (ImGui::SliderFloat("Metallic", &m.material->metallic, 0.0f, 1.0f)) {}
@@ -676,10 +660,6 @@ void Editor::Inspector() {
             
                     ImGui::Separator();
                 }
-
-                if (ImGui::Button("Remove Mesh Component")) {
-                    engine->activeScene->registry.meshes.erase(selectedAnchor);
-                }
         
                 ImGui::EndGroup();
 
@@ -720,10 +700,14 @@ void Editor::Inspector() {
             }
         }
 
+        if (!openMesh) engine->activeScene->registry.meshes.erase(selectedAnchor);
+
         // LIGHT COMPONENT
 
-        if (engine->activeScene->registry.lights.find(selectedAnchor) != engine->activeScene->registry.lights.end()) {
-            if (ImGui::CollapsingHeader("Light")) {
+        bool openLight = true;
+        bool hasLight = engine->activeScene->registry.lights.find(selectedAnchor) != engine->activeScene->registry.lights.end();
+        if (hasLight) {
+            if (ImGui::CollapsingHeader("Light", &openLight)) {
                 ImGui::BeginGroup();
 
                 LightComponent& l = engine->activeScene->registry.lights[selectedAnchor];
@@ -734,14 +718,52 @@ void Editor::Inspector() {
                 if (ImGui::ColorEdit3("Color", &l.color.x)) {}
                 if (ImGui::DragFloat("Intensity", &l.intensity)) {}
 
-                if (ImGui::Button("Remove Light Component")) {
-                    engine->activeScene->registry.lights.erase(selectedAnchor);
-                }
+                ImGui::Separator();
+
+                ImGui::EndGroup();
+            }
+        }
+
+        // CAMERA COMPONENT
+
+        bool openCamera = true;
+        bool hasCamera = engine->activeScene->registry.cameras.find(selectedAnchor) != engine->activeScene->registry.cameras.end();
+        if (hasCamera) {
+            if (ImGui::CollapsingHeader("Camera", &openCamera)) {
+                ImGui::BeginGroup();
+
+                CameraComponent& c = engine->activeScene->registry.cameras[selectedAnchor];
+
+                ImGui::DragFloat("FOV", &c.fov);
+                // ImGui::DragFloat("nearPlane", &c.nearPlane);
+                // ImGui::DragFloat("farPlane", &c.farPlane);
+                ImGui::DragFloat("Zoom", &c.zoom, 0.01f);
+                ImGui::Checkbox("IsMain", &c.isMain);
+                ImGui::Checkbox("Perspective", &c.isPerspective);
 
                 ImGui::Separator();
 
                 ImGui::EndGroup();
             }
+        }
+
+
+        if (!openLight) engine->activeScene->registry.lights.erase(selectedAnchor);
+
+        if (!hasName || !hasTransform || !hasMesh || !hasLight || !hasCamera) {
+
+            if (ImGui::Button("Add Component", ImVec2(availWidth, 0))) { ImGui::OpenPopup("AddComponentPopup"); }
+            if (ImGui::BeginPopup("AddComponentPopup")) {
+
+                if (!hasName) { if (ImGui::MenuItem("Add Name")) { engine->activeScene->registry.tags[selectedAnchor] = NameComponent{"", AnchorType::None}; } }
+                if (!hasTransform) { if (ImGui::MenuItem("Add Transform")) { engine->activeScene->registry.transforms[selectedAnchor] = TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}}; } }
+                if (!hasMesh) { if (ImGui::MenuItem("Add Mesh")) { engine->activeScene->registry.meshes[selectedAnchor] = MeshComponent{nullptr, nullptr, nullptr}; } }
+                if (!hasLight) { if (ImGui::MenuItem("Add Light")) { engine->activeScene->registry.lights[selectedAnchor] = LightComponent{ glm::vec3(1,1,1), 1.0f, 1 }; } }
+                if (!hasCamera) { if (ImGui::MenuItem("Add Camera")) { engine->activeScene->registry.cameras[selectedAnchor] = CameraComponent{ 45.0f, 0.1f, 100.0f, 1.0f, false, true }; } }
+
+                ImGui::EndPopup();
+            }
+
         }
 
     }

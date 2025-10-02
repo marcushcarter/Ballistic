@@ -10,6 +10,52 @@
 #include <cstring>
 #include <stack>
 
+
+namespace BE::Math {
+
+glm::quat EulerToQuat(glm::vec3 euler) {
+    float yaw = euler.y;
+    float pitch = euler.x;
+    float roll = euler.z;
+
+    float cy = cosf(yaw * 0.5f);
+    float sy = sinf(yaw * 0.5f);
+    float cp = cosf(pitch * 0.5f);
+    float sp = sinf(pitch * 0.5f);
+    float cr = cosf(roll * 0.5f);
+    float sr = sinf(roll * 0.5f);
+
+    glm::quat q;
+    q.w = cr * cp * cy + sr * sp * sy;
+    q.x = sr * cp * cy + cr * sp * sy;
+    q.y = cr * sp * cy + sr * cp * sy;
+    q.z = cr * cp * sy + sr * sp * cy;
+
+    return q;
+}
+
+glm::vec3 QuatToEuler(glm::quat quat) {
+    glm::vec3 euler;
+
+    float sinr_cosp = 2.0f * (quat.w * quat.x + quat.y * quat.z);
+    float cosr_cosp = 1.0f - 2.0f * (quat.x * quat.x + quat.y * quat.z);
+    euler.x = atan2f(sinr_cosp, cosr_cosp);
+
+    float sinp = 2.0f * (quat.w * quat.y - quat.z * quat.x);
+    if (fabsf(sinp) >= 1)
+        euler.y = copysignf(90.0f, sinp);
+    else 
+        euler.y = asinf(sinp);
+
+    float siny_cosp = 2.0f * (quat.w * quat.z + quat.x * quat.y);
+    float cosy_cosp = 1.0f - 2.0f * (quat.y * quat.y + quat.z * quat.z);
+    euler.x = atan2f(siny_cosp, cosy_cosp);
+    
+    return euler;
+}
+
+};
+
 namespace BE {
 
 static void Message(int severity, const std::string& module, const std::string& message, const std::string& file = "", int line = 0, const std::source_location& loc = std::source_location::current()) {
@@ -1585,11 +1631,19 @@ void Camera::uploadToShader(GLuint shaderID) {
 // ========================================================================
 
 Light::Light(float type, const glm::vec3 pos, const glm::vec3 dir, const glm::vec3 col, float inten, float pad1_ ) {
+    
     position = glm::vec4(pos, (float)type);
     color = glm::vec4(col, inten);
     direction = glm::vec4(dir, pad1_);
-    shadowMatrices[0] = glm::mat4(1.0f);
-    shadowMatrices[1] = glm::mat4(1.0f);
+    generateMatrices();
+}
+
+Light::Light(const TransformComponent& t, const LightComponent& l) {
+
+    position = glm::vec4(t.position, (float)l.type);
+    color = glm::vec4(l.color, l.intensity);
+    direction = glm::vec4(t.rotationEuler, 0.0f);
+    generateMatrices();
 }
 
 void Light::generateMatrices() {
@@ -1614,7 +1668,7 @@ void Light::generateMatrices() {
     }
 
     else if (position.w == 2.0f) {
-        float fov    = glm::radians(45.0f); // adjust if you want wider cone
+        float fov    = glm::radians(45.0f);
         float aspect = 1.0f;
         float range  = direction.w;
         glm::mat4 proj = glm::perspective(fov, aspect, 0.1f, range);
@@ -1627,19 +1681,66 @@ void Light::generateMatrices() {
 
 // ========================================================================
 
-// ========================================================================
+TEMPCamera::TEMPCamera(const TransformComponent& t, const CameraComponent& c, float aspectRatio) {   
 
-// ========================================================================
+    if (c.isPerspective) {
+        projectionMatrix = glm::perspective(
+            glm::radians(c.fov),
+            aspectRatio,
+            c.nearPlane,
+            c.farPlane
+        );
+    } else {
+        float orthoHeight = 10.0f;
+        float orthoWidth = orthoHeight * aspectRatio;
+        projectionMatrix = glm::ortho(
+            -orthoWidth * 0.5f, orthoWidth * 0.5f,
+            -orthoHeight * 0.5f, orthoHeight * 0.5f,
+            c.nearPlane, c.farPlane
+        );
+    }
 
-// ========================================================================
+    glm::quat orientation = glm::quat(t.rotationEuler);
 
-// ========================================================================
+    glm::vec3 forward = orientation * glm::vec3(0, 0, -1);
+    glm::vec3 up      = orientation * glm::vec3(0, 1,  0);
+    glm::vec3 target  = t.position + forward;
 
-// ========================================================================
+    viewMatrix = glm::lookAt(t.position, target, up);
+}
 
-// ========================================================================
+TEMPCamera::TEMPCamera(glm::vec3 position, glm::vec3 direction, float fov, float near, float far, bool isPerspective, float aspectRatio) {
 
-// ========================================================================
+    if (isPerspective) {
+        projectionMatrix = glm::perspective(
+            glm::radians(fov),
+            aspectRatio,
+            near,
+            far
+        );
+    } else {
+        float orthoHeight = 10.0f;
+        float orthoWidth = orthoHeight * aspectRatio;
+        projectionMatrix = glm::ortho(
+            -orthoWidth * 0.5f, orthoWidth * 0.5f,
+            -orthoHeight * 0.5f, orthoHeight * 0.5f,
+            near, far
+        );
+    }
+
+    glm::quat orientation = glm::quat(direction);
+
+    glm::vec3 forward = orientation * glm::vec3(0, 0, -1);
+    glm::vec3 up      = orientation * glm::vec3(0, 1,  0);
+    glm::vec3 target  = position + forward;
+
+    viewMatrix = glm::lookAt(position, target, up);
+}
+
+void TEMPCamera::uploadToShader(GLuint shaderID) {
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uView"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
+    glUniformMatrix4fv(glGetUniformLocation(shaderID, "uProjection"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+}
 
 // ========================================================================
 
@@ -1684,10 +1785,6 @@ void Scene::removeCamera(const std::string& name, const std::source_location& lo
         Message(2, "SCENE", "Could not find camera '" + name + "'", loc.file_name(), loc.line());
     }   
 }
-
-// ========================================================================
-
-// ========================================================================
 
 // ========================================================================
 
@@ -1804,6 +1901,24 @@ void Engine::render() {
     viewport->camera->width = viewport->width;
     viewport->camera->height = viewport->height;
 
+    // CAMERA UPLOAD
+    
+    // viewport->camera->updateViewMatrix();
+
+    TEMPCamera camera(viewport->camera->position, glm::eulerAngles(viewport->camera->orientation), viewport->camera->fov, viewport->camera->nearPlane, viewport->camera->farPlane, !glfwGetKey(this->getWindow(), GLFW_KEY_3), ((float)viewport->width / (float)viewport->height));
+
+    for (Anchor a : viewport->scene->anchors) {
+        
+        if ( viewport->scene->registry.transforms.find(a) != viewport->scene->registry.transforms.end() && viewport->scene->registry.cameras.find(a) != viewport->scene->registry.cameras.end() ) {
+            
+            TransformComponent& t = viewport->scene->registry.transforms.find(a)->second;
+            CameraComponent& c = viewport->scene->registry.cameras.find(a)->second;
+
+            if (c.isMain) camera = TEMPCamera(t, c, ((float)viewport->width / (float)viewport->height));
+        }
+
+    }
+
     // LIGHT UPLOAD
 
     static std::vector<Light> lights;
@@ -1815,8 +1930,7 @@ void Engine::render() {
             TransformComponent& t = viewport->scene->registry.transforms.find(a)->second;
             LightComponent& l = viewport->scene->registry.lights.find(a)->second;
 
-            Light gpu(l.type, t.position, t.rotation, l.color, l.intensity, 0.0f);
-            gpu.generateMatrices();
+            Light gpu(t, l);
 
             lights.push_back(gpu);
         }
@@ -1838,7 +1952,7 @@ void Engine::render() {
         TransformComponent& t = viewport->scene->registry.transforms.find(a)->second;
         MeshComponent& m = viewport->scene->registry.meshes.find(a)->second;
 
-        glm::mat4 model = glm::translate(glm::mat4(1.0f), t.position) * glm::eulerAngleXYZ(t.rotation.x, t.rotation.y, t.rotation.z) * glm::scale(glm::mat4(1.0f), t.scale);
+        glm::mat4 model = glm::translate(glm::mat4(1.0f), t.position) * glm::eulerAngleXYZ(t.rotationEuler.x, t.rotationEuler.y, t.rotationEuler.z) * glm::scale(glm::mat4(1.0f), t.scale);
 
         if (viewport->scene->registry.meshes.find(a) != viewport->scene->registry.meshes.end() && m.mesh != nullptr) {
 
@@ -1850,7 +1964,7 @@ void Engine::render() {
                 glUniform1i(glGetUniformLocation(shader->ID, "numLights"), numActiveLights);
                 glUniform1f(glGetUniformLocation(shader->ID, "ambientLight"), 0.2f);
                 glUniform1i(glGetUniformLocation(shader->ID, "enableLights"), true);
-                viewport->camera->uploadToShader(shader->ID);
+                camera.uploadToShader(shader->ID);
                 updatedShaders.push_back(shader->ID);
             }
             
@@ -1894,7 +2008,5 @@ void Engine::beginFrame() {
     glClearColor(0,0,0,0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 }
-
-// void Engine::bindSSBO() { glBindBufferBAse(GL_SHADER_STORAGE_BUFFER, 0, lightSSBO); }
 
 } // BE namespace

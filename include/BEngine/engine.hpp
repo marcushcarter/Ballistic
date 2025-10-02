@@ -25,6 +25,17 @@
 
 #include "BEngine/engine_default.hpp"
 
+namespace BE::Math {
+
+#define DEG2RAD 0.017453292519943295f
+#define RAD2DEG 57.29577951308232f
+
+glm::quat EulerToQuat(glm::vec3 euler);
+
+glm::vec3 QuatToEuler(glm::quat quat);
+
+};
+
 namespace BE {
 
 class FrameTime {
@@ -58,7 +69,7 @@ struct Vertex {
     glm::vec2 texUV;
 };
 
-class VAO {
+struct VAO {
 public:
     GLuint ID = 0;
 
@@ -68,7 +79,7 @@ public:
     void unbind();
 };
 
-class VBO {
+struct VBO {
 public:
     GLuint ID = 0;
 
@@ -82,7 +93,7 @@ public:
 
 };
 
-class EBO {
+struct EBO {
 public:
     GLuint ID = 0;
 
@@ -342,30 +353,9 @@ public:
     void uploadToShader(GLuint shaderID);
 };
 
-class Light {
-public:
-    glm::vec4 position;
-    glm::vec4 color;
-    glm::vec4 direction;
-    glm::mat4 shadowMatrices[2];
-
-    ~Light() = default;
-    Light(
-        float type = 1.0f, 
-        const glm::vec3 pos = glm::vec3(0), 
-        const glm::vec3 dir = glm::vec3(0), 
-        const glm::vec3 col = glm::vec3(1), 
-        float inten = 1.0f, float pad1_ = 0.0f
-    );
-
-    void generateMatrices();
-};
-
 using Anchor = uint32_t;
 
-enum class AnchorType {
-    None, Player
-};
+enum class AnchorType { None, Player };
 
 struct NameComponent {
     std::string name = "Anchor";
@@ -373,22 +363,72 @@ struct NameComponent {
 };
 
 struct TransformComponent {
-    glm::vec3 position {0.0f};
-    glm::vec3 rotation {0.0f};
-    glm::vec3 scale {1.0f};
+    glm::vec3 position {0, 0, 0};
+    glm::vec3 rotationEuler {0, 0, 0};
+    glm::vec3 scale {1, 1, 1};
     glm::mat4 model {1.0f};
 };
 
 struct MeshComponent {
-    std::shared_ptr<Mesh> mesh;
-    std::shared_ptr<Material> material;
-    std::shared_ptr<Shader> shader;
+    std::shared_ptr<Mesh> mesh = nullptr;
+    std::shared_ptr<Material> material = nullptr;
+    std::shared_ptr<Shader> shader = nullptr;
 };
 
 struct LightComponent {
-    glm::vec3 color; 
-    float intensity;
-    int type;
+    glm::vec3 color {1, 1, 1}; 
+    float intensity = 1.0f;
+    int type = 1;
+};
+
+class Light {
+public:
+    glm::vec4 position;
+    glm::vec4 color;
+    glm::vec4 direction;
+    glm::mat4 shadowMatrices[2];
+
+    Light(
+        float type = 1.0f, 
+        const glm::vec3 pos = glm::vec3(0), 
+        const glm::vec3 dir = glm::vec3(0), 
+        const glm::vec3 col = glm::vec3(1), 
+        float inten = 1.0f, float pad1_ = 0.0f
+    );
+    Light(
+        const TransformComponent& t,
+        const LightComponent& l
+    );
+    ~Light() = default;
+
+    void generateMatrices();
+};
+
+struct CameraComponent {
+    float fov = 45.0f;
+    float nearPlane = 0.1f;
+    float farPlane = 100.0f;
+    float zoom = 1.0f;
+
+    bool isMain = false;
+    bool isPerspective = true;
+};
+
+class TEMPCamera {
+public:
+    glm::mat4 projectionMatrix;
+    glm::mat4 viewMatrix;
+
+    TEMPCamera() = default;
+    TEMPCamera(glm::vec3 position, glm::vec3 direction, float fov, float near, float far, bool isPerspective, float aspectRatio);
+    TEMPCamera(
+        const TransformComponent& t,
+        const CameraComponent& c,
+        float aspectRatio
+    );
+
+    void uploadToShader(GLuint shaderID);
+
 };
 
 struct Registry {
@@ -396,6 +436,7 @@ struct Registry {
     std::unordered_map<Anchor, TransformComponent> transforms;
     std::unordered_map<Anchor, MeshComponent> meshes;
     std::unordered_map<Anchor, LightComponent> lights;
+    std::unordered_map<Anchor, CameraComponent> cameras;
 };
 
 class Scene {

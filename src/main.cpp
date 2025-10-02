@@ -12,8 +12,6 @@ int main() {
     while(engine.isRunning()) {
 
         engine.beginFrame();
-
-        engine.activeScene->activeCamera->updateViewMatrix();
         
         engine.viewport->scene = engine.activeScene;
         engine.viewport->camera = engine.activeScene->activeCamera;
