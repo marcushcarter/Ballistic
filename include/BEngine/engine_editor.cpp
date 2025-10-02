@@ -44,10 +44,10 @@ Editor::Editor(Engine* enginePtr)
     engine->activeScene->registry.transforms[cube] = BE::TransformComponent{{0,0,0}, {0,0,0}, {1,1,1}};
     engine->activeScene->registry.meshes[cube] = BE::MeshComponent{engine->resources().meshes["default_cube"], nullptr, nullptr};
     
-    BE::Anchor skybox = engine->activeScene->createAnchor();
-    engine->activeScene->registry.tags[skybox] = BE::NameComponent{"skybox", BE::AnchorType::None};
-    engine->activeScene->registry.transforms[skybox] = BE::TransformComponent{{0,0,0}, {0,0,0}, {10,10,10}};
-    engine->activeScene->registry.meshes[skybox] = BE::MeshComponent{engine->resources().meshes["default_cube"], nullptr, nullptr};
+    // BE::Anchor skybox = engine->activeScene->createAnchor();
+    // engine->activeScene->registry.tags[skybox] = BE::NameComponent{"skybox", BE::AnchorType::None};
+    // engine->activeScene->registry.transforms[skybox] = BE::TransformComponent{{0,0,0}, {0,0,0}, {10,10,10}};
+    // engine->activeScene->registry.meshes[skybox] = BE::MeshComponent{engine->resources().meshes["default_cube"], nullptr, nullptr};
 
     BE::Anchor light = engine->activeScene->createAnchor();
     engine->activeScene->registry.tags[light] = BE::NameComponent{"light", BE::AnchorType::None};

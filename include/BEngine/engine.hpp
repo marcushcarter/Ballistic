@@ -389,7 +389,13 @@ struct EditorCamera {
     glm::vec2 orbit = glm::vec2(glm::radians(-45.0f), glm::radians(-30.0f));
     float radius = 5.0f;
     glm::vec3 target {0, 0, 0};
-    // float fov = 45.0f;
+    float fov = 45.0f;
+
+    glm::vec2 scrollDelta;
+    bool ctrlPressed;
+    bool shiftPressed;
+
+    void inputs();
 };
 
 class Camera {

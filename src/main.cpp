@@ -13,11 +13,7 @@ int main() {
 
         engine.beginFrame();
 
-        engine.editorCamera.orbit.x += engine.frameTime.dt;
-        engine.editorCamera.orbit.y = sinf(glfwGetTime())/2;
-        
         engine.viewport->scene = engine.activeScene;
-
         engine.render();
 
         editor.Frame();

@@ -1637,30 +1637,24 @@ Camera::Camera(glm::vec2 orbit, glm::vec3 target, float radius, float near, floa
         far
     );
     
-    float yaw = orbit.x;
-    float pitch = glm::clamp(orbit.y, -glm::radians(89.0f), glm::radians(89.0f));
-
-    float x = radius * cosf(pitch) * cosf(yaw);
-    float y = radius * sinf(pitch);
-    float z = radius * cosf(pitch) * sinf(yaw);
-
-    glm::vec3 position = target + glm::vec3(x,y,z);
+    glm::vec3 position = target + glm::vec3(
+        radius * cosf(glm::clamp(orbit.y, -glm::radians(89.0f), glm::radians(89.0f))) * cosf(orbit.x),
+        radius * sinf(glm::clamp(orbit.y, -glm::radians(89.0f), glm::radians(89.0f))),
+        radius * cosf(glm::clamp(orbit.y, -glm::radians(89.0f), glm::radians(89.0f))) * sinf(orbit.x)
+    );
 
     viewMatrix = glm::lookAt(position, target, glm::vec3(0,1,0));
 }
 
 Camera::Camera(EditorCamera& camera, float near, float far, float aspectRatio) {
     
-    projectionMatrix = glm::perspective(glm::radians(60.0f), aspectRatio, near, far);
-    
-    float yaw = camera.orbit.x;
-    float pitch = glm::clamp(camera.orbit.y, -glm::radians(89.0f), glm::radians(89.0f));
+    projectionMatrix = glm::perspective(glm::radians(camera.fov), aspectRatio, near, far);
 
-    float x = camera.radius * cosf(pitch) * cosf(yaw);
-    float y = camera.radius * sinf(pitch);
-    float z = camera.radius * cosf(pitch) * sinf(yaw);
-
-    glm::vec3 position = camera.target + glm::vec3(x,y,z);
+    glm::vec3 position = camera.target + glm::vec3(
+        camera.radius * cosf(glm::clamp(camera.orbit.y, -glm::radians(89.0f), glm::radians(89.0f))) * cosf(camera.orbit.x),
+        camera.radius * sinf(glm::clamp(camera.orbit.y, -glm::radians(89.0f), glm::radians(89.0f))),
+        camera.radius * cosf(glm::clamp(camera.orbit.y, -glm::radians(89.0f), glm::radians(89.0f))) * sinf(camera.orbit.x)
+    );
 
     viewMatrix = glm::lookAt(position, camera.target, glm::vec3(0,1,0));
 }
@@ -1668,6 +1662,43 @@ Camera::Camera(EditorCamera& camera, float near, float far, float aspectRatio) {
 void Camera::uploadToShader(GLuint shaderID) {
     glUniformMatrix4fv(glGetUniformLocation(shaderID, "uView"), 1, GL_FALSE, glm::value_ptr(viewMatrix));
     glUniformMatrix4fv(glGetUniformLocation(shaderID, "uProjection"), 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+}
+
+void EditorCamera::inputs() {
+
+    float orbitSpeed = 0.005f;
+    float zoomSpeed = 0.01f;
+    float panSpeed = 0.01f * radius;
+
+    if (!ctrlPressed && !shiftPressed) {
+
+        orbit.x += scrollDelta.x * orbitSpeed;
+        orbit.y += scrollDelta.y * orbitSpeed;
+        orbit.y = glm::clamp(orbit.y, -glm::radians(89.0f), glm::radians(89.0f));
+
+    } else if (ctrlPressed) {
+
+        radius -= scrollDelta.x * zoomSpeed;
+        radius += scrollDelta.y * zoomSpeed;
+        radius = glm::max(radius, 0.1f);
+
+    } else if (shiftPressed) {
+        
+        glm::vec3 cameraPos = target + glm::vec3(
+            radius * cosf(glm::clamp(orbit.y, -glm::radians(89.0f), glm::radians(89.0f))) * cosf(orbit.x),
+            radius * sinf(glm::clamp(orbit.y, -glm::radians(89.0f), glm::radians(89.0f))),
+            radius * cosf(glm::clamp(orbit.y, -glm::radians(89.0f), glm::radians(89.0f))) * sinf(orbit.x)
+        );
+
+        glm::vec3 forward = glm::normalize(target - cameraPos);
+        glm::vec3 right = glm::normalize(glm::cross(forward, glm::vec3(0,1,0)));
+        glm::vec3 up = glm::cross(right, forward);
+
+        target += -right * scrollDelta.x * panSpeed;
+        target += up * scrollDelta.y * panSpeed;
+    }
+
+    scrollDelta *= 0.9f;
 }
 
 // ========================================================================
@@ -1694,8 +1725,14 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     if (!engine) return;
 
     engine->setSize(width, height);
+}
 
-    // Message(0, "ENGINE", "Framebuffer resized", __FILE__, __LINE__);
+static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset) {
+    Engine* engine = static_cast<Engine*>(glfwGetWindowUserPointer(window));
+    if (!engine) return;
+
+    engine->editorCamera.scrollDelta.x += (float)xoffset;
+    engine->editorCamera.scrollDelta.y += (float)yoffset;
 }
 
 static Engine* g_boundEngine = nullptr;
@@ -1895,9 +1932,12 @@ void Engine::beginFrame() {
 
     glfwSetWindowUserPointer(window, this);
     glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+    glfwSetScrollCallback(window, scroll_callback);
     
     glfwPollEvents();
-    // inputs
+    editorCamera.inputs();
+    editorCamera.ctrlPressed = glfwGetKey(window, GLFW_KEY_LEFT_CONTROL);
+    editorCamera.shiftPressed = glfwGetKey(window, GLFW_KEY_LEFT_SHIFT);
     frameTime.update();
     // update audio engine
     //set listener position to camera
