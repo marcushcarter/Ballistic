@@ -1,25 +1,3 @@
-[submodule "thirdparty/imgui"]
-	path = thirdparty/imgui
-	url = https://github.com/ocornut/imgui.git
-	branch = docking
-[submodule "thirdparty/glm"]
-	path = thirdparty/glm
-	url = https://github.com/g-truc/glm.git
-[submodule "thirdparty/glfw"]
-	path = thirdparty/glfw
-	url = https://github.com/glfw/glfw.git
-[submodule "thirdparty/entt"]
-	path = thirdparty/entt
-	url = https://github.com/skypjack/entt
-[submodule "thirdparty/tinyfiledialogs"]
-	path = thirdparty/tinyfiledialogs
-	url = https://github.com/native-toolkit/libtinyfiledialogs.git
-[submodule "thirdparty/tinyobjloader"]
-	path = thirdparty/tinyobjloader
-	url = https://github.com/tinyobjloader/tinyobjloader.git
-[submodule "thirdparty/stb"]
-	path = thirdparty/stb
-	url = https://github.com/nothings/stb
-[submodule "thirdparty/imguizmo"]
-	path = thirdparty/imguizmo
-	url = https://github.com/CedricGuillemet/ImGuizmo
+[submodule "Ballistic/Thirdparty/glew"]
+	path = Ballistic/Thirdparty/glew
+	url = https://github.com/Perlmint/glew-cmake
