@@ -1,0 +1,7 @@
+bin/
+build/
+Makefile
+*.mk
+make/
+thirdparty/implot/
+thirdparty/implot3d/
