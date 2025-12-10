@@ -3,9 +3,6 @@
 namespace Ballistic {
 
     void RuntimeLayer::OnAttach() {
-        // glGenFramebuffers(1, &m_Framebuffer);
-        // glBindFramebuffer(GL_FRAMEBUFFER, m_Framebuffer);
-        // glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
     void RuntimeLayer::OnDetach() {

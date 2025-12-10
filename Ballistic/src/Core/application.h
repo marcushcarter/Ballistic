@@ -7,6 +7,7 @@ namespace Ballistic {
 	class Layer;
 	class LayerStack;
 	class RenderLayer;
+	class ProjectManager;
 }
 
 namespace Ballistic {
@@ -23,6 +24,8 @@ namespace Ballistic {
 		std::shared_ptr<Window> m_Window;
 
     	std::shared_ptr<LayerStack> m_LayerStack;
+
+        std::shared_ptr<ProjectManager> m_ProjectManager;
 
     	std::shared_ptr<RenderLayer> m_RenderLayer;
 	};

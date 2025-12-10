@@ -22,16 +22,9 @@ namespace Ballistic {
 	        layer->OnUpdate();
 	}
 
-	// void LayerStack::DispatchEvent(void* e) {
-	//     for (std::shared_ptr<Layer>& layer : m_Layers)
-	//         layer->OnEvent(e);
-	// }
-
 	void LayerStack::DispatchEvent(std::shared_ptr<IEvent> event) {
 	    for (std::shared_ptr<Layer>& layer : m_Layers) {
 	        layer->OnEvent(event);
-	        // if (event->IsConsumed())
-	        // 	break;
 	    }
 	}
 
