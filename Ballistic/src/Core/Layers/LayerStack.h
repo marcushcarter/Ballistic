@@ -17,8 +17,5 @@ namespace Ballistic {
 
 	    void OnUpdate();
 	    void DispatchEvent(std::shared_ptr<IEvent> event);
-
-	private:
-	    // std::vector<std::shared_ptr<Layer>> m_Layers;
 	};
 }

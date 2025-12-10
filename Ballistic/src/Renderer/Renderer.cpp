@@ -38,7 +38,7 @@ namespace Ballistic {
 	    // ConfigureRtxInstancesSSBO();
 	    // ConfigureRtxSpheresSSBO();
 
-	    computeRtxTexture = std::make_shared<Image2D>(1200, 800);
+	    computeRtxTexture = std::make_shared<Image2D>(1280, 720);
 	}
 
 	std::shared_ptr<Image2D> Renderer::RenderComputeRtxStage() {
@@ -58,6 +58,36 @@ namespace Ballistic {
 		int groupX = (computeRtxTexture->m_Width + 15) / 16;
 	    int groupY = (computeRtxTexture->m_Height + 15) / 16;
 		computeRtxShader->dispatchCompute(groupX, groupY);
+
+		GLuint fbo;
+	    glGenFramebuffers(1, &fbo);
+	    glBindFramebuffer(GL_READ_FRAMEBUFFER, fbo);
+	    glFramebufferTexture2D(GL_READ_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	                           GL_TEXTURE_2D, computeRtxTexture->m_RendererID, 0);
+
+	    GLenum status = glCheckFramebufferStatus(GL_READ_FRAMEBUFFER);
+	    if (status != GL_FRAMEBUFFER_COMPLETE) {
+	        std::cerr << "Framebuffer incomplete: " << status << std::endl;
+	        glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	        glDeleteFramebuffers(1, &fbo);
+	        computeRtxTexture->unbind(0);
+	        return computeRtxTexture;
+	    }
+
+	    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0); // default framebuffer
+
+	    // Blit entire texture to the window
+	    glBlitFramebuffer(
+	        0, 0, computeRtxTexture->m_Width, computeRtxTexture->m_Height,
+	        0, 0, computeRtxTexture->m_Width, computeRtxTexture->m_Height,
+	        GL_COLOR_BUFFER_BIT,
+	        GL_NEAREST
+	    );
+
+	    // Cleanup
+	    glBindFramebuffer(GL_READ_FRAMEBUFFER, 0);
+	    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+	    glDeleteFramebuffers(1, &fbo);
 
 		computeRtxTexture->unbind(0);
 

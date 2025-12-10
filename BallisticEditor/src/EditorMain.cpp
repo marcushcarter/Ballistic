@@ -7,7 +7,7 @@ namespace Ballistic {
 	class BallisticEditor : public Application {
 	public:
 		BallisticEditor() {
-			m_LayerStack->PushLayer(std::make_shared<EditorLayer>());
+			m_LayerStack->PushLayer(std::make_shared<EditorLayer>(m_LayerStack));
 		}
 
 		void Shutdown() override {

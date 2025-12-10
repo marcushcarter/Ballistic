@@ -19,7 +19,7 @@ namespace Ballistic {
     private:
         std::shared_ptr<LayerStack> m_LayerStack;
         
-        // Image2D* m_CurrentFrame;
+        // std::shared_ptr<Image2D> m_CurrentFrame;
         // GLuint m_Framebuffer;
     };
 

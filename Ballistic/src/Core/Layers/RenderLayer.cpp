@@ -12,12 +12,10 @@ namespace Ballistic {
     }
 
     void RenderLayer::OnUpdate() {
-        auto image = m_Renderer.RenderComputeRtxStage();
-        std::shared_ptr<IEvent> event = std::make_shared<FrameRenderedEvent>(image);
-
-        if (m_LayerStack) {
-            m_LayerStack->DispatchEvent(event);
-        }
+        std::shared_ptr<Image2D> image = m_Renderer.RenderComputeRtxStage();
+        
+        if (m_LayerStack)
+            m_LayerStack->DispatchEvent(std::make_shared<FrameRenderedEvent>(image));
     }
 
 }
