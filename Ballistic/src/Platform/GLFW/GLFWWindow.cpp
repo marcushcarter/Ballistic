@@ -22,17 +22,7 @@ namespace Ballistic {
 
 	    glfwMakeContextCurrent(m_NativeWindow);
 
-	    if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-	        if (!m_NativeWindow) {
-	            std::cout << "Failed to initialize GLAD" << std::endl;
-	            glfwDestroyWindow(m_NativeWindow);
-	            glfwTerminate();
-	        }
-	    }
-
-	    std::cout << glGetString(GL_VERSION) << std::endl;
 	    glfwSwapInterval(windowProps.VSync);
-
 	}
 
 	GLFWWindow::~GLFWWindow() {

@@ -5,5 +5,5 @@
 #include <memory>
 #include <vector>
 
-#include <glad/glad.h>
+#include <vulkan/vulkan.h>
 #include <GLFW/glfw3.h>

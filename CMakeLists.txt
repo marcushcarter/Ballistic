@@ -10,12 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(GLFW_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(GLFW_BUILD_DOCS OFF CACHE BOOL "" FORCE)
-
 add_subdirectory(external/glfw)
-
-# GLAD
-add_library(glad STATIC external/glad/src/glad.c)
-target_include_directories(glad PUBLIC external/glad/include)
 
 # Vulkan
 find_package(Vulkan REQUIRED)
@@ -36,7 +31,7 @@ target_include_directories(Ballistic PUBLIC
     BallisticRuntime/src
     ${Vulkan_INCLUDE_DIRS}
 )
-target_link_libraries(Ballistic PUBLIC glfw glad ${CMAKE_DL_LIBS})
+target_link_libraries(Ballistic PUBLIC glfw ${CMAKE_DL_LIBS})
 target_precompile_headers(Ballistic PUBLIC Ballistic/src/bepch.h)
 
 # -------- Ballistic Runtime --------
