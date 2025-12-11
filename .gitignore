@@ -1,0 +1,8 @@
+/build/
+/bin/
+/out/
+/CMakeFiles/
+/CMakeCache.txt
+/*.cmake
+/*.make
+/*.ninja
