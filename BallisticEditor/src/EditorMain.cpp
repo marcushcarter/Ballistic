@@ -9,7 +9,12 @@ namespace Ballistic
     public:
         BallisticEditor() : Application() {
 
-            m_LayerStack.pushLayer(std::make_shared<EditorLayer>(m_LayerStack, std::string("EditorLayer")));
+            LayerContext context;
+            context.window = m_Window.get();
+            context.layerStack = &m_LayerStack;
+            context.renderer = m_Renderer.get();
+
+            m_LayerStack.pushLayer(std::make_shared<EditorLayer>(context, std::string("EditorLayer")));
         }
 
         virtual void Shutdown() override {

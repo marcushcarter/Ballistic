@@ -6,8 +6,8 @@ namespace Ballistic {
 
 	class RuntimeLayer : public Layer {
 	public:
-		RuntimeLayer(LayerStack& layerStack, const std::string name = "RuntimeLayer")
-			: Layer(name), m_LayerStack(&layerStack) {}
+		RuntimeLayer(const LayerContext& context, const std::string name = "RuntimeLayer")
+			: Layer(name), m_LayerStack(context.layerStack) {}
 
 		void onAttach() override;
 		void onDetach() override;

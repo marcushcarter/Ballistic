@@ -11,8 +11,8 @@ namespace Ballistic {
 		m_LayerStack.pushLayer(renderLayer);
 		m_RenderLayer = renderLayer;
 
-		m_Renderer = std::make_unique<VulkanRenderer>();
-		m_Renderer->Init();
+		m_Renderer = std::make_unique<Renderer>();
+		m_Renderer->Init(m_Window);
 	}
 
 	void Application::Shutdown(){

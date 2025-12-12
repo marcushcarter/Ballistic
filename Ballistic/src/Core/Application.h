@@ -3,13 +3,19 @@
 #include "bepch.h"
 #include "Platform/GLFW/GLFWWindow.h"
 #include "Layers/LayerStack.h"
-#include "Renderer/VulkanRenderer.h"
+#include "Renderer/Renderer.h"
 
 namespace Ballistic {
 
 	class RenderLayer;
 	class EditorLayer;
 	class RuntimeLayer;
+
+	struct LayerContext {
+	    LayerStack* layerStack;
+	    GLFWWindow* window;
+	    Renderer* renderer;
+	};
 
 	class Application {
 	public:
@@ -23,7 +29,7 @@ namespace Ballistic {
 		LayerStack m_LayerStack;
 		std::weak_ptr<RenderLayer> m_RenderLayer;
 
-		std::unique_ptr<VulkanRenderer> m_Renderer;
+		std::unique_ptr<Renderer> m_Renderer;
 
 		virtual void Shutdown();
 	};

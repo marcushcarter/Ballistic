@@ -22,10 +22,20 @@ namespace Ballistic {
 		void onUpdate();
 		bool shouldClose() const;
 
+		// void createVulkanSurface(VkInstance instance);
+
+		GLFWwindow* get() const { return m_NativeWindow; }
+		VkSurfaceKHR getVkSurface() const { return m_Surface; }
+		WindowProps getProps() const { return m_Props; }
+
+		void createVulkanSurface(VkInstance instance);
+
 		static std::shared_ptr<GLFWWindow> CreateWindow(const WindowProps& windowProps = {});
 
 	private:
 		GLFWwindow* m_NativeWindow;
+		VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
+		WindowProps m_Props;
 	};
 
 }
