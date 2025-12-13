@@ -13,18 +13,18 @@ namespace Ballistic {
 		: m_WindowAPI(windowAPI), m_RendererAPI(rendererAPI) {
 
 		switch (m_WindowAPI) {
-		case WindowAPI::GLFW:
-			m_Window = GLFWWindow::Create(m_RendererAPI, windowProps);
-			break;
+			case WindowAPI::GLFW:
+				m_Window = GLFWWindow::Create(m_RendererAPI, windowProps);
+				break;
 		}
 
 		switch (m_RendererAPI) {
-		case RendererAPI::OpenGL:
-            m_Renderer = std::make_unique<GLRenderer>();
-            break;
-		case RendererAPI::Vulkan:
-            m_Renderer = std::make_unique<VkRenderer>();
-            break;
+			case RendererAPI::OpenGL:
+	            m_Renderer = std::make_unique<GLRenderer>();
+	            break;
+			case RendererAPI::Vulkan:
+	            m_Renderer = std::make_unique<VkRenderer>();
+	            break;
 		}
 
 		if (m_Renderer) m_Renderer->Init();

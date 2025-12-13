@@ -13,8 +13,8 @@ namespace Ballistic {
 
 	struct LayerContext {
 	    LayerStack* layerStack;
-	    // GLFWWindow* window;
-	    // Renderer* renderer;
+	    IWindow* window;
+	    IRenderer* renderer;
 	};
 
 	class Application {
