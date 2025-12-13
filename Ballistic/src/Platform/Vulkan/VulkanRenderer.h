@@ -13,10 +13,10 @@
 
 namespace Ballistic {
 
-	class Renderer {
+	class VulkanRenderer {
 	public:
-		Renderer() = default;
-		~Renderer();
+		VulkanRenderer() = default;
+		~VulkanRenderer();
 
 		void Init(std::shared_ptr<GLFWWindow> window);
 		void Shutdown();

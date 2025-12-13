@@ -1,40 +1,26 @@
 #pragma once
 
 #include "bepch.h"
+#include "Core/IWindow.h"
 
 namespace Ballistic {
-
-	struct WindowProps {
-		std::string title;
-		int width;
-		int height;
-		bool VSync;
-
-		WindowProps(const std::string& title = "BallisticEngine", int width = 1280, int height = 720, bool VSync = false)
-			: title(title), width(width), height(height), VSync(VSync) {}
-	};
 	
-	class GLFWWindow {
+	class GLFWWindow : public IWindow {
 	public:
-		GLFWWindow(const WindowProps& windowProps);
+		GLFWWindow(RendererAPI api, const WindowProps& windowProps);
 		~GLFWWindow();
 
-		void onUpdate();
-		bool shouldClose() const;
+		void onUpdate() override;
+		bool shouldClose() const override;
 
-		// void createVulkanSurface(VkInstance instance);
+		void* get() const override { return m_NativeWindow; }
+		WindowProps getProps() const override { return m_Props; }
+		WindowAPI getAPI() const override { return WindowAPI::GLFW; }
 
-		GLFWwindow* get() const { return m_NativeWindow; }
-		VkSurfaceKHR getVkSurface() const { return m_Surface; }
-		WindowProps getProps() const { return m_Props; }
-
-		void createVulkanSurface(VkInstance instance);
-
-		static std::shared_ptr<GLFWWindow> CreateWindow(const WindowProps& windowProps = {});
+		static std::shared_ptr<IWindow> Create(RendererAPI rendererAPI, const WindowProps& windowProps = {});
 
 	private:
 		GLFWwindow* m_NativeWindow;
-		VkSurfaceKHR m_Surface = VK_NULL_HANDLE;
 		WindowProps m_Props;
 	};
 

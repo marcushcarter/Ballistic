@@ -7,7 +7,7 @@ namespace Ballistic {
 	class EditorLayer : public Layer {
 	public:
 		EditorLayer(const LayerContext& context, const std::string name = "EditorLayer")
-			: Layer(name), m_LayerStack(context.layerStack), m_Window(context.window), m_Renderer(context.renderer) {}
+			: Layer(name), m_LayerStack(context.layerStack) {}
 
 		void onAttach() override;
 		void onDetach() override;
@@ -16,8 +16,5 @@ namespace Ballistic {
 
 	private:
 		LayerStack* m_LayerStack = nullptr;
-
-		GLFWWindow* m_Window = nullptr;
-    	Renderer* m_Renderer = nullptr;
 	};
 }

@@ -2,21 +2,41 @@
 
 #include "Layers/RenderLayer.h"
 
+#include "Renderer/GLRenderer.h"
+#include "Renderer/VkRenderer.h"
+
+#include "Platform/GLFW/GLFWWindow.h"
+
 namespace Ballistic {
 
-	Application::Application(WindowProps windowProps) {
-		m_Window = GLFWWindow::CreateWindow(windowProps);
+	Application::Application(WindowProps windowProps, RendererAPI rendererAPI, WindowAPI windowAPI)
+		: m_WindowAPI(windowAPI), m_RendererAPI(rendererAPI) {
+
+		switch (m_WindowAPI) {
+		case WindowAPI::GLFW:
+			m_Window = GLFWWindow::Create(m_RendererAPI, windowProps);
+			break;
+		}
+
+		switch (m_RendererAPI) {
+		case RendererAPI::OpenGL:
+            m_Renderer = std::make_unique<GLRenderer>();
+            break;
+		case RendererAPI::Vulkan:
+            m_Renderer = std::make_unique<VkRenderer>();
+            break;
+		}
+
+		if (m_Renderer) m_Renderer->Init();
 
 		auto renderLayer = std::make_shared<RenderLayer>(m_LayerStack, "RenderLayer");
 		m_LayerStack.pushLayer(renderLayer);
 		m_RenderLayer = renderLayer;
-
-		m_Renderer = std::make_unique<Renderer>();
-		m_Renderer->Init(m_Window);
 	}
 
 	void Application::Shutdown(){
-		m_Renderer->Shutdown();
+		 if (m_Renderer)
+	        m_Renderer->Shutdown();
 	}
 
 	void Application::run() {

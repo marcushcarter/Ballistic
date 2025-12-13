@@ -1,12 +1,12 @@
-#include "Renderer.h"
+#include "VulkanRenderer.h"
 
 namespace Ballistic {
 
-	Renderer::~Renderer() {
+	VulkanRenderer::~VulkanRenderer() {
 	    Shutdown();
 	}
 
-	void Renderer::Init(std::shared_ptr<GLFWWindow> window) {
+	void VulkanRenderer::Init(std::shared_ptr<GLFWWindow> window) {
 	    VulkanInstance::Config configInstance;
 	    configInstance.enableValidation = true;
 	    m_Instance = std::make_unique<VulkanInstance>(configInstance);
@@ -18,10 +18,10 @@ namespace Ballistic {
 		configDevice.enabledFeatures.samplerAnisotropy = VK_TRUE;
 		m_LogicalDevice = std::make_unique<VulkanDevice>(getVulkanPhysicalDevice(), configDevice);
 
-		window->createVulkanSurface(getVulkanInstance().get());
+		// window->createVulkanSurface(getVulkanInstance().get());
 
 	    VulkanSwapchain::Config configSwapchain;
-	    configSwapchain.surface = window->getVkSurface();
+	    // configSwapchain.surface = window->getVkSurface();
 		configSwapchain.imageCount = 2;
 		configSwapchain.enableVSync = window->getProps().VSync;
 		m_Swapchain = std::make_unique<VulkanSwapchain>(getVulkanDevice(), getVulkanPhysicalDevice(), configSwapchain);
@@ -42,7 +42,7 @@ namespace Ballistic {
 		m_DescriptorPool = std::make_unique<VulkanDescriptorPool>(getVulkanDevice());
 	}
 
-	void Renderer::Shutdown() {
+	void VulkanRenderer::Shutdown() {
 	}
 
 }

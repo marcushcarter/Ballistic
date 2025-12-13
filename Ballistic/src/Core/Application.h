@@ -1,9 +1,9 @@
 #pragma once
 
 #include "bepch.h"
-#include "Platform/GLFW/GLFWWindow.h"
+#include "Core/IWindow.h"
 #include "Layers/LayerStack.h"
-#include "Renderer/Renderer.h"
+#include "Renderer/IRenderer.h"
 
 namespace Ballistic {
 
@@ -13,23 +13,25 @@ namespace Ballistic {
 
 	struct LayerContext {
 	    LayerStack* layerStack;
-	    GLFWWindow* window;
-	    Renderer* renderer;
+	    // GLFWWindow* window;
+	    // Renderer* renderer;
 	};
 
 	class Application {
 	public:
-		Application(WindowProps windowProps = WindowProps{});
+		Application(WindowProps windowProps = WindowProps{}, RendererAPI rendererAPI = RendererAPI::OpenGL, WindowAPI windowAPI = WindowAPI::GLFW);
 		virtual ~Application() = default;
 		void run();
 
 	protected:
-		std::shared_ptr<GLFWWindow> m_Window;
-
 		LayerStack m_LayerStack;
-		std::weak_ptr<RenderLayer> m_RenderLayer;
 
-		std::unique_ptr<Renderer> m_Renderer;
+		std::shared_ptr<IWindow> m_Window;
+		WindowAPI m_WindowAPI;
+
+		std::weak_ptr<RenderLayer> m_RenderLayer;
+		std::unique_ptr<IRenderer> m_Renderer;
+		RendererAPI m_RendererAPI;
 
 		virtual void Shutdown();
 	};
