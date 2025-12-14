@@ -16,7 +16,7 @@ namespace Ballistic {
 				break;
 		}
 
-	    m_VkRenderer = std::make_unique<VkRenderer>();
+	    m_VkRenderer = std::make_unique<VkRenderer>(m_Window.get());
 		m_VkRenderer->Init();
 
 		auto renderLayer = std::make_shared<RenderLayer>(m_LayerStack, "RenderLayer");
@@ -32,6 +32,8 @@ namespace Ballistic {
 	void Application::run() {
 		while (!m_Window->shouldClose()) {
 			m_LayerStack.onUpdate();
+
+			m_VkRenderer->Render();
 
 			m_Window->onUpdate();
 		}

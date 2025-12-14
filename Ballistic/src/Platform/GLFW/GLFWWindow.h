@@ -19,6 +19,8 @@ namespace Ballistic {
 		void* get() const override { return m_NativeWindow; }
 		WindowProps getProps() const override { return m_Props; }
 
+		virtual vk::UniqueSurfaceKHR createVulkanSurface(vk::Instance instance) override;
+
 		static std::shared_ptr<IWindow> Create(const WindowProps& windowProps = {});
 
 	private:

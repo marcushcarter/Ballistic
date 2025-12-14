@@ -23,12 +23,10 @@ namespace Ballistic {
 
 	GLFWWindow::~GLFWWindow() {
 		if (m_NativeWindow) glfwDestroyWindow(m_NativeWindow);
-		glfwTerminate();
 	}
 
 	void GLFWWindow::onUpdate() {
 		glfwPollEvents();
-		glfwSwapBuffers(m_NativeWindow);
 	}
 
 	bool GLFWWindow::shouldClose() const {
@@ -52,6 +50,13 @@ namespace Ballistic {
 
 	bool GLFWWindow::isFullscreen() const {
 		return glfwGetWindowMonitor(m_NativeWindow) != nullptr;
+	}
+
+	vk::UniqueSurfaceKHR GLFWWindow::createVulkanSurface(vk::Instance instance) {
+	    VkSurfaceKHR rawSurface;
+	    if (glfwCreateWindowSurface(static_cast<VkInstance>(instance), m_NativeWindow, nullptr, &rawSurface) != VK_SUCCESS)
+	        throw std::runtime_error("Failed to create Vulkan surface!");
+	    return vk::UniqueSurfaceKHR(rawSurface, instance);
 	}
 
 	std::shared_ptr<IWindow> GLFWWindow::Create(const WindowProps& windowProps) {
