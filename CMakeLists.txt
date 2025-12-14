@@ -18,6 +18,12 @@ if(NOT Vulkan_FOUND)
     message(FATAL_ERROR "Vulkan SDK not found! Make sure VULKAN_SDK env variable is set.")
 endif()
 
+# Vulkan-Hpp
+add_library(vulkan-hpp INTERFACE)
+target_include_directories(vulkan-hpp INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/external/vulkan-hpp
+)
+
 # ImGui
 file(GLOB IMGUI_CORE external/imgui/*.cpp)
 set(IMGUI_BACKENDS
@@ -54,6 +60,8 @@ target_include_directories(Ballistic PUBLIC
 target_link_libraries(Ballistic PUBLIC
     glfw
     imgui
+    Vulkan::Vulkan
+    vulkan-hpp
     ${CMAKE_DL_LIBS}
 )
 
@@ -64,7 +72,7 @@ target_precompile_headers(Ballistic PUBLIC Ballistic/src/bepch.h)
 file(GLOB_RECURSE RUNTIME_SRC BallisticRuntime/src/*.cpp)
 if(RUNTIME_SRC)
     add_executable(BallisticRuntime ${RUNTIME_SRC})
-    target_link_libraries(BallisticRuntime PRIVATE Ballistic Vulkan::Vulkan)
+    target_link_libraries(BallisticRuntime PRIVATE Ballistic)
 endif()
 
 # -------- Ballistic Editor --------
@@ -72,5 +80,5 @@ endif()
 file(GLOB_RECURSE EDITOR_SRC BallisticEditor/src/*.cpp)
 if(EDITOR_SRC)
     add_executable(BallisticEditor ${EDITOR_SRC})
-    target_link_libraries(BallisticEditor PRIVATE Ballistic Vulkan::Vulkan)
+    target_link_libraries(BallisticEditor PRIVATE Ballistic)
 endif()

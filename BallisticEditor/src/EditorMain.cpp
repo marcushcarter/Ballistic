@@ -1,5 +1,10 @@
 #include <Ballistic.h>
 #include <BallisticEntrypoint.h>
+
+#define VULKAN_HPP_DISPATCH_LOADER_DYNAMIC 1
+#define VULKAN_HPP_NO_CONSTRUCTORS
+#define VULKAN_HPP_NO_SMART_HANDLE
+#include <vulkan/vulkan.hpp>
 #include "EditorLayer.h"
 
 namespace Ballistic
