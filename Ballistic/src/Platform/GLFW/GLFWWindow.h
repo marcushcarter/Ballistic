@@ -7,7 +7,7 @@ namespace Ballistic {
 	
 	class GLFWWindow : public IWindow {
 	public:
-		GLFWWindow(RendererAPI api, const WindowProps& windowProps);
+		GLFWWindow(const WindowProps& windowProps);
 		~GLFWWindow();
 
 		void onUpdate() override;
@@ -20,7 +20,7 @@ namespace Ballistic {
 		WindowProps getProps() const override { return m_Props; }
 		WindowAPI getAPI() const override { return WindowAPI::GLFW; }
 
-		static std::shared_ptr<IWindow> Create(RendererAPI rendererAPI, const WindowProps& windowProps = {});
+		static std::shared_ptr<IWindow> Create(const WindowProps& windowProps = {});
 
 	private:
 		GLFWwindow* m_NativeWindow;

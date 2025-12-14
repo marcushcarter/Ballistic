@@ -6,8 +6,8 @@ namespace Ballistic {
 		GLFW
 	};
 
-	enum class RendererAPI {
-		OpenGL,
-		Vulkan
-	};
+	// enum class RendererAPI {
+	// 	OpenGL,
+	// 	Vulkan
+	// };
 }

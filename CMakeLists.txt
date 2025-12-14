@@ -43,6 +43,8 @@ file(GLOB_RECURSE ENGINE_SRC
     Ballistic/src/Platform/*.cpp
     Ballistic/src/Project/*.cpp
     Ballistic/src/Renderer/*.cpp
+    
+    BallisticEditor/src/*.cpp
 )
 
 add_library(Ballistic STATIC ${ENGINE_SRC})

@@ -12,8 +12,6 @@ namespace Ballistic {
 		virtual void Init() = 0;
 		virtual void Shutdown() = 0;
 
-		virtual RendererAPI getAPI() const = 0;
-
 	protected:
 
 	};

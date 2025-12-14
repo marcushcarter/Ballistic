@@ -12,8 +12,6 @@ namespace Ballistic {
 		void Init() override;
 		void Shutdown() override;
 
-		RendererAPI getAPI() const override { return RendererAPI::OpenGL; }
-
 	private:
 		// opengl context
 	};

@@ -24,6 +24,6 @@ namespace Ballistic {
         IWindow* m_Window = nullptr;
         IRenderer* m_Renderer = nullptr;
 
-        std::vector<std::shared_ptr<IPanel>> m_Panels;
+        std::vector<std::unique_ptr<IPanel>> m_Panels;
 	};
 }

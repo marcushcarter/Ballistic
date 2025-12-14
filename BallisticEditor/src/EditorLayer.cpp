@@ -29,30 +29,33 @@ namespace Ballistic {
 	    		break;
     	}
 
-    	switch (m_Renderer->getAPI()) {
-	    	case RendererAPI::OpenGL:
+    	switch (RendererAPI::GetAPI()) {
+	    	case RendererAPI::API::OpenGL:
 	    		ImGui_ImplOpenGL3_Init("#version 460");
 	    		break;
 
-	    	case RendererAPI::Vulkan:
+	    	case RendererAPI::API::Vulkan:
 	    		break;
 
 	    	default:
 	    		break;
     	}
 
-    	std::shared_ptr<IPanel> demo = std::make_shared<DemoPanel>();
-		demo->Init();
-		m_Panels.push_back(demo);
+		m_Panels.push_back(std::make_unique<DemoPanel>());
+		m_Panels.push_back(std::make_unique<DemoPanel>());
+
+	    for (auto& panel : m_Panels)
+        	panel->init();
+
 	}
 
 	void EditorLayer::onDetach() {
 
-    	switch (m_Renderer->getAPI()) {
-	    	case RendererAPI::OpenGL:
+    	switch (RendererAPI::GetAPI()) {
+	    	case RendererAPI::API::OpenGL:
 	    		ImGui_ImplOpenGL3_Shutdown();
 	    		break;
-	    	case RendererAPI::Vulkan:
+	    	case RendererAPI::API::Vulkan:
 	    		ImGui_ImplVulkan_Shutdown();
 	    		break;
 	    	default:
@@ -215,11 +218,11 @@ namespace Ballistic {
 
 	void EditorLayer::onUpdate() {
 
-    	switch (m_Renderer->getAPI()) {
-	    	case RendererAPI::OpenGL:
+    	switch (RendererAPI::GetAPI()) {
+	    	case RendererAPI::API::OpenGL:
 	    		ImGui_ImplOpenGL3_NewFrame();
 	    		break;
-	    	case RendererAPI::Vulkan:
+	    	case RendererAPI::API::Vulkan:
 	    		ImGui_ImplVulkan_NewFrame();
 	    		break;
 	    	default:
@@ -251,11 +254,11 @@ namespace Ballistic {
 
     	ImGui::Render();
 
-    	switch (m_Renderer->getAPI()) {
-        case RendererAPI::OpenGL:
+    	switch (RendererAPI::GetAPI()) {
+        case RendererAPI::API::OpenGL:
             ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
             break;
-        case RendererAPI::Vulkan:
+        case RendererAPI::API::Vulkan:
             break;
         default:
             break;
@@ -263,7 +266,7 @@ namespace Ballistic {
 
     	auto io = ImGui::GetIO();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-		    if (m_Window->getAPI() == WindowAPI::GLFW && m_Renderer->getAPI() == RendererAPI::OpenGL) {
+		    if (m_Window->getAPI() == WindowAPI::GLFW && RendererAPI::GetAPI() == RendererAPI::API::OpenGL) {
 		        GLFWwindow* backup = static_cast<GLFWwindow*>(m_Window->get());
 		        ImGui::UpdatePlatformWindows();
 		        ImGui::RenderPlatformWindowsDefault();

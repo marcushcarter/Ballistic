@@ -1,8 +1,10 @@
 #include "GLFWWindow.h"
 
+#include "Renderer/RendererAPI.h"
+
 namespace Ballistic {
 
-	GLFWWindow::GLFWWindow(RendererAPI rendererAPI, const WindowProps& windowProps)
+	GLFWWindow::GLFWWindow(const WindowProps& windowProps)
 		: m_Props(windowProps) {
 
 	    if (!glfwInit()) {
@@ -11,14 +13,14 @@ namespace Ballistic {
 	        return;
 	    }
 
-	    switch (rendererAPI) {
-	        case RendererAPI::OpenGL:
+	    switch (RendererAPI::GetAPI()) {
+	        case RendererAPI::API::OpenGL:
 	            glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
 	            glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
 	            glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
 	            glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 	            break;
-	        case RendererAPI::Vulkan:
+	        case RendererAPI::API::Vulkan:
 	            glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	            break;
 	        default:
@@ -34,7 +36,7 @@ namespace Ballistic {
 	        return;
 	    }
 
-	    if (rendererAPI == RendererAPI::OpenGL) {
+	    if (RendererAPI::GetAPI() == RendererAPI::API::OpenGL) {
 	        glfwMakeContextCurrent(m_NativeWindow);
 	        if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
 	            std::cerr << "Failed to initialize OpenGL context with glad" << std::endl;
@@ -78,7 +80,7 @@ namespace Ballistic {
 		return glfwGetWindowMonitor(m_NativeWindow) != nullptr;
 	}
 
-	std::shared_ptr<IWindow> GLFWWindow::Create(RendererAPI api, const WindowProps& windowProps) {
-		return std::make_shared<GLFWWindow>(api, windowProps);
+	std::shared_ptr<IWindow> GLFWWindow::Create(const WindowProps& windowProps) {
+		return std::make_shared<GLFWWindow>(windowProps);
 	}
 }
