@@ -13,6 +13,9 @@ namespace Ballistic {
 		void onUpdate() override;
 		bool shouldClose() const override;
 
+		void toggleFullscreen(bool fullscreen) override;
+		bool isFullscreen() const override;
+
 		void* get() const override { return m_NativeWindow; }
 		WindowProps getProps() const override { return m_Props; }
 		WindowAPI getAPI() const override { return WindowAPI::GLFW; }
@@ -22,6 +25,8 @@ namespace Ballistic {
 	private:
 		GLFWwindow* m_NativeWindow;
 		WindowProps m_Props;
+
+		int m_WindowedX = 0, m_WindowedY = 0, m_WindowedW = 1280, m_WindowedH = 720;
 	};
 
 }

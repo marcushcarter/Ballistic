@@ -5,7 +5,7 @@
 #include <imgui_impl_opengl3.h>
 #include <imgui_impl_glfw.h>
 
-#include "Platform/Vulkan/VulkanCommandBuffer.h"
+#include "Panels/DemoPanel/DemoPanel.h"
 
 namespace Ballistic {
 
@@ -40,6 +40,10 @@ namespace Ballistic {
 	    	default:
 	    		break;
     	}
+
+    	std::shared_ptr<IPanel> demo = std::make_shared<DemoPanel>();
+		demo->Init();
+		m_Panels.push_back(demo);
 	}
 
 	void EditorLayer::onDetach() {
@@ -66,30 +70,8 @@ namespace Ballistic {
     	ImGui::DestroyContext();
 	}
 
-	void EditorLayer::onUpdate() {
-
-    	switch (m_Renderer->getAPI()) {
-	    	case RendererAPI::OpenGL:
-	    		ImGui_ImplOpenGL3_NewFrame();
-	    		break;
-	    	case RendererAPI::Vulkan:
-	    		ImGui_ImplVulkan_NewFrame();
-	    		break;
-	    	default:
-	    		break;
-    	}
-
-    	switch (m_Window->getAPI()) {
-	    	case WindowAPI::GLFW:
-	    		ImGui_ImplGlfw_NewFrame();
-	    		break;
-	    	default:
-	    		break;
-    	}
-
-    	ImGui::NewFrame();
-
-    	const ImGuiViewport* viewport = ImGui::GetMainViewport();
+	void EditorLayer::GenDockspace() {
+		const ImGuiViewport* viewport = ImGui::GetMainViewport();
 	    ImGui::SetNextWindowPos(viewport->Pos);
 	    ImGui::SetNextWindowSize(viewport->Size);
 	    ImGui::SetNextWindowViewport(viewport->ID);
@@ -114,12 +96,158 @@ namespace Ballistic {
 	    
 	    ImGui::PopStyleVar(3);
 	    ImGui::End();
+	}
 
-    	// ImGui::DockSpaceOverViewport(ImGui::GetMainViewport());
+	void EditorLayer::DrawMenuBar() {
+		// entt::entity& selected = editorState.temp.selectedEntity;
 
-    	ImGui::Begin("Editor Panel");
-	    ImGui::Text("Hello from Ballistic EditorLayer!");
-	    ImGui::End();
+	if (ImGui::BeginMainMenuBar()) {
+
+	    if (ImGui::BeginMenu("Project")) {
+
+	        if (ImGui::MenuItem("New Scene")) {
+	        	// manager.Clear();
+	        	// scene.clear();
+	        	// selected = entt::null;
+	        }
+	        if (ImGui::MenuItem("Open Scene")) {}
+	        if (ImGui::MenuItem("Open Recent")) {}
+	        
+	        ImGui::Separator();
+
+	        if (ImGui::MenuItem("Save")) {}
+	        if (ImGui::MenuItem("Save As")) {}
+	        if (ImGui::MenuItem("Save Copy")) {}
+	        if (ImGui::MenuItem("Save Increments")) {}
+
+	        ImGui::Separator();
+
+	        if (ImGui::MenuItem("Set Project Directory")) {}
+	        if (ImGui::MenuItem("Import")) {
+
+	        	// const char* filters[] = { "*.obj" };
+			    // const char* files = tinyfd_openFileDialog("Pick files", "", 1, filters, "OBJ Files", 1);
+
+			    // if (files && *files != '\0') {
+				//     std::string filesStr = files;
+				//     size_t start = 0, end;
+
+				//     do {
+				//         end = filesStr.find("|", start);
+				//         std::string path = filesStr.substr(start, end - start);
+
+				//         if (!path.empty()) {
+				//             std::filesystem::path p(path);
+				//             std::string ext = p.extension().string();
+				//             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+				//             if (ext == ".obj") {
+				//                 manager.AddRtxMesh(p.stem().string(), path);
+				//             }
+				//         }
+
+				//         start = (end == std::string::npos) ? filesStr.size() : end + 1;
+				//     } while (start < filesStr.size());
+				// }
+	        }
+
+	        // if (ImGui::MenuItem("Export")) {}
+
+	        ImGui::Separator();
+
+	        if (ImGui::MenuItem("Undo")) {}
+	        if (ImGui::MenuItem("Redo")) {}
+	        if (ImGui::MenuItem("Undo History")) {}
+
+	        ImGui::Separator();
+
+	        if (ImGui::MenuItem("Quit")) { glfwTerminate(); }
+
+	        ImGui::EndMenu();
+	    }
+
+	    if (ImGui::BeginMenu("Debug")) {
+
+	        ImGui::EndMenu();
+	    }
+
+	    if (ImGui::BeginMenu("Editor")) {
+
+	        if (ImGui::MenuItem("Editor Settings")) {}
+	        if (ImGui::MenuItem("Editor Colors")) {}
+
+	        ImGui::Separator();
+
+	        // if (ImGui::MenuItem("Take Editor Screenshot")) {} // takeScreenshotNextFrame = true;
+	        // if (ImGui::MenuItem("Take Viewport Screenshot")) {} // takeTextureScreenshotNextFrame = true;
+
+	        if (ImGui::MenuItem(m_Window->isFullscreen() ? "Windowed" : "Fullscreen")) m_Window->toggleFullscreen(!m_Window->isFullscreen());
+
+	        ImGui::EndMenu();
+	    }
+
+	    if (ImGui::BeginMenu("Help")) {
+
+	        if (ImGui::MenuItem("Search Help")) {}
+
+	        ImGui::Separator();
+
+	        if (ImGui::MenuItem("Online Documentation")) {} // OpenLink("https://ballisticstudios.ca/");
+	        if (ImGui::MenuItem("Forums")) {} // OpenLink("https://ballisticstudios.ca/");
+	        if (ImGui::MenuItem("Community")) {} // OpenLink("https://ballisticstudios.ca/");
+	        if (ImGui::MenuItem("Tutorials")) {} // OpenLink("https://ballisticstudios.ca/");
+
+	        ImGui::Separator();
+
+	        if (ImGui::MenuItem("Report a bug")) {} // OpenLink("https://ballisticstudios.ca/");
+
+	        ImGui::Separator();
+
+	        if (ImGui::MenuItem("About The Engine")) {} // OpenLink("https://ballisticstudios.ca/");
+	        if (ImGui::MenuItem("Support Development")) {} // OpenLink("https://ballisticstudios.ca/");
+
+	        ImGui::EndMenu();
+	    }
+
+	    ImGui::EndMainMenuBar();
+	}
+	}
+
+	void EditorLayer::onUpdate() {
+
+    	switch (m_Renderer->getAPI()) {
+	    	case RendererAPI::OpenGL:
+	    		ImGui_ImplOpenGL3_NewFrame();
+	    		break;
+	    	case RendererAPI::Vulkan:
+	    		ImGui_ImplVulkan_NewFrame();
+	    		break;
+	    	default:
+	    		break;
+    	}
+
+    	switch (m_Window->getAPI()) {
+	    	case WindowAPI::GLFW:
+	    		ImGui_ImplGlfw_NewFrame();
+	    		break;
+	    	default:
+	    		break;
+    	}
+
+    	ImGui::NewFrame();
+
+    	GenDockspace();
+	    DrawMenuBar();
+
+	    for (auto& panel : m_Panels)
+        	panel->OnImGuiRender();
+
+    	// ImGui::Begin("Editor Panel");
+	    // ImGui::Text("Hello from Ballistic EditorLayer!");
+
+	    // ImGui::End();
+
+	    ImGui::ShowDemoWindow();
 
     	ImGui::Render();
 

@@ -59,6 +59,25 @@ namespace Ballistic {
 		return glfwWindowShouldClose(m_NativeWindow);
 	}
 
+	void GLFWWindow::toggleFullscreen(bool fullscreen) {
+		if (fullscreen == isFullscreen()) return;
+
+	    if (fullscreen) {
+	        glfwGetWindowPos(m_NativeWindow, &m_WindowedX, &m_WindowedY);
+	        glfwGetWindowSize(m_NativeWindow, &m_WindowedW, &m_WindowedH);
+
+	        GLFWmonitor* monitor = glfwGetPrimaryMonitor();
+	        const GLFWvidmode* mode = glfwGetVideoMode(monitor);
+	        glfwSetWindowMonitor(m_NativeWindow, monitor, 0, 0, mode->width, mode->height, mode->refreshRate);
+	    } else {
+	        glfwSetWindowMonitor(m_NativeWindow, nullptr, m_WindowedX, m_WindowedY, m_WindowedW, m_WindowedH, 0);
+	    }
+	}
+
+	bool GLFWWindow::isFullscreen() const {
+		return glfwGetWindowMonitor(m_NativeWindow) != nullptr;
+	}
+
 	std::shared_ptr<IWindow> GLFWWindow::Create(RendererAPI api, const WindowProps& windowProps) {
 		return std::make_shared<GLFWWindow>(api, windowProps);
 	}

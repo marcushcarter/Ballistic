@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Ballistic.h>
+#include "Panels/IPanel.h"
 
 namespace Ballistic {
 
@@ -14,10 +15,15 @@ namespace Ballistic {
 		void onUpdate() override;
 		void onEvent(void* e) override;
 
+		void GenDockspace();
+		void DrawMenuBar();
+
 	private:
 		LayerStack* m_LayerStack = nullptr;
 
         IWindow* m_Window = nullptr;
         IRenderer* m_Renderer = nullptr;
+
+        std::vector<std::shared_ptr<IPanel>> m_Panels;
 	};
 }

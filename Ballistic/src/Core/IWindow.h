@@ -22,6 +22,9 @@ namespace Ballistic {
 		virtual void onUpdate() = 0;
 		virtual bool shouldClose() const = 0;
 
+		virtual void toggleFullscreen(bool fullscreen) = 0;
+		virtual bool isFullscreen() const = 0;
+
 		virtual void* get() const = 0;
 		virtual WindowProps getProps() const = 0;
 		virtual WindowAPI getAPI() const = 0;
