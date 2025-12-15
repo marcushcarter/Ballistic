@@ -3,7 +3,7 @@
 #include "bepch.h"
 #include "Core/IWindow.h"
 #include "Layers/LayerStack.h"
-#include "Renderer/VkRenderer.h"
+#include "Renderer/OglRenderer.h"
 
 namespace Ballistic {
 
@@ -14,7 +14,7 @@ namespace Ballistic {
 	struct LayerContext {
 	    LayerStack* layerStack;
 	    IWindow* window;
-	    VkRenderer* renderer;
+	    OglRenderer* renderer;
 	};
 
 	class Application {
@@ -29,7 +29,7 @@ namespace Ballistic {
 		std::shared_ptr<IWindow> m_Window;
 
 		std::weak_ptr<RenderLayer> m_RenderLayer;
-		std::unique_ptr<VkRenderer> m_VkRenderer;
+		std::unique_ptr<OglRenderer> m_OglRenderer;
 
 		virtual void Shutdown();
 	};

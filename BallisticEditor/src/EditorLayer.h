@@ -8,7 +8,7 @@ namespace Ballistic {
 	class EditorLayer : public Layer {
 	public:
 		EditorLayer(const LayerContext& context, const std::string name = "EditorLayer")
-			: Layer(name), m_LayerStack(context.layerStack), m_Window(context.window), m_VkRenderer(context.renderer) {}
+			: Layer(name), m_LayerStack(context.layerStack), m_Window(context.window), m_OglRenderer(context.renderer) {}
 
 		void onAttach() override;
 		void onDetach() override;
@@ -22,14 +22,8 @@ namespace Ballistic {
 		LayerStack* m_LayerStack = nullptr;
 
         IWindow* m_Window = nullptr;
-        VkRenderer* m_VkRenderer = nullptr;
-
-		vk::UniqueDescriptorPool m_ImGuiDescriptorPool;
-		vk::CommandBuffer m_CommandBuffer;
+        OglRenderer* m_OglRenderer = nullptr;
 
         std::vector<std::unique_ptr<IPanel>> m_Panels;
-
-		void createImGuiDescriptorPool();
-		void uploadFonts();
 	};
 }

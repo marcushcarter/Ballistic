@@ -40,8 +40,6 @@ namespace Ballistic {
 
 		virtual void* get() const = 0;
 		virtual WindowProps getProps() const = 0;
-
-		virtual vk::UniqueSurfaceKHR createVulkanSurface(vk::Instance instance) = 0;
 	};
 
 }

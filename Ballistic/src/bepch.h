@@ -9,6 +9,5 @@
 #include <cstdint>
 #include <algorithm>
 
-#include <vulkan/vulkan.h>
-#include <vulkan/vulkan.hpp>
+#include <glad/glad.h>
 #include <GLFW/glfw3.h>

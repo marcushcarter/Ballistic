@@ -1,81 +1,34 @@
 #include "EditorLayer.h"
 
 #include "imgui.h"
-#include "imgui_impl_vulkan.h"
+#include "imgui_impl_opengl3.h"
 #include "imgui_impl_glfw.h"
 
 #include "Panels/DemoPanel/DemoPanel.h"
 
 namespace Ballistic {
 
-	void EditorLayer::createImGuiDescriptorPool() {
-		std::vector<vk::DescriptorPoolSize> poolSizes = {
-			{vk::DescriptorType::eSampler, 1000},
-			{vk::DescriptorType::eCombinedImageSampler, 1000},
-			{vk::DescriptorType::eSampledImage, 1000},
-			{vk::DescriptorType::eStorageImage, 1000},
-			{vk::DescriptorType::eUniformTexelBuffer, 1000},
-			{vk::DescriptorType::eStorageTexelBuffer, 1000},
-			{vk::DescriptorType::eUniformBuffer, 1000},
-			{vk::DescriptorType::eStorageBuffer, 1000},
-			{vk::DescriptorType::eUniformBufferDynamic, 1000},
-			{vk::DescriptorType::eStorageBufferDynamic, 1000},
-			{vk::DescriptorType::eInputAttachment, 1000}
-		};
-
-		vk::DescriptorPoolCreateInfo poolInfo{};
-		poolInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
-		poolInfo.maxSets = 1000 * static_cast<uint32_t>(poolSizes.size());
-		poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
-		poolInfo.pPoolSizes = poolSizes.data();
-
-		m_ImGuiDescriptorPool = m_VkRenderer->m_Device->createDescriptorPoolUnique(poolInfo);
-	}
-
-	void EditorLayer::uploadFonts() {
-		// auto cmdBuf = m_CommandBuffer.get();
-		// ImGui_ImplVulkan_CreateFontsTexture(cmdBuf);
-		// m_VkRenderer->flushCommandBuffer(cmdBuf);
-		ImGui_ImplVulkan_DestroyFontUploadObjects();
-	}
-
 	void EditorLayer::onAttach() {
 		IMGUI_CHECKVERSION();
 	    ImGui::CreateContext();
+
 	    ImGuiIO& io = ImGui::GetIO();
-	    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable; // Enable docking
 	    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+	    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    	io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
-	    ImGui::StyleColorsDark();
+    	ImGui::StyleColorsDark();
 
-		switch (WindowAPI::GetAPI()) {
-			case WindowAPI::API::GLFW:
-				ImGui_ImplGlfw_InitForVulkan(static_cast<GLFWwindow*>(m_Window->get()), true);
-				break;
-		}
+    	switch (WindowAPI::GetAPI()) {
+	    	case WindowAPI::API::GLFW:
+	    		ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(m_Window->get()), true);
+	    		break;
+
+	    	default:
+	    		break;
+    	}
 		
-    	createImGuiDescriptorPool();
-
-	    ImGui_ImplVulkan_InitInfo init_info{};
-	    init_info.Instance = m_VkRenderer->m_Instance.get();
-	    init_info.PhysicalDevice = m_VkRenderer->m_PhysicalDevice;
-	    init_info.Device = m_VkRenderer->m_Device.get();
-	    // init_info.Queue = m_VkRenderer->m_GraphicsQueue;
-	    init_info.DescriptorPool = *m_ImGuiDescriptorPool;
-	    // init_info.MinImageCount = m_VkRenderer->m_Swapchain->GetMinImageCount();
-	    // init_info.ImageCount = m_VkRenderer->m_Swapchain->GetImageCount();
-		init_info.PipelineInfoMain.Subpass = 0;
-	    init_info.PipelineInfoMain.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-		// initInfo.Allocator = nullptr;
-		// initInfo.CheckVkResultFn = [](VkResult err) { if (err != VK_SUCCESS) abort(); };
-
-		init_info.PipelineInfoMain.RenderPass = m_VkRenderer->m_RenderPass.get();
-
-	    ImGui_ImplVulkan_Init(&init_info);
-
-		uploadFonts();
-
-	    ImGui::CreateContext();
+	    ImGui_ImplOpenGL3_Init("#version 460");
 
 		m_Panels.push_back(std::make_unique<DemoPanel>());
 		m_Panels.push_back(std::make_unique<DemoPanel>());
@@ -85,14 +38,18 @@ namespace Ballistic {
 	}
 
 	void EditorLayer::onDetach() {
-		vkDeviceWaitIdle(m_VkRenderer->m_Device.get());
-		ImGui_ImplVulkan_Shutdown();
 		
-		switch (WindowAPI::GetAPI()) {
-			case WindowAPI::API::GLFW:
-				ImGui_ImplGlfw_Shutdown();
-				break;
-		}
+	    ImGui_ImplOpenGL3_Shutdown();
+
+    	switch (WindowAPI::GetAPI()) {
+	    	case WindowAPI::API::GLFW:
+	    		ImGui_ImplGlfw_Shutdown();
+	    		break;
+	    	default:
+	    		break;
+    	}
+
+    	ImGui::DestroyContext();
 	}
 
 	void EditorLayer::GenDockspace() {
@@ -123,7 +80,160 @@ namespace Ballistic {
 	    ImGui::End();
 	}
 
+	void EditorLayer::DrawMenuBar() {
+		// entt::entity& selected = editorState.temp.selectedEntity;
+
+		if (ImGui::BeginMainMenuBar()) {
+
+			if (ImGui::BeginMenu("Project")) {
+
+				if (ImGui::MenuItem("New Scene")) {
+					// manager.Clear();
+					// scene.clear();
+					// selected = entt::null;
+				}
+				if (ImGui::MenuItem("Open Scene")) {}
+				if (ImGui::MenuItem("Open Recent")) {}
+				
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Save")) {}
+				if (ImGui::MenuItem("Save As")) {}
+				if (ImGui::MenuItem("Save Copy")) {}
+				if (ImGui::MenuItem("Save Increments")) {}
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Set Project Directory")) {}
+				if (ImGui::MenuItem("Import")) {
+
+					// const char* filters[] = { "*.obj" };
+					// const char* files = tinyfd_openFileDialog("Pick files", "", 1, filters, "OBJ Files", 1);
+
+					// if (files && *files != '\0') {
+					//     std::string filesStr = files;
+					//     size_t start = 0, end;
+
+					//     do {
+					//         end = filesStr.find("|", start);
+					//         std::string path = filesStr.substr(start, end - start);
+
+					//         if (!path.empty()) {
+					//             std::filesystem::path p(path);
+					//             std::string ext = p.extension().string();
+					//             std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+					//             if (ext == ".obj") {
+					//                 manager.AddRtxMesh(p.stem().string(), path);
+					//             }
+					//         }
+
+					//         start = (end == std::string::npos) ? filesStr.size() : end + 1;
+					//     } while (start < filesStr.size());
+					// }
+				}
+
+				// if (ImGui::MenuItem("Export")) {}
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Undo")) {}
+				if (ImGui::MenuItem("Redo")) {}
+				if (ImGui::MenuItem("Undo History")) {}
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Quit")) { glfwTerminate(); }
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Debug")) {
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Editor")) {
+
+				if (ImGui::MenuItem("Editor Settings")) {}
+				if (ImGui::MenuItem("Editor Colors")) {}
+
+				ImGui::Separator();
+
+				// if (ImGui::MenuItem("Take Editor Screenshot")) {} // takeScreenshotNextFrame = true;
+				// if (ImGui::MenuItem("Take Viewport Screenshot")) {} // takeTextureScreenshotNextFrame = true;
+
+				if (ImGui::MenuItem(m_Window->isFullscreen() ? "Windowed" : "Fullscreen")) m_Window->toggleFullscreen(!m_Window->isFullscreen());
+
+				ImGui::EndMenu();
+			}
+
+			if (ImGui::BeginMenu("Help")) {
+
+				if (ImGui::MenuItem("Search Help")) {}
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Online Documentation")) {} // OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Forums")) {} // OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Community")) {} // OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Tutorials")) {} // OpenLink("https://ballisticstudios.ca/");
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("Report a bug")) {} // OpenLink("https://ballisticstudios.ca/");
+
+				ImGui::Separator();
+
+				if (ImGui::MenuItem("About The Engine")) {} // OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Support Development")) {} // OpenLink("https://ballisticstudios.ca/");
+
+				ImGui::EndMenu();
+			}
+
+			ImGui::EndMainMenuBar();
+		}
+	}
+
 	void EditorLayer::onUpdate() {
+		
+	    ImGui_ImplOpenGL3_NewFrame();
+
+    	switch (WindowAPI::GetAPI()) {
+	    	case WindowAPI::API::GLFW:
+	    		ImGui_ImplGlfw_NewFrame();
+	    		break;
+	    	default:
+	    		break;
+    	}
+
+    	ImGui::NewFrame();
+
+    	GenDockspace();
+	    DrawMenuBar();
+
+	    for (auto& panel : m_Panels)
+        	panel->OnImGuiRender();
+
+    	// ImGui::Begin("Editor Panel");
+	    // ImGui::Text("Hello from Ballistic EditorLayer!");
+
+	    // ImGui::End();
+
+	    ImGui::ShowDemoWindow();
+
+    	ImGui::Render();
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    	auto io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+		    if (WindowAPI::GetAPI() == WindowAPI::API::GLFW) {
+		        GLFWwindow* backup = static_cast<GLFWwindow*>(m_Window->get());
+		        ImGui::UpdatePlatformWindows();
+		        ImGui::RenderPlatformWindowsDefault();
+		        glfwMakeContextCurrent(backup);
+		    }
+		}
 	}
 
 	void EditorLayer::onEvent(void* ePtr) {

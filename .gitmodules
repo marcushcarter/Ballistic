@@ -5,6 +5,3 @@
 	path = external/imgui
 	url = https://github.com/ocornut/imgui.git
 	branch = docking
-[submodule "external/vulkan-hpp"]
-	path = external/vulkan-hpp
-	url = https://github.com/KhronosGroup/Vulkan-Hpp.git

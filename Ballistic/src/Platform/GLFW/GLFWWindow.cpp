@@ -11,7 +11,10 @@ namespace Ballistic {
 	        return;
 	    }
 
-	    glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
+		glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
+		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 6);
+		glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	    m_NativeWindow = glfwCreateWindow(windowProps.width, windowProps.height, (windowProps.title).c_str(), nullptr, nullptr);
 	    if (!m_NativeWindow) {
@@ -19,6 +22,14 @@ namespace Ballistic {
 	        glfwTerminate();
 	        return;
 	    }
+	
+		glfwMakeContextCurrent(m_NativeWindow);
+		if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
+			std::cerr << "Failed to initialize OpenGL context with glad" << std::endl;
+			glfwDestroyWindow(m_NativeWindow);
+			glfwTerminate();
+			return;
+		}
 	}
 
 	GLFWWindow::~GLFWWindow() {
@@ -27,6 +38,7 @@ namespace Ballistic {
 
 	void GLFWWindow::onUpdate() {
 		glfwPollEvents();
+		glfwSwapBuffers(m_NativeWindow);
 	}
 
 	bool GLFWWindow::shouldClose() const {
@@ -50,13 +62,6 @@ namespace Ballistic {
 
 	bool GLFWWindow::isFullscreen() const {
 		return glfwGetWindowMonitor(m_NativeWindow) != nullptr;
-	}
-
-	vk::UniqueSurfaceKHR GLFWWindow::createVulkanSurface(vk::Instance instance) {
-	    VkSurfaceKHR rawSurface;
-	    if (glfwCreateWindowSurface(static_cast<VkInstance>(instance), m_NativeWindow, nullptr, &rawSurface) != VK_SUCCESS)
-	        throw std::runtime_error("Failed to create Vulkan surface!");
-	    return vk::UniqueSurfaceKHR(rawSurface, instance);
 	}
 
 	std::shared_ptr<IWindow> GLFWWindow::Create(const WindowProps& windowProps) {
