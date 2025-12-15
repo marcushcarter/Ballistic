@@ -1,6 +1,6 @@
 #include "Scene.h"
 
-namespace Ballisic {
+namespace Ballistic {
 
     glm::mat4 Transform::TRS() {
         glm::mat4 m(1.0f);

@@ -7,8 +7,7 @@ namespace Ballistic {
 
 	class EditorLayer : public Layer {
 	public:
-		EditorLayer(const LayerContext& context, const std::string name = "EditorLayer")
-			: Layer(name), m_LayerStack(context.layerStack), m_Window(context.window), m_OglRenderer(context.renderer) {}
+		EditorLayer(const LayerContext& context, const std::string name = "EditorLayer");
 
 		void onAttach() override;
 		void onDetach() override;
@@ -19,10 +18,10 @@ namespace Ballistic {
 		void DrawMenuBar();
 
 	private:
-		LayerStack* m_LayerStack = nullptr;
+		std::shared_ptr<LayerStack> m_LayerStack;
 
-        IWindow* m_Window = nullptr;
-        OglRenderer* m_OglRenderer = nullptr;
+        std::shared_ptr<IWindow> m_Window;
+        std::shared_ptr<OglRenderer> m_OglRenderer;
 
         std::vector<std::unique_ptr<IPanel>> m_Panels;
 	};

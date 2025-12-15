@@ -1,12 +1,16 @@
 #include "EditorLayer.h"
-
 #include "imgui.h"
 #include "imgui_impl_opengl3.h"
 #include "imgui_impl_glfw.h"
-
 #include "Panels/DemoPanel/DemoPanel.h"
 
 namespace Ballistic {
+
+	EditorLayer::EditorLayer(const LayerContext& context, const std::string name) : Layer(name) {
+		m_LayerStack = context.layerStack;
+		m_Window = context.window;
+		m_OglRenderer = context.renderer;
+	}
 
 	void EditorLayer::onAttach() {
 		IMGUI_CHECKVERSION();

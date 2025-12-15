@@ -10,11 +10,12 @@ namespace Ballistic
         BallisticEditor() : Application() {
 
             LayerContext context;
-            context.layerStack = &m_LayerStack;
-            context.window = m_Window.get();
-            context.renderer = m_OglRenderer.get();
+            context.layerStack = m_LayerStack;
+            context.window = m_Window;
+            context.renderer = m_OglRenderer;
+            context.projectManager = m_ProjectManager;
 
-            m_LayerStack.pushLayer(std::make_shared<EditorLayer>(context, std::string("EditorLayer")));
+            m_LayerStack->pushLayer(std::make_shared<EditorLayer>(context, std::string("EditorLayer")));
         }
 
         virtual void Shutdown() override {

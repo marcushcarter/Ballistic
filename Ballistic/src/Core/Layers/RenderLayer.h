@@ -1,5 +1,4 @@
 #pragma once
-
 #include "Layer.h"
 #include "LayerStack.h"
 
@@ -7,8 +6,9 @@ namespace Ballistic {
 
 	class RenderLayer : public Layer {
 	public:
-		RenderLayer(LayerStack& layerStack, const std::string name = "RenderLayer")
-			: Layer(name), m_LayerStack(&layerStack) {}
+		RenderLayer(std::shared_ptr<LayerStack> layerStack, const std::string name = "RenderLayer") : Layer(name) {
+				m_LayerStack = layerStack;
+			}
 
 		void onAttach() override;
 		void onDetach() override;
@@ -16,6 +16,6 @@ namespace Ballistic {
 		void onEvent(void* e) override;
 
 	private:
-		LayerStack* m_LayerStack = nullptr;
+		std::shared_ptr<LayerStack> m_LayerStack;
 	};
 }

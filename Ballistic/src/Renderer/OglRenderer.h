@@ -1,5 +1,4 @@
 #pragma once
-
 #include "bepch.h"
 #include "Core/IWindow.h"
 
@@ -7,8 +6,7 @@ namespace Ballistic {
 
 	class OglRenderer {
 	public:
-		OglRenderer() = default;
-		explicit OglRenderer(IWindow* window) : m_Window(window) {}
+		OglRenderer(std::shared_ptr<IWindow> window);
 
 		void Init();
 		void Shutdown();
@@ -16,7 +14,7 @@ namespace Ballistic {
 
 	private:
 
-	    IWindow* m_Window = nullptr;
+	    std::shared_ptr<IWindow> m_Window;
 
 	};
 }

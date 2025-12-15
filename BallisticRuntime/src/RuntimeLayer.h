@@ -6,8 +6,7 @@ namespace Ballistic {
 
 	class RuntimeLayer : public Layer {
 	public:
-		RuntimeLayer(const LayerContext& context, const std::string name = "RuntimeLayer")
-			: Layer(name), m_LayerStack(context.layerStack), m_Window(context.window), m_OglRenderer(context.renderer) {}
+		RuntimeLayer(const LayerContext& context, const std::string name = "RuntimeLayer");
 
 		void onAttach() override;
 		void onDetach() override;
@@ -15,9 +14,9 @@ namespace Ballistic {
 		void onEvent(void* e) override;
 
 	private:
-		LayerStack* m_LayerStack = nullptr;
+		std::shared_ptr<LayerStack> m_LayerStack;
 		
-        IWindow* m_Window = nullptr;
-        OglRenderer* m_OglRenderer = nullptr;
+        std::shared_ptr<IWindow> m_Window;
+        std::shared_ptr<OglRenderer> m_OglRenderer;
 	};
 }

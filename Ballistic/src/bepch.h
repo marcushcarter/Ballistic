@@ -8,6 +8,7 @@
 #include <set>
 #include <cstdint>
 #include <algorithm>
+#include <filesystem>
 
 #include <glad/glad.h>
 #include <glballistic/gl.h>

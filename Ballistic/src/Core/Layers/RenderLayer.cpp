@@ -1,5 +1,4 @@
 #include "RenderLayer.h"
-
 #include "Event.h"
 
 namespace Ballistic {

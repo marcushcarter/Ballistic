@@ -1,8 +1,7 @@
 #pragma once
-
 #include "bepch.h"
 
-namespace Ballisic {
+namespace Ballistic {
 
     struct Parent { entt::entity entity = entt::null; };
     struct Children { std::vector<entt::entity> entities; };
@@ -33,6 +32,7 @@ namespace Ballisic {
         void clear();
 
         entt::registry registry;
+        entt::entity selected = entt::null;
 
     private:
         entt::entity duplicateEntity(entt::entity original, entt::entity targetParent);

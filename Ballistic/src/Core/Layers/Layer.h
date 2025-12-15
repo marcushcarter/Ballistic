@@ -1,7 +1,5 @@
 #pragma once
-
 #include "bepch.h"
-// include event
 
 namespace Ballistic {
 
