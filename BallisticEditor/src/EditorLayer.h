@@ -14,9 +14,6 @@ namespace Ballistic {
 		void onUpdate() override;
 		void onEvent(void* e) override;
 
-		void GenDockspace();
-		void DrawMenuBar();
-
 	private:
 		std::shared_ptr<ProjectManager> m_ProjectManager;
 		

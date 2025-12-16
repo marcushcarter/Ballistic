@@ -5,11 +5,10 @@
 
 namespace Ballistic {
 
-	class DemoPanel : public IPanel {
-	public:
+	class Dockspace : public IPanel {
+	public:        
 		void init() override;
 		void OnImGuiRender() override;
 		void onEvent(void* e) override;
-
 	};
 }
