@@ -13,6 +13,8 @@ namespace Ballistic {
 		void OnImGuiRender() override;
 		void onEvent(void* e) override;
 
+		void OpenLink(const std::string& url);
+
     private:
         std::shared_ptr<ProjectManager> m_ProjectManager;
         std::shared_ptr<IWindow> m_Window;

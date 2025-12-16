@@ -11,6 +11,18 @@ namespace Ballistic {
 	void MenuBar::init() {
 	}
 
+	void MenuBar::OpenLink(const std::string& url) {
+	#ifdef _WIN32
+		ShellExecuteA(nullptr, "open", url.c_str(), nullptr, nullptr, SW_SHOWNORMAL);
+	#elif __APPLE__
+		std::string cmd = "open " + url;
+		std::system(cmd.c_str());
+	#else // Linux/Unix
+		std::string cmd = "xdg-open " + url;
+		std::system(cmd.c_str());
+	#endif
+	}
+
 	void MenuBar::OnImGuiRender() {
 		// entt::entity& selected = editorState.temp.selectedEntity;
 
@@ -91,8 +103,8 @@ namespace Ballistic {
 
 				ImGui::Separator();
 
-				// if (ImGui::MenuItem("Take Editor Screenshot")) {} // takeScreenshotNextFrame = true;
-				// if (ImGui::MenuItem("Take Viewport Screenshot")) {} // takeTextureScreenshotNextFrame = true;
+				if (ImGui::MenuItem("Take Editor Screenshot")) {} // takeScreenshotNextFrame = true;
+				if (ImGui::MenuItem("Take Viewport Screenshot")) {} // takeTextureScreenshotNextFrame = true;
 
 				if (ImGui::MenuItem(m_Window->isFullscreen() ? "Windowed" : "Fullscreen")) m_Window->toggleFullscreen(!m_Window->isFullscreen());
 
@@ -105,19 +117,19 @@ namespace Ballistic {
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem("Online Documentation")) {} // OpenLink("https://ballisticstudios.ca/");
-				if (ImGui::MenuItem("Forums")) {} // OpenLink("https://ballisticstudios.ca/");
-				if (ImGui::MenuItem("Community")) {} // OpenLink("https://ballisticstudios.ca/");
-				if (ImGui::MenuItem("Tutorials")) {} // OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Online Documentation")) OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Forums")) OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Community")) OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Tutorials")) OpenLink("https://ballisticstudios.ca/");
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem("Report a bug")) {} // OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Report a bug")) OpenLink("https://ballisticstudios.ca/");
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem("About The Engine")) {} // OpenLink("https://ballisticstudios.ca/");
-				if (ImGui::MenuItem("Support Development")) {} // OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("About The Engine")) OpenLink("https://ballisticstudios.ca/");
+				if (ImGui::MenuItem("Support Development")) OpenLink("https://ballisticstudios.ca/");
 
 				ImGui::EndMenu();
 			}

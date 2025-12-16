@@ -7,6 +7,8 @@
 #include "Panels/Dockspace/Dockspace.h"
 #include "Panels/MenuBar/MenuBar.h"
 #include "Panels/HierarchyPanel/HierarchyPanel.h"
+// inspector
+#include "Panels/ViewportPanel/ViewportPanel.h"
 
 namespace Ballistic {
 
@@ -43,6 +45,8 @@ namespace Ballistic {
 
 		m_Panels.push_back(std::make_unique<MenuBar>(m_ProjectManager, m_Window));
 		m_Panels.push_back(std::make_unique<HierarchyPanel>(m_ProjectManager));
+		// inspector
+		m_Panels.push_back(std::make_unique<ViewportPanel>(m_OglRenderer));
 
 	    for (auto& panel : m_Panels)
         	panel->init();
