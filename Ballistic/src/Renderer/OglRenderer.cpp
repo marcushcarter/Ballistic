@@ -1,4 +1,5 @@
 #include "OglRenderer.h"
+#include "Core/IWindow.h"
 
 namespace Ballistic {
 

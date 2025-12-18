@@ -1,14 +1,17 @@
 #pragma once
+#include "bepch.h"
 #include "Layer.h"
-#include "LayerStack.h"
 
 namespace Ballistic {
 
+	struct LayerContext;
+	class Layer;
+	class LayerStack;
+	class OglRenderer;
+
 	class RenderLayer : public Layer {
 	public:
-		RenderLayer(std::shared_ptr<LayerStack> layerStack, const std::string name = "RenderLayer") : Layer(name) {
-				m_LayerStack = layerStack;
-			}
+		RenderLayer(const LayerContext& context, const std::string name = "RenderLayer");
 
 		void onAttach() override;
 		void onDetach() override;
@@ -17,5 +20,6 @@ namespace Ballistic {
 
 	private:
 		std::shared_ptr<LayerStack> m_LayerStack;
+        std::shared_ptr<OglRenderer> m_OglRenderer;
 	};
 }

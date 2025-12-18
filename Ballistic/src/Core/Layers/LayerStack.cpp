@@ -1,4 +1,5 @@
 #include "LayerStack.h"
+#include "Layer.h"
 
 namespace Ballistic {
 

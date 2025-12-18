@@ -1,6 +1,5 @@
 #pragma once
 #include "bepch.h"
-#include "Core/GUID.h"
 
 namespace Ballistic {
 

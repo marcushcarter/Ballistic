@@ -1,9 +1,10 @@
 #pragma once
 #include "bepch.h"
-#include "EntityHandle.h"
-#include "Components.h"
+#include "Core/GUID.h"
 
 namespace Ballistic {
+
+    struct GUID;
 
     class Scene {
     public:
@@ -22,11 +23,8 @@ namespace Ballistic {
         entt::registry registry;
         entt::entity selected = entt::null;
         
-        GUID GetGUID(entt::entity e) { return registry.get<GUID>(e); }
-        entt::entity GetEntity(GUID id) {
-            auto it = guidToEntity.find(id);
-            return it != guidToEntity.end() ? it->second : entt::null;
-        }
+        GUID GetGUID(entt::entity e);
+        entt::entity GetEntity(GUID id);
 
     private:
         entt::entity duplicateEntity(entt::entity original, entt::entity targetParent);

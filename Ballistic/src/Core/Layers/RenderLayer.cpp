@@ -1,7 +1,15 @@
 #include "RenderLayer.h"
 #include "Event.h"
+#include "LayerStack.h"
+#include "Core/Application.h"
+#include "Renderer/OglRenderer.h"
 
 namespace Ballistic {
+
+	RenderLayer::RenderLayer(const LayerContext& context, const std::string name) : Layer(name) {
+		m_LayerStack = context.layerStack;
+		m_OglRenderer = context.renderer;
+	}
 
 	void RenderLayer::onAttach() {
 	}
@@ -10,8 +18,10 @@ namespace Ballistic {
 	}
 
 	void RenderLayer::onUpdate() {
-		glClearColor(1.0, 0.0, 0.0, 1.0);
-		glClear(GL_COLOR_BUFFER_BIT);
+		m_OglRenderer->Render();
+		
+		// Event e(EventType::TestEvent, nullptr);
+		// m_LayerStack->dispatchEvent(&e);
 	}
 
 	void RenderLayer::onEvent(void* ePtr) {

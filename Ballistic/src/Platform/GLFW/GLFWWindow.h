@@ -1,6 +1,8 @@
 #pragma once
 #include "bepch.h"
 #include "Core/IWindow.h"
+#include "Core/WindowProps.h"
+#include "Core/WindowAPI.h"
 
 namespace Ballistic {
 	

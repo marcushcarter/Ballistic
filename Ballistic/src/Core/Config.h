@@ -1,5 +1,4 @@
 #pragma once
-
 #include "bepch.h"
 
 namespace Ballistic::Config {

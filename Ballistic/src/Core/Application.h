@@ -1,6 +1,6 @@
 #pragma once
 #include "bepch.h"
-#include "Renderer/OglRenderer.h"
+#include "WindowProps.h"
 
 namespace Ballistic {
 
@@ -9,6 +9,8 @@ namespace Ballistic {
 	class EditorLayer;
 	class RuntimeLayer;
 	class ProjectManager;
+	class OglRenderer;
+	class IWindow;
 
 	struct LayerContext {
 	    std::shared_ptr<LayerStack> layerStack;

@@ -15,9 +15,15 @@ namespace Ballistic {
 	}
 
 	void RuntimeLayer::onUpdate() {
+		gl::ClearColor(1.0, 0.0, 1.0, 1.0);
+		gl::Clear();
+
 	}
 
 	void RuntimeLayer::onEvent(void* ePtr) {
 		Event* e = static_cast<Event*>(ePtr);
+		// if (e->getType() == EventType::TestEvent) {
+		// 	std::cout << "Event passed from Render Layer to Runtime Layer" << std::endl;
+	    // }
 	}
 }

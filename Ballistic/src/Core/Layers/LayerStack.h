@@ -1,8 +1,9 @@
 #pragma once
 #include "bepch.h"
-#include "Layer.h"
 
 namespace Ballistic {
+
+	class Layer;
 
 	class LayerStack {
 	public:

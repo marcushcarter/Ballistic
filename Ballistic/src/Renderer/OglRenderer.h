@@ -1,8 +1,9 @@
 #pragma once
 #include "bepch.h"
-#include "Core/IWindow.h"
 
 namespace Ballistic {
+
+	class IWindow;
 
 	class OglRenderer {
 	public:

@@ -1,4 +1,6 @@
 #include "Scene.h"
+#include "EntityHandle.h"
+#include "Components.h"
 
 namespace Ballistic {
 
@@ -193,6 +195,15 @@ namespace Ballistic {
             destroy(root);
 
         guidToEntity.clear();
+    }
+
+    GUID Scene::GetGUID(entt::entity e) {
+        return registry.get<GUID>(e);
+    }
+    
+    entt::entity Scene::GetEntity(GUID id) {
+        auto it = guidToEntity.find(id);
+        return it != guidToEntity.end() ? it->second : entt::null;
     }
 
 }

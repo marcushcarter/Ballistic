@@ -3,6 +3,7 @@
 #include "Layers/LayerStack.h"
 #include "Layers/RenderLayer.h"
 #include "Platform/GLFW/GLFWWindow.h"
+#include "Renderer/OglRenderer.h"
 
 namespace Ballistic {
 
@@ -21,8 +22,15 @@ namespace Ballistic {
 
 	    m_OglRenderer = std::make_shared<OglRenderer>(m_Window);
 		m_OglRenderer->Init();
+		
 
-		auto renderLayer = std::make_shared<RenderLayer>(m_LayerStack, "RenderLayer");
+		LayerContext context;
+		context.layerStack = m_LayerStack;
+		context.window = m_Window;
+		context.renderer = m_OglRenderer;
+		context.projectManager = m_ProjectManager;
+
+		auto renderLayer = std::make_shared<RenderLayer>(context, "RenderLayer");
 		m_LayerStack->pushLayer(renderLayer);
 		m_RenderLayer = renderLayer;
 	}
@@ -36,8 +44,6 @@ namespace Ballistic {
 		while (!m_Window->shouldClose()) {
 			
 			m_LayerStack->onUpdate();
-			
-			m_OglRenderer->Render();
 
 			m_Window->onUpdate();
 		}
