@@ -1,5 +1,4 @@
 #pragma once
-
 #include <Ballistic.h>
 
 namespace Ballistic {

@@ -1,5 +1,4 @@
 #include "EditorLayer.h"
-
 #include "Panels/Dockspace/Dockspace.h"
 #include "Panels/MenuBar/MenuBar.h"
 #include "Panels/HierarchyPanel/HierarchyPanel.h"

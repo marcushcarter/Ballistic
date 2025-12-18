@@ -1,4 +1,5 @@
 #include "GLFWWindow.h"
+#include "Core/Config.h"
 
 namespace Ballistic {
 
@@ -41,6 +42,7 @@ namespace Ballistic {
 	}
 
 	void GLFWWindow::onUpdate() {
+		glfwGetWindowSize(m_NativeWindow, &m_Props.width, &m_Props.height);
 		glfwPollEvents();
 		glfwSwapBuffers(m_NativeWindow);
 	}

@@ -16,12 +16,13 @@ add_subdirectory(external/glfw)
 add_library(glad STATIC external/glad/src/glad.c)
 target_include_directories(glad PUBLIC external/glad/include)
 
-# glBallistic
-add_subdirectory(external/glballistic)
-
 # GLM (header-only)
 add_library(glm INTERFACE)
 target_include_directories(glm INTERFACE external/glm)
+
+# stb (header-only)
+add_library(stb INTERFACE)
+target_include_directories(stb INTERFACE external/stb)
 
 # ImGui
 file(GLOB IMGUI_CORE external/imgui/*.cpp)
@@ -62,9 +63,9 @@ target_include_directories(Ballistic PUBLIC
 target_link_libraries(Ballistic PUBLIC
     glfw
     glad
-    glballistic
     glm
     imgui
+    stb
     EnTT::EnTT
     IconFontCppHeaders
     ${CMAKE_DL_LIBS}

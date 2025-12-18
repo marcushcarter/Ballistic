@@ -1,5 +1,4 @@
 #pragma once
-
 #include <Ballistic.h>
 #include "Panels/IPanel.h"
 

@@ -8,12 +8,12 @@
 [submodule "external/glm"]
 	path = external/glm
 	url = https://github.com/g-truc/glm.git
-[submodule "external/glballistic"]
-	path = external/glballistic
-	url = https://github.com/marcushcarter/glballistic.git
 [submodule "external/entt"]
 	path = external/entt
 	url = https://github.com/skypjack/entt.git
 [submodule "external/icon-fonts-headers"]
 	path = external/icon-fonts-headers
 	url = https://github.com/juliettef/IconFontCppHeaders
+[submodule "external/stb"]
+	path = external/stb
+	url = https://github.com/nothings/stb

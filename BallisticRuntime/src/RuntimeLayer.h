@@ -1,5 +1,4 @@
 #pragma once
-
 #include <Ballistic.h>
 
 namespace Ballistic {
@@ -18,5 +17,10 @@ namespace Ballistic {
 		
         std::shared_ptr<IWindow> m_Window;
         std::shared_ptr<OglRenderer> m_OglRenderer;
+
+		std::shared_ptr<gl::Shader> blitShader;
+		std::shared_ptr<gl::VertexArray> vao;
+		// GLuint m_VAO = 0;
+
 	};
 }

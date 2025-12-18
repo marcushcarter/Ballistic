@@ -14,10 +14,10 @@
 
 #include "Platform/GLFW/GLFWWindow.h"
 
-#include "Project/Scene/SceneManager.h"
-#include "Project/Scene/Scene.h"
 #include "Project/Scene/Components.h"
 #include "Project/Scene/EntityHandle.h"
+#include "Project/Scene/Scene.h"
+#include "Project/Scene/SceneManager.h"
 #include "Project/ProjectManager.h"
 
 #include "Renderer/OglRenderer.h"

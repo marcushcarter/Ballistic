@@ -21,8 +21,11 @@
 #include <filesystem>
 #include <unordered_map>
 
+#include <stb_image.h>
+
 #include <glad/glad.h>
-#include <glballistic/all.h>
+#include <Platform/OpenGL/all.h>
+#include <Platform/OpenGL/ShaderGLM.h>
 #include <GLFW/glfw3.h>
 
 #include <entt/entt.hpp>
@@ -31,3 +34,4 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
+#include <glm/gtc/type_ptr.hpp>

@@ -49,7 +49,7 @@ namespace Ballistic {
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         drawList->AddImage(
-            (void*)(intptr_t)texture->id(), 
+            (void*)(intptr_t)texture->get(), 
             topLeftTextureCoords, 
             bottomRightTextureCoords, 
             ImVec2(0,1), 

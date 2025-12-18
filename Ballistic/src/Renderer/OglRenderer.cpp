@@ -8,6 +8,7 @@ namespace Ballistic {
 	}
 
 	void OglRenderer::requestResize(glm::vec2 dim) {
+		if (m_CurrentSize == dim) return;
 		m_ResizeSize = dim;
 		m_PendingResize = true;
 	}
@@ -15,8 +16,11 @@ namespace Ballistic {
 	void OglRenderer::Init() {
 		std::cout << "OpenGL Renderer Initialized" << std::endl;
 
+		m_PendingResize = true;
+		m_ResizeSize = glm::vec2(800, 600);
+
 		const char* computeShaderSrc = R"(
-		#version 430 core
+		#version 460 core
 		layout (local_size_x = 16, local_size_y = 16) in;
 
 		layout (rgba32f, binding = 0) uniform image2D imgOutput;
@@ -25,7 +29,6 @@ namespace Ballistic {
 			ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
 			vec2 uv = vec2(pixel) / vec2(imageSize(imgOutput));
 			
-			// simple gradient raytracer
 			vec3 color = vec3(uv, 0.5);
 			imageStore(imgOutput, pixel, vec4(color, 1.0));
 		}
@@ -39,6 +42,18 @@ namespace Ballistic {
 		texture = std::make_shared<gl::Texture2D>();
 		texture->create(800, 600, GL_RGBA32F, GL_RGBA, GL_FLOAT);
     	texture->setParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
+
+		framebuffer = std::make_shared<gl::Framebuffer>();
+		framebuffer->create();
+		framebuffer->attachColor(0, *texture);
+
+		gl::Renderbuffer depthBuffer;
+		depthBuffer.create();
+		depthBuffer.storage(GL_DEPTH_COMPONENT24, 800, 600);
+		framebuffer->attachDepth(depthBuffer);
+
+		if (!framebuffer->complete())
+        	throw std::runtime_error("Framebuffer incomplete!");
 	}
 	
 	void OglRenderer::Shutdown() {
@@ -46,13 +61,34 @@ namespace Ballistic {
 
 	void OglRenderer::Render() {
 		if (m_PendingResize) {
-			texture->destroy();
-			texture->create(m_ResizeSize.x, m_ResizeSize.y, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-			texture->setParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-			m_PendingResize = true;
+			int w = (int)m_ResizeSize.x;
+        	int h = (int)m_ResizeSize.y;
+
+			texture->resize(w, h);
+
+			framebuffer->destroy();
+			framebuffer->create();
+			framebuffer->attachColor(0, *texture);
+
+			gl::Renderbuffer depthBuffer;
+			depthBuffer.create();
+			depthBuffer.storage(GL_DEPTH_COMPONENT24, w, h);
+			framebuffer->attachDepth(depthBuffer);
+
+			m_PendingResize = false;
 		}
-		shader->use();
-        texture->bindImage(0, GL_WRITE_ONLY);
-        shader->dispatchCompute((texture->width() + 15)/16, (texture->height() + 15)/16, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+
+		if (true) {
+			shader->use();
+        	texture->bindImage(0, GL_WRITE_ONLY);
+        	shader->dispatchCompute((texture->width() + 15)/16, (texture->height() + 15)/16, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
+		} else {
+			framebuffer->bind();
+			gl::Viewport(0, 0, texture->width(), texture->height());
+			gl::ClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+			gl::Clear();
+			framebuffer->unbind();
+		}
+
 	}
 }
