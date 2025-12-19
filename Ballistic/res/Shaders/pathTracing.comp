@@ -1,0 +1,12 @@
+#version 460 core
+layout (local_size_x = 16, local_size_y = 16) in;
+
+layout (rgba32f, binding = 0) uniform image2D imgOutput;
+
+void main() {
+    ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
+    vec2 uv = vec2(pixel) / vec2(imageSize(imgOutput));
+    
+    vec3 color = vec3(uv, 0.5);
+    imageStore(imgOutput, pixel, vec4(color, 1.0));
+}

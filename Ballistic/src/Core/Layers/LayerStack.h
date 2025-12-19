@@ -10,14 +10,14 @@ namespace Ballistic {
 		LayerStack() = default;
 		~LayerStack() = default;
 
-		void pushLayer(std::shared_ptr<Layer> layer);
-		void popLayer(std::shared_ptr<Layer> layer);
+		void PushLayer(std::shared_ptr<Layer> layer);
+		void PopLayer(std::shared_ptr<Layer> layer);
 
-		void onUpdate();
-		void onDetach();
-		void dispatchEvent(void* e);
+		void OnUpdate();
+		void OnDetach();
+		void DispatchEvent(void* ePtr);
 
 	public:
-		std::vector<std::shared_ptr<Layer>> m_Layers;
+		std::vector<std::shared_ptr<Layer>> m_layers;
 	};
 }

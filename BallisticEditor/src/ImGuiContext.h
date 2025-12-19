@@ -16,7 +16,7 @@ namespace Ballistic {
 		void LoadDefaultLayout();
 
 	private:
-		std::shared_ptr<IWindow> m_Window;
+		std::shared_ptr<IWindow> m_window;
     };
 
 }

@@ -2,11 +2,11 @@
 
 namespace Ballistic {
 
-    ViewportPanel::ViewportPanel(std::shared_ptr<OglRenderer> oglRenderer) {
-        m_OglRenderer = oglRenderer;
+    ViewportPanel::ViewportPanel(std::shared_ptr<IRenderer> renderer) {
+        m_renderer = renderer;
     }
 	
-	void ViewportPanel::init() {
+	void ViewportPanel::Init() {
 	}
 
 	void ViewportPanel::OnImGuiRender() {
@@ -29,7 +29,7 @@ namespace Ballistic {
         if (viewportSize.x != prevViewportSize.x || viewportSize.y != prevViewportSize.y) {
             glm::vec2 dim = glm::vec2(viewportSize.x, viewportSize.y);
 
-            m_OglRenderer->requestResize(dim);
+            m_renderer->RequestResize(dim);
             // camera.setScreenSize(dim);
             wasImguiInput = true;
 
@@ -45,7 +45,7 @@ namespace Ballistic {
         topLeftTextureCoords = ImVec2(cursor.x + offset.x, cursor.y + offset.y);
         bottomRightTextureCoords = ImVec2(topLeftTextureCoords.x + viewportSize.x, topLeftTextureCoords.y + viewportSize.y);
         
-        auto texture = m_OglRenderer->getTexture();
+        auto texture = m_renderer->getTexture();
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         drawList->AddImage(
@@ -62,6 +62,6 @@ namespace Ballistic {
         ImGui::PopStyleVar();
 	}
 	
-	void ViewportPanel::onEvent(void* e) {
+	void ViewportPanel::OnEvent(void* e) {
 	}
 }

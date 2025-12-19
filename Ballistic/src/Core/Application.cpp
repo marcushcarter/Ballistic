@@ -3,51 +3,39 @@
 #include "Layers/LayerStack.h"
 #include "Layers/RenderLayer.h"
 #include "Platform/GLFW/GLFWWindow.h"
-#include "Renderer/OglRenderer.h"
+#include "Renderer/IRenderer.h"
 
 namespace Ballistic {
 
 	Application::Application(WindowProps windowProps) {
 
-		m_LayerStack = std::make_shared<LayerStack>();
+		m_layerStack = std::make_shared<LayerStack>();
 
 		WindowAPI::SetAPI(WindowAPI::API::GLFW);
 		switch (WindowAPI::GetAPI()) {
 			case WindowAPI::API::GLFW:
-				m_Window = GLFWWindow::Create(windowProps);
+				m_window = GLFWWindow::Create(windowProps);
 				break;
 		}
 
-		m_ProjectManager = std::make_shared<ProjectManager>();
+		m_projectManager = std::make_shared<ProjectManager>();
 
-	    m_OglRenderer = std::make_shared<OglRenderer>(m_Window);
-		m_OglRenderer->Init();
-		
+	    m_renderer = std::make_shared<IRenderer>();
+		m_renderer->Init();
 
-		LayerContext context;
-		context.layerStack = m_LayerStack;
-		context.window = m_Window;
-		context.renderer = m_OglRenderer;
-		context.projectManager = m_ProjectManager;
-
-		auto renderLayer = std::make_shared<RenderLayer>(context, "RenderLayer");
-		m_LayerStack->pushLayer(renderLayer);
-		m_RenderLayer = renderLayer;
+		m_layerStack->PushLayer(std::make_shared<RenderLayer>(GetAppContext(), "RenderLayer"));
 	}
 
 	void Application::Shutdown(){
-		 if (m_OglRenderer)
-	        m_OglRenderer->Shutdown();
+		 if (m_renderer)
+	        m_renderer->Shutdown();
 	}
 
-	void Application::run() {
-		while (!m_Window->shouldClose()) {
-			
-			m_LayerStack->onUpdate();
-
-			m_Window->onUpdate();
+	void Application::Run() {
+		while (!m_window->ShouldClose()) {
+			m_layerStack->OnUpdate();
+			m_window->OnUpdate();
 		}
-
 		Shutdown();
 	}
 }

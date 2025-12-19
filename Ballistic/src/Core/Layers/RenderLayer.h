@@ -5,21 +5,20 @@
 namespace Ballistic {
 
 	struct LayerContext;
-	class Layer;
 	class LayerStack;
-	class OglRenderer;
+	class IRenderer;
 
 	class RenderLayer : public Layer {
 	public:
 		RenderLayer(const LayerContext& context, const std::string name = "RenderLayer");
 
-		void onAttach() override;
-		void onDetach() override;
-		void onUpdate() override;
-		void onEvent(void* e) override;
+		void OnAttach() override;
+		void OnDetach() override;
+		void OnUpdate() override;
+		void OnEvent(void* ePtr) override;
 
 	private:
-		std::shared_ptr<LayerStack> m_LayerStack;
-        std::shared_ptr<OglRenderer> m_OglRenderer;
+		std::shared_ptr<LayerStack> m_layerStack;
+        std::shared_ptr<IRenderer> m_renderer;
 	};
 }

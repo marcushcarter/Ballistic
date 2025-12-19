@@ -6,8 +6,8 @@ namespace Ballistic {
 
 	class Dockspace : public IPanel {
 	public:        
-		void init() override;
+		void Init() override;
 		void OnImGuiRender() override;
-		void onEvent(void* e) override;
+		void OnEvent(void* ePtr) override;
 	};
 }

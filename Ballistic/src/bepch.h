@@ -1,35 +1,31 @@
 #pragma once
 
 #ifdef _WIN32
+    #define WIN32_LEAN_AND_MEAN
+    #define NOMINMAX
     #include <windows.h>
     #include <shellapi.h>
 #endif
 
-#include <string>
+#include <algorithm>
+#include <atomic>
+#include <cfloat>
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <functional>
 #include <iostream>
 #include <memory>
-#include <vector>
-#include <functional>
-#include <cfloat>
-#include <atomic>
 #include <random>
-#include <cstdint>
-
 #include <set>
-#include <cstdint>
-#include <algorithm>
-#include <filesystem>
+#include <string>
 #include <unordered_map>
-#include <fstream>
+#include <vector>
 
 #include <stb_image.h>
 
 #include <glad/glad.h>
-#include <Platform/OpenGL/all.h>
-#include <Platform/OpenGL/ShaderGLM.h>
 #include <GLFW/glfw3.h>
-
-#include <entt/entt.hpp>
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
@@ -37,5 +33,11 @@
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <entt/entt.hpp>
+
 #include <nlohmann/json.hpp>
-using json = nlohmann::json;
+
+#include <Platform/OpenGL/all.h>
+#include <Platform/OpenGL/ShaderGLM.h>
+
+#include <Core/Utils.h>

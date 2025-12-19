@@ -9,6 +9,6 @@ int main(int argc, char** argv) {
     std::filesystem::path exeDir = exePath.parent_path();
     
     Ballistic::Application* app = Ballistic::CreateApplication(exeDir);
-    app->run();
+    app->Run();
     delete app;
 }

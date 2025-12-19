@@ -21,9 +21,7 @@ namespace Ballistic {
     private:
         static uint64_t Generate() noexcept {
             static std::atomic<uint64_t> counter { 1 };
-            static thread_local std::mt19937_64 rng {
-                std::random_device{}()
-            };
+            static thread_local std::mt19937_64 rng { std::random_device{}() };
             uint64_t c = counter.fetch_add(1, std::memory_order_relaxed);
             uint64_t r = rng();
             return (r ^ (c + 0x9E3779B97F4A7C15ULL)) | 1ULL;

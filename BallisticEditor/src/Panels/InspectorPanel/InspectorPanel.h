@@ -8,9 +8,9 @@ namespace Ballistic {
 	public:
         InspectorPanel(std::shared_ptr<ProjectManager> projectManager);
         
-		void init() override;
+		void Init() override;
 		void OnImGuiRender() override;
-		void onEvent(void* e) override;
+		void OnEvent(void* ePtr) override;
     
     private:
         std::shared_ptr<ProjectManager> m_ProjectManager;

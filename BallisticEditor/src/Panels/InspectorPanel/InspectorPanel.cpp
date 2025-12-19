@@ -18,13 +18,13 @@ namespace Ballistic {
         m_ProjectManager = projectManager;
     }
 	
-	void InspectorPanel::init() {
+	void InspectorPanel::Init() {
 	}
 
 	void InspectorPanel::OnImGuiRender() {
-        auto& scene = *m_ProjectManager->GetSceneManager()->m_activeScene;
+        auto& scene = m_ProjectManager->GetSceneManager()->GetActiveScene();
         // auto& reg = scene.registry;
-        EntityHandle selected(scene.selected, scene.registry);
+        EntityHandle selected(scene.GetSelected(), scene.GetRegistry());
 
         static ImGuiWindowFlags InspectorFlags = ImGuiWindowFlags_NoCollapse;
         ImGui::Begin("Inspector", nullptr, InspectorFlags);
@@ -35,14 +35,12 @@ namespace Ballistic {
             return;
         }
 
-        bool hasTag = selected.has<Tag>();
-        bool hasGUID = selected.has<GUID>();
         bool hasTransform = selected.has<TransformComponent>();
         bool hasSphere = selected.has<SphereComponent>();
 
 		ImVec4 lightGray = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
 
-        if (hasTag) {
+        if (selected.has<Tag>()) {
             auto& tag = selected.get<Tag>();
 
 		    static char buffer[256];
@@ -67,7 +65,7 @@ namespace Ballistic {
             }
         }
 
-        if (hasGUID) {
+        if (selected.has<GUID>()) {
             auto& guid = selected.get<GUID>();
             
             ImGui::PushStyleColor(ImGuiCol_Text, lightGray);
@@ -94,16 +92,22 @@ namespace Ballistic {
             });
         }
 
-        if (ImGui::Button("Add Component")) ImGui::OpenPopup("AddComponentPopup");
-        if (ImGui::BeginPopup("AddComponentPopup")) {
-            if (!hasTransform && ImGui::Selectable("Transform")) selected.add<TransformComponent>();
-            if (!hasSphere && ImGui::Selectable("Sphere")) selected.add<SphereComponent>();
-            ImGui::EndPopup();
+        bool hasAll = hasTransform && hasSphere;
+
+        ImVec2 avail = ImGui::GetContentRegionAvail();
+        if (!hasAll) {
+            if (ImGui::Button("Add Component", ImVec2(avail.x, 0)) && !hasAll) ImGui::OpenPopup("AddComponentPopup");
+            if (ImGui::BeginPopup("AddComponentPopup")) {
+                if (!hasTransform && ImGui::Selectable("Transform")) selected.add<TransformComponent>();
+                if (!hasSphere && ImGui::Selectable("Sphere")) selected.add<SphereComponent>();
+                ImGui::EndPopup();
+            }
         }
+        
 
         ImGui::End();
 	}
 
-    void InspectorPanel::onEvent(void* e) {
+    void InspectorPanel::OnEvent(void* e) {
 	}
 }

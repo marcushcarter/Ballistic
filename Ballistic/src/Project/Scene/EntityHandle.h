@@ -21,6 +21,7 @@ namespace Ballistic {
         void remove() { registry.remove<T>(entity); }
 
         entt::entity handle() const { return entity; }
+        entt::entity& handle() { return entity; }
         bool valid() const { return entity != entt::null && registry.valid(entity); }
 
     private:

@@ -7,20 +7,17 @@ namespace Ballistic {
 	public:
 		RuntimeLayer(const LayerContext& context, const std::string name = "RuntimeLayer");
 
-		void onAttach() override;
-		void onDetach() override;
-		void onUpdate() override;
-		void onEvent(void* e) override;
+		void OnAttach() override;
+		void OnDetach() override;
+		void OnUpdate() override;
+		void OnEvent(void* e) override;
 
-	private:
-		std::shared_ptr<LayerStack> m_LayerStack;
-		
-        std::shared_ptr<IWindow> m_Window;
-        std::shared_ptr<OglRenderer> m_OglRenderer;
+	private:		
+        std::shared_ptr<IWindow> m_window;
+        std::shared_ptr<IRenderer> m_renderer;
 
 		std::shared_ptr<gl::Shader> blitShader;
 		std::shared_ptr<gl::VertexArray> vao;
-		// GLuint m_VAO = 0;
 
 	};
 }

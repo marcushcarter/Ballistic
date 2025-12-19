@@ -10,11 +10,11 @@ namespace Ballistic {
 			GLFW = 1,
 		};
 
-		static API GetAPI() { return s_API; }
-		static void SetAPI(API api) { s_API = api; }
+		static API GetAPI() { return s_api; }
+		static void SetAPI(API api) { s_api = api; }
 
 	private:
-		static API s_API;
+		static API s_api;
 	};
 
 }

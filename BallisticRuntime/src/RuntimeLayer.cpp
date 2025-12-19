@@ -3,12 +3,11 @@
 namespace Ballistic {
 
 	RuntimeLayer::RuntimeLayer(const LayerContext& context, const std::string name) : Layer(name) {
-		m_LayerStack = context.layerStack;
-		m_Window = context.window;
-		m_OglRenderer = context.renderer;
+		m_window = context.window;
+		m_renderer = context.renderer;
 	}
 
-	void RuntimeLayer::onAttach() {
+	void RuntimeLayer::OnAttach() {
 		
 		const char* vertexShaderSrc = R"(
 		#version 460 core
@@ -45,15 +44,15 @@ namespace Ballistic {
 		vao->create();
 	}
 
-	void RuntimeLayer::onDetach() {
+	void RuntimeLayer::OnDetach() {
 	}
 
-	void RuntimeLayer::onUpdate() {
-		auto windowProps = m_Window->getProps();
-		m_OglRenderer->requestResize(glm::vec2(windowProps.width, windowProps.height));
+	void RuntimeLayer::OnUpdate() {
+		auto windowProps = m_window->GetWindowProps();
+		m_renderer->RequestResize(glm::vec2(windowProps.width, windowProps.height));
 		// resize camera
 
-		auto texture = m_OglRenderer->getTexture();
+		auto texture = m_renderer->getTexture();
 
 		gl::State::bindFramebuffer(GL_FRAMEBUFFER, 0);
 		glDisable(GL_DEPTH_TEST);
@@ -68,7 +67,7 @@ namespace Ballistic {
 		vao->unbind();
 	}
 
-	void RuntimeLayer::onEvent(void* ePtr) {
+	void RuntimeLayer::OnEvent(void* ePtr) {
 		Event* e = static_cast<Event*>(ePtr);
 		// if (e->getType() == EventType::TestEvent) {
 		// 	std::cout << "Event passed from Render Layer to Runtime Layer" << std::endl;

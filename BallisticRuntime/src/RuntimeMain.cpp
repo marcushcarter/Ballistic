@@ -9,13 +9,7 @@ namespace Ballistic {
         BallisticRuntime()
             : Application() {
 
-            LayerContext context;
-            context.layerStack = m_LayerStack;
-            context.window = m_Window;
-            context.renderer = m_OglRenderer;
-            context.projectManager = m_ProjectManager;
-
-            m_LayerStack->pushLayer(std::make_shared<RuntimeLayer>(context, std::string("RuntimeLayer")));
+            m_layerStack->PushLayer(std::make_shared<RuntimeLayer>(GetAppContext(), std::string("RuntimeLayer")));
         }
 
         virtual void Shutdown() override {

@@ -2,29 +2,29 @@
 #include "Event.h"
 #include "LayerStack.h"
 #include "Core/Application.h"
-#include "Renderer/OglRenderer.h"
+#include "Renderer/IRenderer.h"
 
 namespace Ballistic {
 
 	RenderLayer::RenderLayer(const LayerContext& context, const std::string name) : Layer(name) {
-		m_LayerStack = context.layerStack;
-		m_OglRenderer = context.renderer;
+		m_layerStack = context.layerStack;
+		m_renderer = context.renderer;
 	}
 
-	void RenderLayer::onAttach() {
+	void RenderLayer::OnAttach() {
 	}
 
-	void RenderLayer::onDetach() {
+	void RenderLayer::OnDetach() {
 	}
 
-	void RenderLayer::onUpdate() {
-		m_OglRenderer->Render();
+	void RenderLayer::OnUpdate() {
+		m_renderer->Render();
 		
 		// Event e(EventType::TestEvent, nullptr);
 		// m_LayerStack->dispatchEvent(&e);
 	}
 
-	void RenderLayer::onEvent(void* ePtr) {
+	void RenderLayer::OnEvent(void* ePtr) {
 		Event* e = static_cast<Event*>(ePtr);
 	}
 }

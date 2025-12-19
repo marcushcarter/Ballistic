@@ -5,20 +5,21 @@ namespace Ballistic {
 
 	class Layer {
 	public:
-		Layer(const std::string name = "Layer") : m_Name(name) {
-			std::cout << m_Name << " Attached" << std::endl;
+		Layer(const std::string name = "Layer")
+			: m_name(name) {
+			std::cout << m_name << " Attached" << std::endl;
 		}
 
 		virtual ~Layer() = default;
 
-		virtual void onAttach() {}
-		virtual void onDetach() {}
-		virtual void onUpdate() {}
-		virtual void onEvent(void* e) {}
+		virtual void OnAttach() = 0;
+		virtual void OnDetach() = 0;
+		virtual void OnUpdate() = 0;
+		virtual void OnEvent(void* ePtr) = 0;
 
-		const std::string& getName() const { return m_Name; }
+		const std::string& getName() const { return m_name; }
 
 	private:
-		std::string m_Name;
+		std::string m_name;
 	};
 }

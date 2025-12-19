@@ -7,13 +7,14 @@ namespace Ballistic {
 
 	class Event {
 	public:
-		Event(EventType type, void* data = nullptr) : m_Type(type), m_Data(data) {}
+		Event(EventType type, void* data = nullptr)
+			: m_type(type), m_data(data) {}
 
-		EventType getType() const { return m_Type; }
-		void* getData() const { return m_Data; }
+		EventType getType() const { return m_type; }
+		void* getData() const { return m_data; }
 
 	private:
-		EventType m_Type;
-		void* m_Data;
+		EventType m_type;
+		void* m_data;
 	};
 }

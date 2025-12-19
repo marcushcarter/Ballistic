@@ -7,7 +7,7 @@
 namespace Ballistic {
     
     ImGuiContext::ImGuiContext(std::shared_ptr<IWindow> window) {
-        m_Window = window;
+        m_window = window;
     }
 
     ImGuiContext::~ImGuiContext() {
@@ -59,7 +59,7 @@ namespace Ballistic {
 
     	switch (WindowAPI::GetAPI()) {
 	    	case WindowAPI::API::GLFW:
-	    		ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(m_Window->get()), true);
+	    		ImGui_ImplGlfw_InitForOpenGL(static_cast<GLFWwindow*>(m_window->GetNativeWindow()), true);
 	    		break;
 
 	    	default:
@@ -89,7 +89,7 @@ namespace Ballistic {
     	auto io = ImGui::GetIO();
 		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
 		    if (WindowAPI::GetAPI() == WindowAPI::API::GLFW) {
-		        GLFWwindow* backup = static_cast<GLFWwindow*>(m_Window->get());
+		        GLFWwindow* backup = static_cast<GLFWwindow*>(m_window->GetNativeWindow());
 		        ImGui::UpdatePlatformWindows();
 		        ImGui::RenderPlatformWindowsDefault();
 		        glfwMakeContextCurrent(backup);

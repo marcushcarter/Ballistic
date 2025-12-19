@@ -4,37 +4,40 @@
 
 namespace Ballistic {
 
-	class LayerStack;
-	class RenderLayer;
-	class EditorLayer;
-	class RuntimeLayer;
 	class ProjectManager;
-	class OglRenderer;
+	class LayerStack;
 	class IWindow;
+	class IRenderer;
 
 	struct LayerContext {
+		std::shared_ptr<ProjectManager> projectManager;
 	    std::shared_ptr<LayerStack> layerStack;
 	    std::shared_ptr<IWindow> window;
-	    std::shared_ptr<OglRenderer> renderer;
-		std::shared_ptr<ProjectManager> projectManager;
+	    std::shared_ptr<IRenderer> renderer;
 	};
 
 	class Application {
 	public:
 		Application(WindowProps windowProps = WindowProps{});
 		virtual ~Application() = default;
-		void run();
+		void Run();
+
+		LayerContext GetAppContext() {
+			LayerContext context;
+			context.projectManager = m_projectManager;
+            context.layerStack = m_layerStack;
+            context.window = m_window;
+            context.renderer = m_renderer;
+			return context;
+		}
 
 	protected:
-		std::shared_ptr<ProjectManager> m_ProjectManager;
+		std::shared_ptr<ProjectManager> m_projectManager;
+		std::shared_ptr<LayerStack> m_layerStack;
+		std::shared_ptr<IWindow> m_window;
+		std::shared_ptr<IRenderer> m_renderer;
 
-		std::shared_ptr<LayerStack> m_LayerStack;
-		std::weak_ptr<RenderLayer> m_RenderLayer;
-
-		std::shared_ptr<IWindow> m_Window;
-		std::shared_ptr<OglRenderer> m_OglRenderer;
-
-		virtual void Shutdown();
+		virtual void Shutdown() = 0;
 	};
 
 	Application* CreateApplication(const std::filesystem::path& exeDir);

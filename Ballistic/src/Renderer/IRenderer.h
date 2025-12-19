@@ -5,22 +5,20 @@ namespace Ballistic {
 
 	class IWindow;
 
-	class OglRenderer {
+	class IRenderer {
 	public:
-		OglRenderer(std::shared_ptr<IWindow> window);
+		IRenderer();
 
 		void Init();
 		void Shutdown();
 		void Render();
 
-		void requestResize(glm::vec2 dim);
+		void RequestResize(glm::vec2 dim);
 
 		std::shared_ptr<gl::Texture2D> getTexture() const { return texture; }
 		std::shared_ptr<gl::Framebuffer> getFramebuffer() const { return framebuffer; }
 
 	private:
-	    std::shared_ptr<IWindow> m_Window;
-
 		std::shared_ptr<gl::Shader> shader;
 		std::shared_ptr<gl::Texture2D> texture;
 		std::shared_ptr<gl::Framebuffer> framebuffer;

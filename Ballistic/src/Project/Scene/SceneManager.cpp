@@ -7,7 +7,7 @@ namespace Ballistic {
         if (m_scenes.contains(name))
             throw std::runtime_error("Scene already exists: " + name);
 
-        auto scene = std::make_shared<Scene>();
+        auto scene = std::make_shared<Scene>(name);
         m_scenes[name] = scene;
 
         if (!m_activeScene)

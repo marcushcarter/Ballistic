@@ -20,6 +20,6 @@
 #include "Project/Scene/SceneManager.h"
 #include "Project/ProjectManager.h"
 
-#include "Renderer/OglRenderer.h"
+#include "Renderer/IRenderer.h"
 
 #include "bepch.h"

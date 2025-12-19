@@ -2,7 +2,7 @@
 
 namespace Ballistic {
 	
-	void Dockspace::init() {
+	void Dockspace::Init() {
 	}
 
 	void Dockspace::OnImGuiRender() {
@@ -33,6 +33,6 @@ namespace Ballistic {
 	    ImGui::End();
 	}
 	
-	void Dockspace::onEvent(void* e) {
+	void Dockspace::OnEvent(void* e) {
 	}
 }

@@ -1,42 +1,29 @@
-#include "OglRenderer.h"
+#include "IRenderer.h"
 #include "Core/IWindow.h"
+#include "Core/Config.h"
 
 namespace Ballistic {
 
-	OglRenderer::OglRenderer(std::shared_ptr<IWindow> window) {
-		m_Window = window;
+	IRenderer::IRenderer() {
 	}
 
-	void OglRenderer::requestResize(glm::vec2 dim) {
+	void IRenderer::RequestResize(glm::vec2 dim) {
 		if (m_CurrentSize == dim) return;
 		m_ResizeSize = dim;
 		m_PendingResize = true;
 	}
 	
-	void OglRenderer::Init() {
-		std::cout << "OpenGL Renderer Initialized" << std::endl;
+	void IRenderer::Init() {
+		std::cout << "OpenGL IRenderer Initialized" << std::endl;
 
 		m_PendingResize = true;
 		m_ResizeSize = glm::vec2(800, 600);
 
-		const char* computeShaderSrc = R"(
-		#version 460 core
-		layout (local_size_x = 16, local_size_y = 16) in;
-
-		layout (rgba32f, binding = 0) uniform image2D imgOutput;
-
-		void main() {
-			ivec2 pixel = ivec2(gl_GlobalInvocationID.xy);
-			vec2 uv = vec2(pixel) / vec2(imageSize(imgOutput));
-			
-			vec3 color = vec3(uv, 0.5);
-			imageStore(imgOutput, pixel, vec4(color, 1.0));
-		}
-		)";
+		std::string computeSrc = ReadFile((Config::BALLISTIC_RES_PATH / "Shaders/pathTracing.comp").string());
 
 		shader = std::make_shared<gl::Shader>();
 		shader->create();
-		shader->attachShader(GL_COMPUTE_SHADER, computeShaderSrc);
+		shader->attachShader(GL_COMPUTE_SHADER, computeSrc.c_str());
 		shader->link();
 
 		texture = std::make_shared<gl::Texture2D>();
@@ -56,10 +43,10 @@ namespace Ballistic {
         	throw std::runtime_error("Framebuffer incomplete!");
 	}
 	
-	void OglRenderer::Shutdown() {
+	void IRenderer::Shutdown() {
 	}
 
-	void OglRenderer::Render() {
+	void IRenderer::Render() {
 		if (m_PendingResize) {
 			int w = (int)m_ResizeSize.x;
         	int h = (int)m_ResizeSize.y;

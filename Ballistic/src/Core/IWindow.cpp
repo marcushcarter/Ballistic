@@ -2,5 +2,5 @@
 #include "WindowAPI.h"
 
 namespace Ballistic {
-	WindowAPI::API WindowAPI::s_API = WindowAPI::API::GLFW;
+	WindowAPI::API WindowAPI::s_api = WindowAPI::API::GLFW;
 }

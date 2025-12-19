@@ -8,14 +8,14 @@ namespace Ballistic {
 	public:
         MenuBar(std::shared_ptr<ProjectManager> projectManager, std::shared_ptr<IWindow> window);
         
-		void init() override;
+		void Init() override;
 		void OnImGuiRender() override;
-		void onEvent(void* e) override;
+		void OnEvent(void* ePtr) override;
 
 		void OpenLink(const std::string& url);
 
     private:
-        std::shared_ptr<ProjectManager> m_ProjectManager;
-        std::shared_ptr<IWindow> m_Window;
+        std::shared_ptr<ProjectManager> m_projectManager;
+        std::shared_ptr<IWindow> m_window;
 	};
 }

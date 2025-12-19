@@ -1,12 +1,13 @@
 #include "Scene.h"
 #include "EntityHandle.h"
 #include "Components.h"
+#include "Core/GUID.h"
 
 namespace Ballistic {
 
-    entt::entity Scene::create(const std::string& name, entt::entity parent) {
-        entt::entity eID = registry.create();
-        EntityHandle e(eID, registry);
+    entt::entity Scene::Create(const std::string& name, entt::entity parent) {
+        entt::entity eID = m_registry.create();
+        EntityHandle e(eID, m_registry);
 
         GUID guid(GUID::Invalid);
         e.add<GUID>(guid);
@@ -15,7 +16,7 @@ namespace Ballistic {
         guidToEntity[guid] = eID;
         
         if (parent != entt::null) {
-            EntityHandle p(parent, registry);
+            EntityHandle p(parent, m_registry);
             if (p.valid()) {
                 e.add<Parent>(p.get<GUID>());
 
@@ -28,8 +29,8 @@ namespace Ballistic {
         return eID;
     }
 
-    void Scene::destroy(entt::entity id) {
-        EntityHandle e(id, registry);
+    void Scene::Destroy(entt::entity id) {
+        EntityHandle e(id, m_registry);
         if (!e.valid()) return;
 
         GUID guid = e.get<GUID>();
@@ -37,7 +38,7 @@ namespace Ballistic {
         if (e.has<Children>()) {
             auto children = e.get<Children>().children;
             for (GUID childGuid : children) {
-                destroy(GetEntity(childGuid));
+                Destroy(GetEntity(childGuid));
             }
             e.remove<Children>();
         }
@@ -46,7 +47,7 @@ namespace Ballistic {
             GUID parentGuid = e.get<Parent>().parent;
             entt::entity parentEntity = GetEntity(parentGuid);
             if (parentEntity != entt::null) {
-                EntityHandle p(parentEntity, registry);
+                EntityHandle p(parentEntity, m_registry);
                 if (p.valid() && p.has<Children>()) {
                     auto& siblings = p.get<Children>().children;
                     siblings.erase(std::remove(siblings.begin(), siblings.end(), guid), siblings.end());
@@ -56,26 +57,26 @@ namespace Ballistic {
         }
 
         guidToEntity.erase(guid);
-        registry.destroy(id);
+        m_registry.destroy(id);
     }
 
-    bool Scene::isDescendant(entt::entity ancestor, entt::entity potentialChild) {
-        EntityHandle a(ancestor, registry);
-        if (!a.valid() || !a.has<Children>())
-            return false;
-
-        for (GUID child : a.get<Children>().children) {
-            if (GetEntity(child) == potentialChild) return true;
-            if (isDescendant(GetEntity(child), potentialChild)) return true;
+    void Scene::Clear() {
+        std::vector<entt::entity> roots;
+        for (auto e : m_registry.view<Tag>()) {
+            if (!m_registry.all_of<Parent>(e))
+                roots.push_back(e);
         }
 
-        return false;
+        for (auto root : roots)
+            Destroy(root);
+
+        guidToEntity.clear();
     }
 
-    void Scene::reparent(entt::entity entity, entt::entity newParent) {
-        EntityHandle e(entity, registry);
+    void Scene::Reparent(entt::entity entity, entt::entity newParent) {
+        EntityHandle e(entity, m_registry);
         if (!e.valid() || entity == newParent) return;
-        if (newParent != entt::null && isDescendant(entity, newParent))
+        if (newParent != entt::null && IsDescendant(entity, newParent))
             return;
 
         GUID guid = GetGUID(entity);
@@ -84,7 +85,7 @@ namespace Ballistic {
             GUID oldParentGuid = e.get<Parent>().parent;
             entt::entity oldParentEntity = GetEntity(oldParentGuid);
             if (oldParentEntity != entt::null) {
-                EntityHandle oldParent(oldParentEntity, registry);
+                EntityHandle oldParent(oldParentEntity, m_registry);
                 if (oldParent.valid() && oldParent.has<Children>()) {
                     auto& siblings = oldParent.get<Children>().children;
                     siblings.erase(std::remove(siblings.begin(), siblings.end(), guid), siblings.end());
@@ -94,7 +95,7 @@ namespace Ballistic {
         }
 
         if (newParent != entt::null) {
-            EntityHandle np(newParent, registry);
+            EntityHandle np(newParent, m_registry);
             if (!np.valid()) return;
 
             GUID newParentGuid = GetGUID(newParent);
@@ -107,14 +108,27 @@ namespace Ballistic {
         }
     }
 
+    bool Scene::IsDescendant(entt::entity ancestor, entt::entity potentialChild) {
+        EntityHandle a(ancestor, m_registry);
+        if (!a.valid() || !a.has<Children>())
+            return false;
+
+        for (GUID child : a.get<Children>().children) {
+            if (GetEntity(child) == potentialChild) return true;
+            if (IsDescendant(GetEntity(child), potentialChild)) return true;
+        }
+
+        return false;
+    }
+
     entt::entity Scene::duplicateEntity(entt::entity original, entt::entity targetParent) {
-        EntityHandle src(original, registry);
+        EntityHandle src(original, m_registry);
         if (!src.valid()) return entt::null;
 
         auto duplicateRec = [&](auto&& self, entt::entity srcID, entt::entity parentID) -> entt::entity {
-            entt::entity copyID = registry.create();
-            EntityHandle copy(copyID, registry);
-            EntityHandle srcEnt(srcID, registry);
+            entt::entity copyID = m_registry.create();
+            EntityHandle copy(copyID, m_registry);
+            EntityHandle srcEnt(srcID, m_registry);
 
             GUID guid(GUID::Invalid);
             copy.add<GUID>(guid);
@@ -125,7 +139,7 @@ namespace Ballistic {
             if (srcEnt.has<SphereComponent>()) copy.add<SphereComponent>(srcEnt.get<SphereComponent>());
 
             if (parentID != entt::null) {
-                EntityHandle p(parentID, registry);
+                EntityHandle p(parentID, m_registry);
                 GUID parentGuid = GetGUID(parentID);
                 copy.add<Parent>(parentGuid);
                 if (!p.has<Children>())
@@ -147,15 +161,15 @@ namespace Ballistic {
         return duplicateRec(duplicateRec, original, parent);
     }
 
-    void Scene::duplicate(entt::entity original) {
-        EntityHandle e(original, registry);
+    void Scene::Duplicate(entt::entity original) {
+        EntityHandle e(original, m_registry);
         if (!e.valid()) return;
         entt::entity parent = e.has<Parent>() ? GetEntity(e.get<Parent>().parent) : entt::null;
         duplicateEntity(original, parent);
     }
 
-    void Scene::duplicate(entt::entity original, entt::entity targetParent) {
-        if (!registry.valid(original)) return;
+    void Scene::Duplicate(entt::entity original, entt::entity targetParent) {
+        if (!m_registry.valid(original)) return;
         duplicateEntity(original, targetParent);
     }
     
@@ -163,16 +177,16 @@ namespace Ballistic {
         glm::mat4 world(1.0f);
         entt::entity current = entity;
     
-        while (current != entt::null && registry.valid(current)) {
-            if (registry.all_of<TransformComponent>(current)) {
-                TransformComponent& t = registry.get<TransformComponent>(current);
+        while (current != entt::null && m_registry.valid(current)) {
+            if (m_registry.all_of<TransformComponent>(current)) {
+                TransformComponent& t = m_registry.get<TransformComponent>(current);
                 world = t.TRS() * world;
             }
     
-            if (registry.all_of<Parent>(current)) {
-                GUID parentGUID = registry.get<Parent>(current).parent;
+            if (m_registry.all_of<Parent>(current)) {
+                GUID parentGUID = m_registry.get<Parent>(current).parent;
                 entt::entity parent = GetEntity(parentGUID);
-                if (registry.valid(parent))
+                if (m_registry.valid(parent))
                     current = parent;
                 else
                     break;
@@ -182,28 +196,6 @@ namespace Ballistic {
         }
     
         return world;
-    }
-
-    void Scene::clear() {
-        std::vector<entt::entity> roots;
-        for (auto e : registry.view<Tag>()) {
-            if (!registry.all_of<Parent>(e))
-                roots.push_back(e);
-        }
-
-        for (auto root : roots)
-            destroy(root);
-
-        guidToEntity.clear();
-    }
-
-    GUID Scene::GetGUID(entt::entity e) {
-        return registry.get<GUID>(e);
-    }
-    
-    entt::entity Scene::GetEntity(GUID id) {
-        auto it = guidToEntity.find(id);
-        return it != guidToEntity.end() ? it->second : entt::null;
     }
 
 }

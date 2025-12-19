@@ -8,41 +8,42 @@
 namespace Ballistic {
 
 	EditorLayer::EditorLayer(const LayerContext& context, std::shared_ptr<ImGuiContext> imguiContext, const std::string name) : Layer(name) {
-		m_ProjectManager = context.projectManager;
-		m_LayerStack = context.layerStack;
-		m_Window = context.window;
-		m_OglRenderer = context.renderer;
+		m_projectManager = context.projectManager;
+		m_window = context.window;
+		m_renderer = context.renderer;
 
-		m_ImGuiContext = imguiContext;
+		m_imguiContext = imguiContext;
 	}
 
-	void EditorLayer::onAttach() {
-		m_Panels.push_back(std::make_unique<Dockspace>());
+	void EditorLayer::OnAttach() {
+		m_panels.push_back(std::make_unique<Dockspace>());
 
-		m_Panels.push_back(std::make_unique<MenuBar>(m_ProjectManager, m_Window));
-		m_Panels.push_back(std::make_unique<HierarchyPanel>(m_ProjectManager));
-		m_Panels.push_back(std::make_unique<InspectorPanel>(m_ProjectManager));
-		m_Panels.push_back(std::make_unique<ViewportPanel>(m_OglRenderer));
+		m_panels.push_back(std::make_unique<MenuBar>(m_projectManager, m_window));
+		m_panels.push_back(std::make_unique<HierarchyPanel>(m_projectManager));
+		m_panels.push_back(std::make_unique<InspectorPanel>(m_projectManager));
+		m_panels.push_back(std::make_unique<ViewportPanel>(m_renderer));
 
-	    for (auto& panel : m_Panels)
-        	panel->init();
+	    for (auto& panel : m_panels)
+        	panel->Init();
 	}
 
-	void EditorLayer::onDetach() {
+	void EditorLayer::OnDetach() {
 	}
 
-	void EditorLayer::onUpdate() {
-		m_ImGuiContext->BeginFrame();
+	void EditorLayer::OnUpdate() {
+		m_imguiContext->BeginFrame();
 
-	    for (auto& panel : m_Panels)
+	    for (auto& panel : m_panels)
         	panel->OnImGuiRender();
 
 	    ImGui::ShowDemoWindow();
 
-		m_ImGuiContext->EndFrame();
+		m_imguiContext->EndFrame();
 	}
 
-	void EditorLayer::onEvent(void* ePtr) {
+	void EditorLayer::OnEvent(void* ePtr) {
 		Event* e = static_cast<Event*>(ePtr);
+		for (auto& panel : m_panels)
+        	panel->OnImGuiRender();
 	}
 }

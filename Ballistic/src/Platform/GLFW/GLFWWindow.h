@@ -11,20 +11,20 @@ namespace Ballistic {
 		GLFWWindow(const WindowProps& windowProps);
 		~GLFWWindow();
 
-		void onUpdate() override;
-		bool shouldClose() const override;
+		void OnUpdate() override;
+		bool ShouldClose() const override;
 
-		void toggleFullscreen(bool fullscreen) override;
-		bool isFullscreen() const override;
+		void ToggleFullscreen(bool fullscreen) override;
+		bool IsFullscreen() const override;
 
-		void* get() const override { return m_NativeWindow; }
-		WindowProps getProps() const override { return m_Props; }
+		void* GetNativeWindow() const override { return m_nativeWindow; }
+		WindowProps GetWindowProps() const override { return m_windowProps; }
 
 		static std::shared_ptr<IWindow> Create(const WindowProps& windowProps = {});
 
 	private:
-		GLFWwindow* m_NativeWindow;
-		WindowProps m_Props;
+		GLFWwindow* m_nativeWindow;
+		WindowProps m_windowProps;
 
 		int m_WindowedX = 0, m_WindowedY = 0, m_WindowedW = 1280, m_WindowedH = 720;
 	};

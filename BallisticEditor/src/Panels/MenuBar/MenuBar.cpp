@@ -5,11 +5,11 @@
 namespace Ballistic {
 
     MenuBar::MenuBar(std::shared_ptr<ProjectManager> projectManager, std::shared_ptr<IWindow> window) {
-        m_ProjectManager = projectManager;
-        m_Window = window;
+        m_projectManager = projectManager;
+        m_window = window;
     }
 	
-	void MenuBar::init() {
+	void MenuBar::Init() {
 	}
 
 	void MenuBar::OpenLink(const std::string& url) {
@@ -112,7 +112,7 @@ namespace Ballistic {
 				if (ImGui::MenuItem("Take Editor Screenshot")) {} // takeScreenshotNextFrame = true;
 				if (ImGui::MenuItem("Take Viewport Screenshot")) {} // takeTextureScreenshotNextFrame = true;
 
-				if (ImGui::MenuItem(m_Window->isFullscreen() ? "Windowed" : "Fullscreen")) m_Window->toggleFullscreen(!m_Window->isFullscreen());
+				if (ImGui::MenuItem(m_window->IsFullscreen() ? "Windowed" : "Fullscreen")) m_window->ToggleFullscreen(!m_window->IsFullscreen());
 
 				ImGui::EndMenu();
 			}
@@ -144,6 +144,6 @@ namespace Ballistic {
 		}
 	}
 	
-	void MenuBar::onEvent(void* e) {
+	void MenuBar::OnEvent(void* e) {
 	}
 }

@@ -10,14 +10,14 @@ namespace Ballistic {
 	public:
 		virtual ~IWindow() = default;
 
-		virtual void onUpdate() = 0;
-		virtual bool shouldClose() const = 0;
+		virtual void OnUpdate() = 0;
+		virtual bool ShouldClose() const = 0;
 
-		virtual void toggleFullscreen(bool fullscreen) = 0;
-		virtual bool isFullscreen() const = 0;
+		virtual void ToggleFullscreen(bool fullscreen) = 0;
+		virtual bool IsFullscreen() const = 0;
 
-		virtual void* get() const = 0;
-		virtual WindowProps getProps() const = 0;
+		virtual void* GetNativeWindow() const = 0;
+		virtual WindowProps GetWindowProps() const = 0;
 	};
 
 }

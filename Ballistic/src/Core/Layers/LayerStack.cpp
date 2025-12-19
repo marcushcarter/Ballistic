@@ -3,32 +3,32 @@
 
 namespace Ballistic {
 
-	void LayerStack::pushLayer(std::shared_ptr<Layer> layer) {
-        m_Layers.push_back(layer);
-        layer->onAttach();
+	void LayerStack::PushLayer(std::shared_ptr<Layer> layer) {
+        m_layers.push_back(layer);
+        layer->OnAttach();
 	}
 
-	void LayerStack::popLayer(std::shared_ptr<Layer> layer) {
-        auto it = std::find(m_Layers.begin(), m_Layers.end(), layer);
-        if (it != m_Layers.end()) {
-            (*it)->onDetach();
-            m_Layers.erase(it);
+	void LayerStack::PopLayer(std::shared_ptr<Layer> layer) {
+        auto it = std::find(m_layers.begin(), m_layers.end(), layer);
+        if (it != m_layers.end()) {
+            (*it)->OnDetach();
+            m_layers.erase(it);
         }
 	}
 
-	void LayerStack::onUpdate() {
-		for (auto& layer : m_Layers)
-           	layer->onUpdate();
+	void LayerStack::OnUpdate() {
+		for (auto& layer : m_layers)
+           	layer->OnUpdate();
 	}
 
-	void LayerStack::onDetach() {
-		for (auto& layer : m_Layers)
-			layer->onDetach();
+	void LayerStack::OnDetach() {
+		for (auto& layer : m_layers)
+			layer->OnDetach();
 	}
 
-	void LayerStack::dispatchEvent(void* e) {
-		for (auto& layer : m_Layers)
-            layer->onEvent(e);
+	void LayerStack::DispatchEvent(void* ePtr) {
+		for (auto& layer : m_layers)
+            layer->OnEvent(ePtr);
 	}
 
 }
