@@ -42,6 +42,14 @@ add_subdirectory(external/entt)
 add_library(IconFontCppHeaders INTERFACE)
 target_include_directories(IconFontCppHeaders INTERFACE external/icon-fonts-headers)
 
+# nlohmann/json
+add_library(nlohmann_json INTERFACE)
+target_include_directories(nlohmann_json INTERFACE external/json/single_include)
+
+# tinyfiledialogs
+add_library(tinyfiledialogs STATIC external/tinyfiledialogs/tinyfiledialogs.c)
+target_include_directories(tinyfiledialogs PUBLIC external/tinyfiledialogs)
+
 # -------- Ballistic Engine --------
 
 file(GLOB_RECURSE ENGINE_SRC
@@ -68,6 +76,8 @@ target_link_libraries(Ballistic PUBLIC
     stb
     EnTT::EnTT
     IconFontCppHeaders
+    tinyfiledialogs
+    nlohmann_json
     ${CMAKE_DL_LIBS}
 )
 

@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <filesystem>
 #include <unordered_map>
+#include <fstream>
 
 #include <stb_image.h>
 
@@ -35,3 +36,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtc/type_ptr.hpp>
+
+#include <nlohmann/json.hpp>
+using json = nlohmann::json;

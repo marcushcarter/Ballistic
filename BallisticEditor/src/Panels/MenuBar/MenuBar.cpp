@@ -1,5 +1,7 @@
 #include "MenuBar.h"
 
+#include "tinyfiledialogs.h"
+
 namespace Ballistic {
 
     MenuBar::MenuBar(std::shared_ptr<ProjectManager> projectManager, std::shared_ptr<IWindow> window) {
@@ -30,11 +32,16 @@ namespace Ballistic {
 			if (ImGui::BeginMenu("Project")) {
 
 				if (ImGui::MenuItem("New Scene")) {
-					// manager.Clear();
-					// scene.clear();
-					// selected = entt::null;
 				}
-				if (ImGui::MenuItem("Open Scene")) {}
+				if (ImGui::MenuItem("Open Scene")) {
+
+					const char* folderPath = tinyfd_saveFileDialog(
+						"Save your file", "C:\\Users\\Marcus\\Documents\\New Project", 0, nullptr, nullptr
+					);
+					// if (folderPath)
+						// m_ProjectManager->NewProject(std::filesystem::path(folderPath));
+
+				}
 				if (ImGui::MenuItem("Open Recent")) {}
 				
 				ImGui::Separator();

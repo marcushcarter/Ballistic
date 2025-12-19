@@ -10,7 +10,7 @@ namespace Ballistic {
         auto scene = std::make_shared<Scene>();
         m_scenes[name] = scene;
 
-        // if (!m_activeScene)
+        if (!m_activeScene)
             m_activeScene = scene;
 
         return scene;

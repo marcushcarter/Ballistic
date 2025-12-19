@@ -3,6 +3,8 @@
 
 namespace Ballistic {
 
+    struct GUID;
+
     struct Parent {
         GUID parent;
         Parent(GUID parent) : parent(parent) {}
