@@ -1,5 +1,5 @@
-#include "IWindow.h"
-#include "WindowInfo.h"
+#include "Core/Windows/IWindow.h"
+#include "Core/Windows/WindowInfo.h"
 
 #include "Platform/GLFW/GLFWWindow.h"
 

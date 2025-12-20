@@ -1,4 +1,4 @@
-#include "GLFWWindow.h"
+#include "Platform/GLFW/GLFWWindow.h"
 #include "Core/Config.h"
 
 namespace Ballistic {

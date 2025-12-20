@@ -1,4 +1,4 @@
-#include "IRenderer.h"
+#include "Renderer/IRenderer.h"
 #include "Core/Windows/IWindow.h"
 #include "Core/Config.h"
 

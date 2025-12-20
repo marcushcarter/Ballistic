@@ -1,5 +1,5 @@
-#include "SceneManager.h"
-#include "Scene.h"
+#include "Project/Scene/SceneManager.h"
+#include "Project/Scene/Scene.h"
 
 namespace Ballistic {
 

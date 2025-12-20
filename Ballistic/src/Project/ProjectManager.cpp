@@ -1,6 +1,6 @@
-#include "ProjectManager.h"
-#include "Scene/SceneManager.h"
-#include "Assets/AssetPool.h"
+#include "Project/ProjectManager.h"
+#include "Project/Assets/AssetPool.h"
+#include "Project/Scene/SceneManager.h"
 
 namespace Ballistic {
 
