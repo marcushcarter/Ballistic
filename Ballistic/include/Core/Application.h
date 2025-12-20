@@ -1,6 +1,6 @@
 #pragma once
 #include "bepch.h"
-#include "Windows/WindowInfo.h"
+#include "Window/WindowInfo.h"
 
 namespace Ballistic {
 

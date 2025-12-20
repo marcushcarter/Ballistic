@@ -9,10 +9,10 @@
 #include "Core/Layers/LayerStack.h"
 #include "Core/Layers/RenderLayer.h"
 
-#include "Core/Windows/WindowInfo.h"
-#include "Core/Windows/IWindow.h"
+#include "Core/Window/WindowInfo.h"
+#include "Core/Window/IWindow.h"
 
-#include "Platform/GLFW/GLFWWindow.h"
+#include "Platform/Window/GLFWWindow.h"
 
 #include "Project/Scene/Components.h"
 #include "Project/Scene/EntityHandle.h"

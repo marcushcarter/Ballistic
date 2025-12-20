@@ -1,5 +1,5 @@
 #include <Ballistic.h>
-#include <BallisticEntrypoint.h>
+#include <Entry/BallisticEntrypoint.h>
 #include "EditorLayer.h"
 
 namespace Ballistic {

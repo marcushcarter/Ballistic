@@ -1,5 +1,5 @@
 #include "Renderer/IRenderer.h"
-#include "Core/Windows/IWindow.h"
+#include "Core/Window/IWindow.h"
 #include "Core/Config.h"
 
 namespace Ballistic {

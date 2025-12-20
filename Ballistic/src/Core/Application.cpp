@@ -1,7 +1,7 @@
 #include "Core/Application.h"
 #include "Core/Layers/LayerStack.h"
 #include "Core/Layers/RenderLayer.h"
-#include "Platform/GLFW/GLFWWindow.h"
+#include "Platform/Window/GLFWWindow.h"
 #include "Project/ProjectManager.h"
 #include "Renderer/IRenderer.h"
 

@@ -37,7 +37,7 @@
 
 #include <nlohmann/json.hpp>
 
-#include <Platform/OpenGL/all.h>
-#include <Platform/OpenGL/ShaderGLM.h>
+#include <Platform/API/OpenGL/all.h>
+#include <Platform/API/OpenGL/ShaderGLM.h>
 
 #include <Core/Utils.h>

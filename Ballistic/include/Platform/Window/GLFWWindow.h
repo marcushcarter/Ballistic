@@ -1,7 +1,7 @@
 #pragma once
 #include "bepch.h"
-#include "Core/Windows/IWindow.h"
-#include "Core/Windows/WindowInfo.h"
+#include "Core/Window/IWindow.h"
+#include "Core/Window/WindowInfo.h"
 
 namespace Ballistic {
 	

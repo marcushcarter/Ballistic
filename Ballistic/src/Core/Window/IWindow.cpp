@@ -1,7 +1,7 @@
-#include "Core/Windows/IWindow.h"
-#include "Core/Windows/WindowInfo.h"
+#include "Core/Window/IWindow.h"
+#include "Core/Window/WindowInfo.h"
 
-#include "Platform/GLFW/GLFWWindow.h"
+#include "Platform/Window/GLFWWindow.h"
 
 namespace Ballistic {
 	WindowAPI::API WindowAPI::s_api = WindowAPI::API::GLFW;

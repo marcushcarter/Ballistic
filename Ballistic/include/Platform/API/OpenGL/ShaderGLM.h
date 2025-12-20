@@ -1,5 +1,5 @@
 #pragma once
-#include "Shader.h"
+#include "Platform/API/OpenGL/Shader.h"
 
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
