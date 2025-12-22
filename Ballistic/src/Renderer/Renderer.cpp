@@ -1,78 +1,57 @@
 #include "Renderer/Renderer.h"
+#include "Renderer/RenderCommand.h"
+#include "Project/ProjectManager.h"
+#include "Project/Scene/Scene.h"
 #include "Core/Config.h"
+
+#include "Renderer/Backends/OpenGL/GLRenderDevice.h"
 
 namespace Ballistic {
 
-	Renderer::Renderer() {
+	Renderer::Renderer(std::shared_ptr<ProjectManager> projectManager) {
+		m_projectManager = projectManager;
+	}
+
+	Renderer::~Renderer() {
+		Shutdown();
 	}
 
 	void Renderer::RequestResize(glm::vec2 dim) {
-		if (m_CurrentSize == dim) return;
-		m_ResizeSize = dim;
-		m_PendingResize = true;
+		if (m_currentSize == dim) return;
+		m_resizeSize = dim;
+		m_pendingResize = true;
 	}
 	
 	void Renderer::Init() {
 		std::cout << "OpenGL Renderer Initialized" << std::endl;
 
-		m_PendingResize = true;
-		m_ResizeSize = glm::vec2(800, 600);
-
-		shader = std::make_shared<gl::Shader>();
-		shader->create();
-		shader->attachShader(GL_COMPUTE_SHADER, Config::BALLISTIC_RES_PATH / "Shaders/pathTracing.comp");
-		shader->link();
-
-		texture = std::make_shared<gl::Texture2D>();
-		texture->create(800, 600, GL_RGBA32F, GL_RGBA, GL_FLOAT);
-    	texture->setParameters(GL_NEAREST, GL_NEAREST, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_EDGE);
-
-		framebuffer = std::make_shared<gl::Framebuffer>();
-		framebuffer->create();
-		framebuffer->attachColor(0, *texture);
-
-		gl::Renderbuffer depthBuffer;
-		depthBuffer.create();
-		depthBuffer.storage(GL_DEPTH_COMPONENT24, 800, 600);
-		framebuffer->attachDepth(depthBuffer);
-
-		if (!framebuffer->complete())
-        	throw std::runtime_error("Framebuffer incomplete!");
+		m_renderDevice = std::make_unique<GLRenderDevice>();
+		m_renderDevice->Init();
 	}
 	
 	void Renderer::Shutdown() {
+		if (m_renderDevice) m_renderDevice->Shutdown();
 	}
 
 	void Renderer::Render() {
-		if (m_PendingResize) {
-			int w = (int)m_ResizeSize.x;
-        	int h = (int)m_ResizeSize.y;
-
-			texture->resize(w, h);
-
-			framebuffer->destroy();
-			framebuffer->create();
-			framebuffer->attachColor(0, *texture);
-
-			gl::Renderbuffer depthBuffer;
-			depthBuffer.create();
-			depthBuffer.storage(GL_DEPTH_COMPONENT24, w, h);
-			framebuffer->attachDepth(depthBuffer);
-
-			m_PendingResize = false;
+		if (m_pendingResize) {
+			m_renderDevice->Resize((uint32_t)m_resizeSize.x, (uint32_t)m_resizeSize.y);
+			m_currentSize = m_resizeSize;
+			m_pendingResize = false;
 		}
 
-		if (true) {
-			shader->use();
-        	texture->bindImage(0, GL_WRITE_ONLY);
-        	shader->dispatchCompute((texture->width() + 15)/16, (texture->height() + 15)/16, 1, GL_SHADER_IMAGE_ACCESS_BARRIER_BIT);
-		} else {
-			framebuffer->bind();
-			gl::Viewport(0, 0, texture->width(), texture->height());
-			gl::ClearColor(1.0f, 0.0f, 0.0f, 1.0f);
-			gl::Clear();
-			framebuffer->unbind();
+		std::vector<RenderCommand> commands;
+
+		auto& scene = m_projectManager->GetCurrentScene();
+		for (auto entity : scene.GetAllEntitiesFlattened()) {
+
+			RenderCommand cmd;
+			cmd.modelMatrix = scene.ComputeWorldTransform(entity);
+
+			commands.push_back(cmd);
 		}
+
+		m_renderDevice->Execute(commands);
 
 	}
 }

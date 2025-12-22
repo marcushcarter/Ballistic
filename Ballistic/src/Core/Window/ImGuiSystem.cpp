@@ -1,6 +1,9 @@
 #include "Core/Window/ImGuiSystem.h"
 #include "Core/Config.h"
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 namespace Ballistic {
 
     ImGuiSystem::~ImGuiSystem() {

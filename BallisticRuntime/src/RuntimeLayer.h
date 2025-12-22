@@ -10,14 +10,10 @@ namespace Ballistic {
 		void OnAttach() override;
 		void OnDetach() override;
 		void OnUpdate() override;
-		void OnEvent(void* e) override;
+		void OnEvent(void* ePtr) override;
 
 	private:		
         std::shared_ptr<Window> m_window;
         std::shared_ptr<Renderer> m_renderer;
-
-		std::shared_ptr<gl::Shader> blitShader;
-		std::shared_ptr<gl::VertexArray> vao;
-
 	};
 }

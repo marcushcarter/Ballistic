@@ -1,5 +1,5 @@
-#include "Platform/API/OpenGL/Texture2D.h"
-#include "Platform/API/OpenGL/State.h"
+#include "Texture2D.h"
+#include "State.h"
 
 namespace gl {
     

@@ -175,6 +175,32 @@ namespace Ballistic {
         if (!m_registry.valid(original)) return;
         duplicateEntity(original, targetParent);
     }
+
+    std::vector<entt::entity> Scene::GetAllEntitiesFlattened() {
+        std::vector<entt::entity> out;
+
+        std::function<void(entt::entity)> flattenRec;
+        flattenRec = [&](entt::entity e) {
+            out.push_back(e);
+
+            if (!m_registry.valid(e) || !m_registry.all_of<Children>(e))
+                return;
+
+            for (GUID childGuid : m_registry.get<Children>(e).children) {
+                entt::entity child = GetEntity(childGuid);
+                if (m_registry.valid(child))
+                    flattenRec(child);
+            }
+        };
+
+        auto view = m_registry.view<Tag>(); 
+        for (auto e : view) {
+            if (!m_registry.all_of<Parent>(e))
+                flattenRec(e);
+        }
+
+        return out;
+    }
     
     glm::mat4 Scene::ComputeWorldTransform(entt::entity entity) {
         glm::mat4 world(1.0f);

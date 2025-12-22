@@ -132,7 +132,7 @@ void selectFolderAndPrintTree() {
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem("Quit")) { glfwTerminate(); }
+				if (ImGui::MenuItem("Quit")) {}
 
 				ImGui::EndMenu();
 			}

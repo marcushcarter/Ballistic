@@ -5,6 +5,7 @@ namespace Ballistic {
 
     class SceneManager;
     class AssetPool;
+    class Scene;
 
     class ProjectManager {
     public:
@@ -22,6 +23,8 @@ namespace Ballistic {
 
         std::shared_ptr<SceneManager> GetSceneManager() { return m_sceneManager; }
         std::shared_ptr<AssetPool> GetAssetPool() { return m_assetPool; }
+        
+        Scene& GetCurrentScene() const;
 
     private:
         std::shared_ptr<SceneManager> m_sceneManager;

@@ -1,5 +1,5 @@
-#include "Platform/API/OpenGL/Shader.h"
-#include "Platform/API/OpenGL/State.h"
+#include "Shader.h"
+#include "State.h"
 #include <string>
 #include <unordered_map>
 #include <vector>

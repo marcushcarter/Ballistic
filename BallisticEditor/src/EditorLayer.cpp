@@ -37,7 +37,8 @@ namespace Ballistic {
 
 	void EditorLayer::OnEvent(void* ePtr) {
 		Event* e = static_cast<Event*>(ePtr);
+		
 		for (auto& panel : m_panels)
-        	panel->OnImGuiRender();
+			panel->OnEvent(ePtr);
 	}
 }

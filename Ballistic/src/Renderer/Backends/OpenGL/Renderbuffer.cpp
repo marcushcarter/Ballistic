@@ -1,5 +1,5 @@
-#include "Platform/API/OpenGL/Renderbuffer.h"
-#include "Platform/API/OpenGL/State.h"
+#include "Renderbuffer.h"
+#include "State.h"
 #include <utility>
 #include <vector>
 

@@ -1,5 +1,5 @@
-#include "Platform/API/OpenGL/Buffer.h"
-#include "Platform/API/OpenGL/State.h"
+#include "Buffer.h"
+#include "State.h"
 #include <utility>
 
 namespace gl {

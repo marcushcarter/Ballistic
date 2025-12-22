@@ -15,7 +15,7 @@ namespace Ballistic {
 
 		m_projectManager = std::make_shared<ProjectManager>();
 
-	    m_renderer = std::make_shared<Renderer>();
+	    m_renderer = std::make_shared<Renderer>(m_projectManager);
 		m_renderer->Init();
 
 		m_layerStack = std::make_shared<LayerStack>();
@@ -31,8 +31,7 @@ namespace Ballistic {
 		while (!m_window->ShouldClose()) {
 			Window::PollEvents();
 
-			gl::ClearColor(0.0, 0.0, 0.0, 1.0);
-			gl::Clear();
+			m_renderer->GetDevice()->Clear();
 
 			// ===== Window =====
 

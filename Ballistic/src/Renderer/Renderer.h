@@ -1,11 +1,16 @@
 #pragma once
 #include "bepch.h"
+#include "Renderer/RenderDevice.h"
+#include "Renderer/RendererTypes.h"
 
 namespace Ballistic {
 
+	class ProjectManager;
+
 	class Renderer {
 	public:
-		Renderer();
+		Renderer(std::shared_ptr<ProjectManager> projectManager);
+		~Renderer();
 
 		void Init();
 		void Shutdown();
@@ -13,17 +18,16 @@ namespace Ballistic {
 
 		void RequestResize(glm::vec2 dim);
 
-		std::shared_ptr<gl::Texture2D> getTexture() const { return texture; }
-		std::shared_ptr<gl::Framebuffer> getFramebuffer() const { return framebuffer; }
+		RenderDevice* GetDevice() const { return m_renderDevice.get(); }
+		glm::vec2 GetSize() const { return m_currentSize; }
 
 	private:
-		std::shared_ptr<gl::Shader> shader;
-		std::shared_ptr<gl::Texture2D> texture;
-		std::shared_ptr<gl::Framebuffer> framebuffer;
+		std::shared_ptr<ProjectManager> m_projectManager;
+		std::unique_ptr<RenderDevice> m_renderDevice;
 
-		glm::vec2 m_CurrentSize;
-		glm::vec2 m_ResizeSize;
-		bool m_PendingResize;
+		glm::vec2 m_currentSize{};
+		glm::vec2 m_resizeSize{};
+		bool m_pendingResize = true;
 
 	};
 }

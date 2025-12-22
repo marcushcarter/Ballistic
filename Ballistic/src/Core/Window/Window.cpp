@@ -2,6 +2,9 @@
 #include "Core/Config.h"
 #include "Core/Window/ImGuiSystem.h"
 
+#include <glad/glad.h>
+#include <GLFW/glfw3.h>
+
 namespace Ballistic {
 
 	Window::Window(const WindowProps& props)

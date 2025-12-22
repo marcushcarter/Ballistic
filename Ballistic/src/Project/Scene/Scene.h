@@ -20,6 +20,8 @@ namespace Ballistic {
 
         void Duplicate(entt::entity original);
         void Duplicate(entt::entity original, entt::entity targetParent);
+
+        std::vector<entt::entity> GetAllEntitiesFlattened();
         
         glm::mat4 ComputeWorldTransform(entt::entity entity);
         

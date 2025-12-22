@@ -44,12 +44,10 @@ namespace Ballistic {
 
         topLeftTextureCoords = ImVec2(cursor.x + offset.x, cursor.y + offset.y);
         bottomRightTextureCoords = ImVec2(topLeftTextureCoords.x + viewportSize.x, topLeftTextureCoords.y + viewportSize.y);
-        
-        auto texture = m_renderer->getTexture();
 
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         drawList->AddImage(
-            (void*)(intptr_t)texture->get(), 
+            m_renderer->GetDevice()->GetNativeTextureHandle(),
             topLeftTextureCoords, 
             bottomRightTextureCoords, 
             ImVec2(0,1), 

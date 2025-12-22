@@ -1,5 +1,5 @@
-#include "Platform/API/OpenGL/VertexArray.h"
-#include "Platform/API/OpenGL/State.h"
+#include "VertexArray.h"
+#include "State.h"
 #include <utility>
 #include <vector>
 

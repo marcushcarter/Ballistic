@@ -47,5 +47,7 @@ namespace Ballistic {
     bool ProjectManager::CloseProject() {
         return false;
     }
+
+    Scene& ProjectManager::GetCurrentScene() const { return m_sceneManager->GetActiveScene(); }
     
 }

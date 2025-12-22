@@ -1,5 +1,5 @@
-#include "Platform/API/OpenGL/Framebuffer.h"
-#include "Platform/API/OpenGL/State.h"
+#include "Framebuffer.h"
+#include "State.h"
 
 namespace gl {
 
