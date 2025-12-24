@@ -9,6 +9,28 @@ namespace Ballistic {
 	void HierarchyPanel::Init() {
 	}
 
+    void FlattenHierarchy(Scene& scene, entt::entity node, std::vector<entt::entity>& out) {
+        auto& reg = scene.GetRegistry();
+        out.push_back(node);
+        if (reg.all_of<Children>(node)) {
+            for (auto child : reg.get<Children>(node).children)
+                FlattenHierarchy(scene, scene.GetEntity(child), out);
+        }
+    }
+
+    bool ParentMatchesSearch(Scene& scene, entt::entity entity, const std::function<bool(const std::string&)>& matchesSearch) {
+        auto& reg = scene.GetRegistry();
+        if (!reg.all_of<Children>(entity)) return false;
+
+        for (auto childID : reg.get<Children>(entity).children) {
+            auto childEntity = scene.GetEntity(childID);
+            auto& childTag = reg.get<Tag>(childEntity);
+            if (matchesSearch(childTag.name)) return true;
+            if (ParentMatchesSearch(scene, childEntity, matchesSearch)) return true;
+        }
+        return false;
+    }
+
 	void HierarchyPanel::OnImGuiRender() {
         auto& scene = m_ProjectManager->GetSceneManager()->GetActiveScene();
         auto& reg = scene.GetRegistry();
@@ -16,17 +38,36 @@ namespace Ballistic {
         
         static ImGuiWindowFlags HierarchyFlags = ImGuiWindowFlags_NoCollapse;
 		ImGui::Begin("Scene Hierarchy", nullptr, HierarchyFlags);
+        
+        static char searchBuffer[128] = "";
 
-        if (ImGui::Button("create")) scene.Create("New Node", selected);
-        // ImGui::BeginDisabled(true);
-        // ImGui::SameLine();
-        // if (ImGui::Button("delete")) {}
-        // ImGui::EndDisabled();
+        ImGui::PushID("SearchBar");
+        // float totalWidth = ImGui::GetContentRegionAvail().x;
+        float buttonWidth = 25.0f;
+        // float spacing = ImGui::GetStyle().ItemSpacing.x;
+        float searchWidth = ImGui::GetContentRegionAvail().x - buttonWidth - ImGui::GetStyle().ItemSpacing.x;
+        ImGui::PushItemWidth(searchWidth);
+        ImGui::InputTextWithHint("##search", "Search...", searchBuffer, IM_ARRAYSIZE(searchBuffer));
+        ImGui::PopItemWidth();
+        ImGui::SameLine();
+        if (ImGui::Button("?", ImVec2(buttonWidth, 0))) scene.Create("New Node", selected);
+        ImGui::PopID();
 
         ImGui::BeginChild("HierarchyList", ImVec2(0, 0), false, ImGuiWindowFlags_HorizontalScrollbar);
 
+        std::string searchStr(searchBuffer);
+        std::transform(searchStr.begin(), searchStr.end(), searchStr.begin(), ::tolower);
+
+        auto MatchesSearch = [&](const std::string& name) {
+            if (searchStr.empty()) return true;
+            std::string lowerName = name;
+            std::transform(lowerName.begin(), lowerName.end(), lowerName.begin(), ::tolower);
+            return lowerName.find(searchStr) != std::string::npos;
+        };
+
         for (auto e : reg.view<Tag>()) {
-            if (!reg.all_of<Parent>(e)) DrawNode(scene, e);
+            if (!reg.all_of<Parent>(e))
+                DrawNode(scene, e, MatchesSearch);
         }
 
         for (auto e : hierarchyMetadata.deferredDestroy) scene.Destroy(e);
@@ -62,7 +103,7 @@ namespace Ballistic {
         ImGui::End();
 	}
 
-    void HierarchyPanel::DrawNode(Scene& scene, entt::entity entity) {
+    void HierarchyPanel::DrawNode(Scene& scene, entt::entity entity, const std::function<bool(const std::string&)>& matchesSearch) {
         auto& reg = scene.GetRegistry();
         auto& selected = scene.GetSelected();
         auto& tag = reg.get<Tag>(entity);
@@ -73,6 +114,9 @@ namespace Ballistic {
         if (std::find(hierarchyMetadata.deferredDestroy.begin(), hierarchyMetadata.deferredDestroy.end(), entity) != hierarchyMetadata.deferredDestroy.end())
             return;
 
+        if (!matchesSearch(tag.name) && !ParentMatchesSearch(scene, entity, matchesSearch))
+            return;
+
         ImGuiTreeNodeFlags flags = 
             ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick |
             ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding;
@@ -80,34 +124,39 @@ namespace Ballistic {
         if (!hasChildren) flags |= ImGuiTreeNodeFlags_Leaf;
         if (isSelected) flags |= ImGuiTreeNodeFlags_Selected;
 
-        bool open = ImGui::TreeNodeEx((void*)(intptr_t)entity, flags, tag.name.c_str());
+        std::string nodeName = tag.name.empty() ? "Unnamed Node" : tag.name;
+        
+        if (tag.name.empty())
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+        bool open = ImGui::TreeNodeEx((void*)(intptr_t)entity, flags, "%s", nodeName.c_str());
+        if (tag.name.empty())
+            ImGui::PopStyleColor();
 
         if (ImGui::IsItemClicked()) {
-
-                if (ImGui::GetIO().KeyShift && hierarchyMetadata.shiftAnchor != entt::null) {
-                    hierarchyMetadata.multiSelection.clear();
-                    std::vector<entt::entity> flatOrder;
-                    for (auto root : reg.view<Tag>()) if (!reg.all_of<Parent>(root)) FlattenHierarchy(scene, root, flatOrder);
-                    bool inRange = false;
-                    for (auto node : flatOrder) {
-                        if (node == hierarchyMetadata.shiftAnchor || node == entity) {
-                            if (!inRange) inRange = true;
-                            else { hierarchyMetadata.multiSelection.push_back(node); break; }
-                        }
-                        if (inRange) hierarchyMetadata.multiSelection.push_back(node);
+            if (ImGui::GetIO().KeyShift && hierarchyMetadata.shiftAnchor != entt::null) {
+                hierarchyMetadata.multiSelection.clear();
+                std::vector<entt::entity> flatOrder;
+                for (auto root : reg.view<Tag>()) if (!reg.all_of<Parent>(root)) FlattenHierarchy(scene, root, flatOrder);
+                bool inRange = false;
+                for (auto node : flatOrder) {
+                    if (node == hierarchyMetadata.shiftAnchor || node == entity) {
+                        if (!inRange) inRange = true;
+                        else { hierarchyMetadata.multiSelection.push_back(node); break; }
                     }
-
-                } else if (ImGui::GetIO().KeyCtrl) {
-                    auto it = std::find(hierarchyMetadata.multiSelection.begin(), hierarchyMetadata.multiSelection.end(), entity);
-                    if (it != hierarchyMetadata.multiSelection.end()) hierarchyMetadata.multiSelection.erase(it);
-                    else hierarchyMetadata.multiSelection.push_back(entity);
-
-                } else {
-                    if (std::find(hierarchyMetadata.multiSelection.begin(), hierarchyMetadata.multiSelection.end(), entity) == hierarchyMetadata.multiSelection.end()) {
-                        hierarchyMetadata.multiSelection = { entity };
-                        hierarchyMetadata.shiftAnchor = entity;
-                    }
+                    if (inRange) hierarchyMetadata.multiSelection.push_back(node);
                 }
+
+            } else if (ImGui::GetIO().KeyCtrl) {
+                auto it = std::find(hierarchyMetadata.multiSelection.begin(), hierarchyMetadata.multiSelection.end(), entity);
+                if (it != hierarchyMetadata.multiSelection.end()) hierarchyMetadata.multiSelection.erase(it);
+                else hierarchyMetadata.multiSelection.push_back(entity);
+
+            } else {
+                if (std::find(hierarchyMetadata.multiSelection.begin(), hierarchyMetadata.multiSelection.end(), entity) == hierarchyMetadata.multiSelection.end()) {
+                    hierarchyMetadata.multiSelection = { entity };
+                    hierarchyMetadata.shiftAnchor = entity;
+                }
+            }
 
             selected = (hierarchyMetadata.multiSelection.size() == 1) ? hierarchyMetadata.multiSelection.front() : entt::null;
             hierarchyMetadata.lastClicked = entity;
@@ -167,20 +216,11 @@ namespace Ballistic {
         }
 
         if (open && hasChildren) {
-            for (auto child : reg.get<Children>(entity).children) DrawNode(scene, scene.GetEntity(child));
+            for (auto child : reg.get<Children>(entity).children) DrawNode(scene, scene.GetEntity(child), matchesSearch);
         }
 
         if (open) ImGui::TreePop();
 
-    }
-
-    void HierarchyPanel::FlattenHierarchy(Scene& scene, entt::entity node, std::vector<entt::entity>& out) {
-        auto& reg = scene.GetRegistry();
-        out.push_back(node);
-        if (reg.all_of<Children>(node)) {
-            for (auto child : reg.get<Children>(node).children)
-                FlattenHierarchy(scene, scene.GetEntity(child), out);
-        }
     }
 
     bool HierarchyPanel::IsSelected(entt::entity entity) const {

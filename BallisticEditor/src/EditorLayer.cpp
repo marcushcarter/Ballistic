@@ -1,9 +1,8 @@
 #include "EditorLayer.h"
-
-#include "Panels/MenuBar/MenuBar.h"
-#include "Panels/HierarchyPanel/HierarchyPanel.h"
-#include "Panels/InspectorPanel/InspectorPanel.h"
-#include "Panels/ViewportPanel/ViewportPanel.h"
+#include "Panels/MenuBar.h"
+#include "Panels/HierarchyPanel.h"
+#include "Panels/InspectorPanel.h"
+#include "Panels/ViewportPanel.h"
 
 namespace Ballistic {
 
@@ -11,6 +10,8 @@ namespace Ballistic {
 		m_projectManager = context.projectManager;
 		m_window = context.window;
 		m_renderer = context.renderer;
+
+		m_editorTheme = std::make_shared<EditorTheme>();
 	}
 
 	void EditorLayer::OnAttach() {
@@ -31,7 +32,7 @@ namespace Ballistic {
 			for (auto& panel : m_panels)
 				panel->OnImGuiRender();
 
-			ImGui::ShowDemoWindow();
+			// ImGui::ShowDemoWindow();
 		}
 	}
 

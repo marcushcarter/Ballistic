@@ -32,29 +32,24 @@ namespace Ballistic {
         bool hasMaterial = selected.has<MaterialComponent>();
         bool hasCamera = selected.has<CameraComponent>();
 
+        
 		ImVec4 lightGray = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
 
         if (selected.has<Tag>()) {
             auto& tag = selected.get<Tag>();
 
-		    static char buffer[256];
-		    static entt::entity lastEntity = entt::null;
-
-            if (selected.handle() != lastEntity) {
-                strncpy(buffer, tag.name.c_str(), sizeof(buffer));
-                buffer[sizeof(buffer) - 1] = '\0';
-                lastEntity = selected.handle();
-            }
+		    char buffer[256];
+            strncpy(buffer, tag.name.c_str(), sizeof(buffer));
+            buffer[sizeof(buffer) - 1] = '\0';
             
             ImGui::PushStyleColor(ImGuiCol_Text, lightGray);
             ImGui::Text("Name:");
             ImGui::PopStyleColor();
             
             ImGui::SameLine();
-		
-            ImVec2 avail = ImGui::GetContentRegionAvail();
-            ImGui::SetNextItemWidth(avail.x);
-            if  (ImGui::InputText("##Name", buffer, IM_ARRAYSIZE(buffer))) {
+            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x);
+            
+            if (ImGui::InputTextWithHint("##Name", "Unnamed Node", buffer, IM_ARRAYSIZE(buffer))) {
                 tag.name = buffer;
             }
         }
@@ -110,29 +105,33 @@ namespace Ballistic {
             });
         }
 
-        if (hasParent || hasChildren) {
-            DrawComponent<Children>("Camera Component", selected, [&]() {
-                if (hasParent) {
-                    auto& parent = selected.get<Parent>();
-                    ImGui::SeparatorText("Parent");
-                    EntityHandle p(scene.GetEntity(parent.parent), reg);
-                    if (ImGui::Button(p.get<Tag>().name.c_str())) {
-                            scene.SetSelected(p.handle());
-                    }
-                }
+        // if (hasParent || hasChildren) {
+        //     DrawComponent<void>("Heirarchy", selected, [&]() {
+        //         if (hasParent) {
+        //             auto& parent = selected.get<Parent>();
+        //             ImGui::SeparatorText("Parent");
+        //             ImGui::PushID("Parent");
+        //             EntityHandle p(scene.GetEntity(parent.parent), reg);
+        //             if (ImGui::Button(p.get<Tag>().name.c_str())) {
+        //                     scene.SetSelected(p.handle());
+        //             }
+        //             ImGui::PopID();
+        //         }
 
-                if (hasChildren) {
-                    auto& children = selected.get<Children>();
-                    ImGui::SeparatorText("Children");
-                    for (auto& child : children.children) {
-                        EntityHandle c(scene.GetEntity(child), reg);
-                        if (ImGui::Button(c.get<Tag>().name.c_str())) {
-                            scene.SetSelected(c.handle());
-                        }
-                    }
-                }
-            });
-        }
+        //         if (hasChildren) {
+        //             auto& children = selected.get<Children>();
+        //             ImGui::SeparatorText("Children");
+        //             for (auto& child : children.children) {
+        //                 EntityHandle c(scene.GetEntity(child), reg);
+        //                 ImGui::PushID("c.handle()");
+        //                 if (ImGui::Button(c.get<Tag>().name.c_str())) {
+        //                     scene.SetSelected(c.handle());
+        //                 }
+        //                 ImGui::PopID();
+        //             }
+        //         }
+        //     });
+        // }
 
         bool hasAll = hasTransform && hasSphere && hasMesh && hasMaterial && hasCamera;
 

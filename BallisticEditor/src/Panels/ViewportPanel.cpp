@@ -15,6 +15,21 @@ namespace Ballistic {
         static ImGuiWindowFlags ViewportFlags = ImGuiWindowFlags_NoCollapse;
         ImGui::Begin("Viewport", nullptr, ViewportFlags);
 
+        ImVec2 windowPos = ImGui::GetWindowPos();
+        ImVec2 windowSize = ImGui::GetWindowSize();
+        ImVec2 padding = ImGui::GetStyle().WindowPadding;
+        float titleBarHeight = ImGui::GetFrameHeight();
+
+        ImVec2 buttonSize = ImVec2(24, 24);
+        ImGui::SetCursorPos(ImVec2(
+            windowSize.x - buttonSize.x - padding.x,
+            titleBarHeight + padding.y
+        ));
+
+        if (ImGui::Button("X", buttonSize)) {
+            // clicked
+        }
+
         ImVec2 viewportWindowSize = ImGui::GetContentRegionAvail();
         double windowAspect = double(viewportWindowSize.x) / double(viewportWindowSize.y);
 
@@ -53,23 +68,6 @@ namespace Ballistic {
             ImVec2(0,1), 
             ImVec2(1,0)
         );
-
-        ImVec2 windowPos      = ImGui::GetWindowPos();
-        ImVec2 windowSize     = ImGui::GetWindowSize();
-        ImVec2 padding        = ImGui::GetStyle().WindowPadding;
-        float titleBarHeight  = ImGui::GetFrameHeight(); // this is the key
-
-        ImVec2 buttonSize = ImVec2(24, 24);
-
-        // Cursor position is LOCAL to window
-        ImGui::SetCursorPos(ImVec2(
-            windowSize.x - buttonSize.x - padding.x,
-            titleBarHeight + padding.y
-        ));
-
-        if (ImGui::Button("...", buttonSize)) {
-            // clicked
-        }
 
         // ImGuizmoGUI(scene, renderer, selected, topLeftTextureCoords, viewportSize, camera.m_View, camera.m_Projection);
 

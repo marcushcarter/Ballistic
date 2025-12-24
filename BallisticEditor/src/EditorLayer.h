@@ -1,5 +1,6 @@
 #pragma once
 #include <Ballistic.h>
+#include "EditorTheme.h"
 #include "Panels/IPanel.h"
 
 namespace Ballistic {
@@ -17,6 +18,8 @@ namespace Ballistic {
 		std::shared_ptr<ProjectManager> m_projectManager;
         std::shared_ptr<Window> m_window;
         std::shared_ptr<Renderer> m_renderer;
+
+		std::shared_ptr<EditorTheme> m_editorTheme;
 
         std::vector<std::unique_ptr<IPanel>> m_panels;
 	};
