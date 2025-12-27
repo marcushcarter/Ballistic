@@ -1,5 +1,7 @@
 #pragma once
 
-#include "Core/app.h"
+#include "Core/Singleton.h"
+#include "Core/Root.h"
+#include "Core/IApplication.h"
 
 #include "bepch.h"

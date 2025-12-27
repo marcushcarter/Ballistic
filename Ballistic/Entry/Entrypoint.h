@@ -1,8 +1,7 @@
 #pragma once
 #include "bepch.h"
+#include "Core/Root.h"
 
-int main(int argc, char** argv) {
-    std::cout << "Hello, World!\n";
-    while (true) {}
-    return 0;
+namespace ballistic {
+    int Main(int argc, char** argv);
 }
