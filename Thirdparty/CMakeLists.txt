@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.20)
 
-# # GLFW
-# add_subdirectory(glfw)
+# GLFW
+add_subdirectory(glfw)
 
 # GLAD
 add_library(glad STATIC glad/src/glad.c)

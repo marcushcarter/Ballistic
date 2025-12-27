@@ -8,7 +8,7 @@ add_library(Ballistic STATIC ${ENGINE_SRC})
 target_include_directories(Ballistic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 target_link_libraries(Ballistic PUBLIC
-    # glfw
+    glfw
     glad
     # glm
     # imgui

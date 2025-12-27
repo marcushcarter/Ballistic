@@ -8,14 +8,30 @@ namespace ballistic
     public:
         bool Init() override {
             std::cout << "Editor initialized\n";
+
+            m_window = std::make_unique<Window>();
+            if (!m_window->Init()) {
+                return false;
+            }
+
             return true;
         }
 
-        void Update(float deltaTime) override {}
+        void Update(float deltaTime) override {
+            m_window->Update();
+
+            if (m_window->ShouldClose())
+                Root::getSingleton().RequestShutdown();
+        }
 
         void Shutdown() override {
+            m_window->Shutdown();
+                
             std::cout << "Editor shutdown\n";
         }
+
+    private:
+        std::unique_ptr<Window> m_window;
     };
 
     Root* CreateRoot() {

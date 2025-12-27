@@ -5,7 +5,7 @@
 namespace ballistic
 {
     class IApplication;
-    
+
     class Root : public Singleton<Root>
     {
     public:
@@ -17,6 +17,8 @@ namespace ballistic
         bool Init();
         void Shutdown();
         void Run();
+
+        void RequestShutdown() { m_running = false; }
     
     private:
         bool m_running = false;
