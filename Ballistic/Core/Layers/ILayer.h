@@ -4,12 +4,13 @@
 
 namespace ballistic
 {
+    struct LayerContext;
+
 	class ILayer
     {
 	public:
-		ILayer(const std::string name = "ILayer") : m_name(name) {
-			std::cout << m_name << " Attached" << std::endl;
-		}
+		ILayer(const LayerContext& context, const std::string name = "Layer")
+            : m_context(context), m_name(name) { LogInfo(m_name, " Attached"); }
 
 		virtual ~ILayer() = default;
 
@@ -17,9 +18,11 @@ namespace ballistic
 		virtual void OnDetach() = 0;
 		virtual void OnUpdate(float deltaTime) = 0;
 		virtual void OnEvent(IEvent& e) = 0;
-		virtual void OnUIRender() = 0;
 
 		const std::string& getName() const { return m_name; }
+
+    protected:
+        LayerContext m_context;
 
 	private:
 		std::string m_name;

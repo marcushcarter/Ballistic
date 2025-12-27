@@ -4,12 +4,6 @@
 
 namespace ballistic
 {
-    Root::Root() = default;
-
-    Root::~Root() {
-        Shutdown();
-    }
-    
     void Root::SetApplication(std::unique_ptr<IApplication> app) {
         m_app = std::move(app);
     }

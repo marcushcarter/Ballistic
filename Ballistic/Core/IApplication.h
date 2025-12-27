@@ -3,10 +3,12 @@
 
 namespace ballistic
 {
+    class Window;
     class LayerStack;
 
     struct LayerContext {
-        std::shared_ptr<LayerStack> layerStack;
+        LayerStack* layerStack = nullptr;
+        Window* window = nullptr;
     };
 
     class IApplication
@@ -15,19 +17,32 @@ namespace ballistic
         IApplication();        
         virtual ~IApplication() = default;
 
-        virtual bool Init() = 0;
-        virtual void Update(float deltaTime) = 0;
-        virtual void Shutdown() = 0;
+        bool Init();
+        void Update(float deltaTime);
+        void Shutdown();
 
         void SetExeDirectory(const std::filesystem::path& path) { m_exeDir = path; }
         const std::filesystem::path& GetExeDirectory() const { return m_exeDir; }
         
         std::shared_ptr<LayerStack> GetLayerStack() { return m_layerStack; }
+    
+    protected:
+        virtual bool OnInit() = 0;
+        virtual void OnUpdate(float deltaTime) = 0;
+        virtual void OnShutdown() = 0;
+        
+        LayerContext CreateLayerContext() {
+            LayerContext ctx;
+            ctx.layerStack = m_layerStack.get();
+            ctx.window = m_window.get();
+            return ctx;
+        }
+
+        std::shared_ptr<LayerStack> m_layerStack;
+        std::unique_ptr<Window> m_window;
 
     private:
         std::filesystem::path m_exeDir;
-
-        std::shared_ptr<LayerStack> m_layerStack;
     };
     
 } // namespace ballistic

@@ -15,7 +15,6 @@ namespace ballistic
 		void PopLayer(std::shared_ptr<ILayer> layer);
 
 		void OnUpdate(float deltaTime);
-        void OnUIRender();
 		void OnDetach();
 		void DispatchEvent(IEvent& e);
 

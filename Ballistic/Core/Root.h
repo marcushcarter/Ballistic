@@ -2,6 +2,7 @@
 #include "bepch.h"
 #include "Singleton.h"
 #include "Core/Logging/Logger.h"
+#include "Core/IApplication.h"
 
 namespace ballistic
 {
@@ -10,8 +11,8 @@ namespace ballistic
     class Root : public Singleton<Root>
     {
     public:
-        Root();
-        ~Root();
+        Root() = default;
+        ~Root() { Shutdown(); }
 
         void SetApplication(std::unique_ptr<IApplication> app);
 

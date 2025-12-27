@@ -6,11 +6,10 @@ namespace ballistic
     class RuntimeApplication : public IApplication
     {
     public:
-        bool Init() override {
+        bool OnInit() override {
             LogInfo("Runtime initialized");
 
             WindowSettings runtimeSettings = WindowSettings::LoadSettingsFromProject();
-            m_window = std::make_unique<Window>();
             if (!m_window->Init(runtimeSettings)) {
                 return false;
             }
@@ -18,21 +17,18 @@ namespace ballistic
             return true;
         }
 
-        void Update(float deltaTime) override {
+        void OnUpdate(float deltaTime) override {
             m_window->Update();
 
             if (m_window->ShouldClose())
                 GetRoot()->RequestShutdown();
         }
 
-        void Shutdown() override {
+        void OnShutdown() override {
             m_window->Shutdown();
 
             std::cout << "Runtime shutdown\n";
         }
-
-    private:
-        std::unique_ptr<Window> m_window;
     };
 
     Root* CreateRoot() {

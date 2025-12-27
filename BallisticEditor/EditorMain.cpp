@@ -1,38 +1,43 @@
 #include <Ballistic.h>
 #include <Entry/Entrypoint.h>
+#include "ImGuiLayer.h"
 
 namespace ballistic
 {
     class EditorApplication : public IApplication
     {
     public:
-        bool Init() override {
+        bool OnInit() override {
             LogInfo("Editor initialized");
 
             WindowSettings editorSettings;
-            m_window = std::make_unique<Window>();
             if (!m_window->Init(editorSettings)) {
                 return false;
             }
 
+            LayerContext ctx = CreateLayerContext();
+            auto imguiLayer = std::make_shared<ImGuiLayer>(ctx);
+            GetLayerStack()->PushLayer(imguiLayer);
+
             return true;
         }
 
-        void Update(float deltaTime) override {
+        void OnUpdate(float deltaTime) override {
+            GetLayerStack()->OnUpdate(deltaTime);
+
             m_window->Update();
 
             if (m_window->ShouldClose())
                 GetRoot()->RequestShutdown();
         }
 
-        void Shutdown() override {
+        void OnShutdown() override {
+            GetLayerStack()->OnDetach();
+
             m_window->Shutdown();
                 
             std::cout << "Editor shutdown\n";
         }
-
-    private:
-        std::unique_ptr<Window> m_window;
     };
 
     Root* CreateRoot() {

@@ -3,8 +3,7 @@
 
 namespace ballistic
 {
-    bool Window::Init(const WindowSettings& windowSettings)
-    {
+    bool Window::Init(const WindowSettings& windowSettings) {
         m_settings = windowSettings;
 
         if (!glfwInit())
