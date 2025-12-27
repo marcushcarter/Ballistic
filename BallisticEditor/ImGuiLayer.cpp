@@ -1,4 +1,7 @@
 #include "ImGuiLayer.h"
+#include "Panels/PanelStack.h"
+
+#include "Panels/DemoPanel.h"
 
 #include "imgui.h"
 #include "imgui_internal.h"
@@ -8,7 +11,13 @@
 namespace ballistic
 {
     ImGuiLayer::ImGuiLayer(const LayerContext& context, const std::string& name) 
-        : ILayer(context, name) {}
+        : ILayer(context, name) {
+
+        m_panelStack = std::make_shared<PanelStack>();
+
+        auto demoPanel = std::make_shared<DemoPanel>();
+        m_panelStack->PushPanel(demoPanel);
+    }
 
     void ImGuiLayer::OnAttach() {
         IMGUI_CHECKVERSION();
@@ -49,9 +58,11 @@ namespace ballistic
     }
 
     void ImGuiLayer::OnDetach() {
-        ImGui_ImplOpenGL3_Shutdown();
-        ImGui_ImplGlfw_Shutdown();
-        ImGui::DestroyContext();
+        if (ImGui::GetCurrentContext() && m_context.window && m_context.window->GetNativeWindow()) {
+            ImGui_ImplOpenGL3_Shutdown();
+            ImGui_ImplGlfw_Shutdown();
+            ImGui::DestroyContext();
+        }
     }
 
     void ImGuiLayer::OnUpdate(float deltaTime) {
@@ -81,13 +92,7 @@ namespace ballistic
         ImGui::PopStyleVar(3);
         ImGui::End();
 
-        ImGui::Begin("Demo Panel");
-        ImGui::Text("Hello from ImGuiLayer!");
-        ImGui::End();
-
-        // update all panels
-
-        ImGui::ShowDemoWindow();
+        m_panelStack->OnUpdate(deltaTime);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

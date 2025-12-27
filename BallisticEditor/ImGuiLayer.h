@@ -5,6 +5,8 @@ struct ImGuiContext;
 
 namespace ballistic
 {
+    class PanelStack;
+
     class ImGuiLayer : public ILayer
     {
     public:
@@ -16,9 +18,10 @@ namespace ballistic
         void OnUpdate(float deltaTime) override;
         void OnEvent(IEvent& e) override;
 
+        std::shared_ptr<PanelStack> GetPanelStack() { return m_panelStack; }
+
     private:
-        
-        // PANEL STACK
+        std::shared_ptr<PanelStack> m_panelStack;
     };
     
 } // namespace ballistic
