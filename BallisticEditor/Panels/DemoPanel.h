@@ -6,21 +6,12 @@ namespace ballistic
 {
 	class DemoPanel : public IPanel {
 	public:
-        DemoPanel(LayerContext context, const std::string& name = "Demo") 
-            : IPanel(context, name) {}
+        DemoPanel(LayerContext& context, const std::string& name = "Demo");
         ~DemoPanel() override { OnDetach(); }
         
-		void OnAttach() override {
-        }
-        
-		void OnDetach() override {
-        }
-
-		void OnUpdate(float deltaTime) override {
-            ImGui::ShowDemoWindow();
-        }
-
-		void OnEvent(IEvent& e) override {
-        }
+		void OnAttach() override;
+		void OnDetach() override;
+		void OnUpdate(float deltaTime) override;
+		void OnEvent(IEvent& e) override;
 	};
 }

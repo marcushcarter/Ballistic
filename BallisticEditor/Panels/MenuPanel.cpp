@@ -6,7 +6,6 @@ namespace ballistic
         : IPanel(context, name) {}
     
     void MenuPanel::OnAttach() {
-
     }
     
     void MenuPanel::OnDetach() {
