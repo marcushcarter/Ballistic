@@ -7,9 +7,9 @@ add_subdirectory(glfw)
 add_library(glad STATIC glad/src/glad.c)
 target_include_directories(glad PUBLIC glad/include)
 
-# # GLM
-# add_library(glm INTERFACE)
-# target_include_directories(glm INTERFACE glm)
+# GLM
+add_library(glm INTERFACE)
+target_include_directories(glm INTERFACE glm)
 
 # stb
 add_library(stb INTERFACE)

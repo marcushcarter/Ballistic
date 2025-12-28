@@ -10,7 +10,7 @@ target_include_directories(Ballistic PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(Ballistic PUBLIC
     glfw
     glad
-    # glm
+    glm
     imgui
     stb
     # EnTT::EnTT
