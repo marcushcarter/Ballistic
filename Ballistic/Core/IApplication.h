@@ -7,11 +7,13 @@ namespace ballistic
     class LayerStack;
     class Renderer;
     class WindowSettings;
+    class SceneManager;
 
     struct LayerContext {
         LayerStack* layerStack = nullptr;
         Window* window = nullptr;
         Renderer* renderer = nullptr;
+        SceneManager* sceneManager = nullptr;
     };
 
     class IApplication
@@ -41,10 +43,13 @@ namespace ballistic
             ctx.layerStack = m_layerStack.get();
             ctx.window = m_window.get();
             ctx.renderer = m_renderer.get();
+            ctx.sceneManager = m_sceneManager.get();
             return ctx;
         }
 
         std::shared_ptr<LayerStack> m_layerStack;
+        std::unique_ptr<SceneManager> m_sceneManager;
+
         std::unique_ptr<Window> m_window;
         std::unique_ptr<Renderer> m_renderer;
         

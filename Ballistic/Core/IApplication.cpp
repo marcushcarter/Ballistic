@@ -2,12 +2,17 @@
 #include "Core/Layers/LayerStack.h"
 #include "Core/Window/Window.h"
 #include "Renderer/Renderer.h"
+#include "Scene/SceneManager.h"
 #include "Root/Root.h"
 
 namespace ballistic
 {   
     bool IApplication::Init() {
         m_layerStack = std::make_shared<LayerStack>();
+
+        m_sceneManager = std::make_unique<SceneManager>();
+        if (!m_sceneManager->Init())
+            return false;
         
         WindowSettings settings = GetWindowSettings();
 
@@ -15,9 +20,11 @@ namespace ballistic
         m_renderer->ApplyWindowHints();
 
         m_window = std::make_unique<Window>();
-        if (!m_window->Init(settings)) return false;
+        if (!m_window->Init(settings))
+            return false;
 
-        if (!m_renderer->Init(m_window.get())) return false;
+        if (!m_renderer->Init(m_window.get()))
+            return false;
         
         m_layerContext = CreateLayerContext();
 

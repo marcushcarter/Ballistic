@@ -2,8 +2,8 @@
 #include "bepch.h"
 #include "Renderer/RenderDevice/IRenderDevice.h"
 
-namespace ballistic {
-
+namespace ballistic
+{
 	class Window;
 	
 	enum class RendererAPI { OpenGL, Vulkan };
@@ -33,4 +33,5 @@ namespace ballistic {
 
 		std::unique_ptr<IRenderDevice> m_renderDevice;
 	};
-}
+
+} // namespace ballistic

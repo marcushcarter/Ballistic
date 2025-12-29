@@ -5,8 +5,8 @@
 
 #include "Renderer/RenderDevice/GLRenderDevice.h"
 
-namespace ballistic {
-
+namespace ballistic
+{
 	void Renderer::ApplyWindowHints() {
 		if (m_api == RendererAPI::OpenGL) {
 			glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_API);
@@ -77,4 +77,5 @@ namespace ballistic {
 		m_resizeSize = dim;
 		m_pendingResize = true;
 	}
-}
+
+} // namespace ballistic

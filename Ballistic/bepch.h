@@ -27,11 +27,13 @@
 #include <deque>
 #include <sstream>
 
+#include "Renderer/Backends/OpenGL/all.h"
+#include "GLFW/glfw3.h"
+
 #define GLM_ENABLE_EXPERIMENTAL
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/euler_angles.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-#include "Renderer/Backends/OpenGL/all.h"
-#include "GLFW/glfw3.h"
+#include <entt/entt.hpp>

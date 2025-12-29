@@ -1,8 +1,8 @@
 #pragma once
 #include "bepch.h"
 
-namespace ballistic {
-
+namespace ballistic
+{
     struct RenderCommand;
     
     class IRenderDevice {
@@ -22,4 +22,4 @@ namespace ballistic {
         virtual void* GetNativeTextureHandle() = 0;
     };
 
-}
+} // namespace ballistic

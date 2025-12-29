@@ -3,12 +3,11 @@
 namespace ballistic
 {
     bool LogManager::Init() {
-        Log(LogLevel::Debug, "Log Manager initialized");
+        Log(LogLevel::Debug, "Log manager initialized");
         return true;
     }
 
     void LogManager::Shutdown() {
-
     }
     
     void LogManager::Log(LogLevel level, const std::string& messsage) {

@@ -2,8 +2,8 @@
 #include "Core/IApplication.h"
 #include "Root/LogManager/Log.h"
 
-namespace ballistic {
-
+namespace ballistic
+{
     bool GLRenderDevice::Init() {
 		m_outputTexture = std::make_shared<gl::Texture2D>();
 		m_outputTexture->create(800, 600, GL_RGBA32F, GL_RGBA, GL_FLOAT);
@@ -116,4 +116,4 @@ namespace ballistic {
         return (void*)(uintptr_t)m_outputTexture->get();
     }
         
-}
+} // namespace ballistic

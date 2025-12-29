@@ -27,7 +27,7 @@ target_include_directories(imgui PUBLIC imgui)
 target_link_libraries(imgui PUBLIC glfw)
 
 # # EnTT
-# add_subdirectory(entt)
+add_subdirectory(entt)
 
 # # JSON
 # add_library(nlohmann_json INTERFACE)

@@ -4,8 +4,8 @@
 #include "Renderer/RenderDevice/IRenderDevice.h"
 #include "Renderer/Backends/OpenGL/all.h"
 
-namespace ballistic {
-
+namespace ballistic
+{
     class GLRenderDevice : public IRenderDevice {
     public:
         GLRenderDevice() = default;
@@ -32,4 +32,5 @@ namespace ballistic {
 
       	glm::vec3 rgb;
     };
-}
+
+} // namespace ballistic
