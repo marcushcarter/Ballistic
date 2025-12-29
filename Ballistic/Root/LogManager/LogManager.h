@@ -34,9 +34,8 @@ namespace ballistic
         std::deque<LogMessage> GetFilteredLogs(const std::string& filter = "") const;
         std::string GetFilteredLogsText(const std::string& filter = "") const;
 
-        void SetLevelEnabled(LogLevel level, bool enabled) {
-            m_levelEnabled[level] = enabled;
-        }
+        void SetLevelEnabled(LogLevel level, bool enabled) { m_levelEnabled[level] = enabled; }
+        
         bool IsLevelEnabled(LogLevel level) const {
             auto it = m_levelEnabled.find(level);
             return it != m_levelEnabled.end() ? it->second : true;
