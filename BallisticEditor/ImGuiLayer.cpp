@@ -5,6 +5,7 @@
 #include "Panels/DemoPanel.h"
 #include "Panels/ViewportPanel.h"
 #include "Panels/HierarchyPanel.h"
+#include "Panels/InspectorPanel.h"
 #include "Panels/ConsolePanel.h"
 
 #include "imgui.h"
@@ -33,6 +34,9 @@ namespace ballistic
 
         auto hierarchyPanel = std::make_shared<HierarchyPanel>(m_context);
         m_panelStack->PushPanel(hierarchyPanel);
+
+        auto inspectorPanel = std::make_shared<InspectorPanel>(m_context);
+        m_panelStack->PushPanel(inspectorPanel);
         
         auto consolePanel = std::make_shared<ConsolePanel>(m_context);
         m_panelStack->PushPanel(consolePanel);
