@@ -5,6 +5,7 @@
 namespace ballistic
 {
 	class Window;
+	class Scene;
 	
 	enum class RendererAPI { OpenGL, Vulkan };
 
@@ -17,7 +18,7 @@ namespace ballistic
 
 		bool Init(Window* window);
 		void Shutdown();
-		void OnUpdate(/* pass in current scene */);
+		void OnUpdate(Scene* scene = nullptr);
 
 		void RequestResize(glm::vec2 dim);
 		glm::vec2 GetSize() const { return m_currentSize; }

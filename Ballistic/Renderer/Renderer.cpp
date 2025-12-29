@@ -1,6 +1,10 @@
 #include "Renderer/Renderer.h"
 #include "Core/Window/Window.h"
-#include "Renderer/RenderCommand.h"
+#include "Renderer/DrawElementsIndirectCommand.h"
+#include "Scene/Components/Components.h"
+#include "Scene/EntityHandle.h"
+#include "Scene/Scene.h"
+
 #include "Root/LogManager/Log.h"
 
 #include "Renderer/RenderDevice/GLRenderDevice.h"
@@ -48,28 +52,36 @@ namespace ballistic
 		if (m_renderDevice) m_renderDevice->Shutdown();
 	}
 
-	void Renderer::OnUpdate(/* pass in current scene */) {
+	void Renderer::OnUpdate(Scene* scene) {
 		if (m_pendingResize) {
 			m_renderDevice->Resize((uint32_t)m_resizeSize.x, (uint32_t)m_resizeSize.y);
 			m_currentSize = m_resizeSize;
 			m_pendingResize = false;
 		}
 
-        // auto& scene = m_projectManager->GetSceneManager()->GetActiveScene();
+		std::vector<DrawElementsIndirectCommand> commands;
 
-		std::vector<RenderCommand> commands;
+		if (scene) {
+			for (auto entity : scene->GetAllEntitiesFlattened()) {
+				EntityHandle e(entity, scene->GetRegistry());
 
-		// auto& scene = m_projectManager->GetCurrentScene();
-		// for (auto entity : scene.GetAllEntitiesFlattened()) {
+				if (e.has<MeshComponent>()) {
+					const MeshMetadata* meta = GetRoot()->GetMeshManager()->GetMeshMetadata(e.get<MeshComponent>().mesh);
+					if (!meta) continue;
 
-		// 	RenderCommand cmd;
-		// 	cmd.modelMatrix = scene.ComputeWorldTransform(entity);
+					DrawElementsIndirectCommand cmd{};
+					cmd.count = meta->indexCount;
+					cmd.instanceCount = 1;
+					cmd.firstIndex = meta->indexOffset;
+					cmd.baseVertex = meta->vertexOffset;
+					cmd.baseInstance = 0;
 
-		// 	commands.push_back(cmd);
-		// }
+					commands.push_back(cmd);
+				}
+			}
+		}
 
 		m_renderDevice->Execute(commands);
-
 	}
 
 	void Renderer::RequestResize(glm::vec2 dim) {

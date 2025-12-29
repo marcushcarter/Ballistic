@@ -1,6 +1,6 @@
 #pragma once
 #include "bepch.h"
-#include "Renderer/RenderCommand.h"
+#include "Renderer/DrawElementsIndirectCommand.h"
 #include "Renderer/RenderDevice/IRenderDevice.h"
 #include "Renderer/Backends/OpenGL/all.h"
 
@@ -14,7 +14,7 @@ namespace ballistic
         bool Init() override;
         void Shutdown() override;
 
-        void Execute(const std::vector<RenderCommand>& commands) override;
+        void Execute(const std::vector<DrawElementsIndirectCommand>& commands) override;
 		
         void Clear(float r, float g, float b, float a) override;
 		void BlitToScreen() override;
@@ -28,9 +28,13 @@ namespace ballistic
 		std::shared_ptr<gl::Framebuffer> m_mainFramebuffer;
 	  
 		std::shared_ptr<gl::Shader> m_blitShader;
-		std::shared_ptr<gl::VertexArray> m_blitVAO;
 
-      	glm::vec3 rgb;
+        std::shared_ptr<gl::VertexArray> m_meshVAO;
+        std::shared_ptr<gl::Buffer> m_meshVBO;
+        std::shared_ptr<gl::Buffer> m_meshEBO;
+        std::shared_ptr<gl::Buffer> m_indirectBuffer;
+        
+		std::shared_ptr<gl::Shader> tempDraw;
     };
 
 } // namespace ballistic

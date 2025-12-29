@@ -90,6 +90,35 @@ namespace ballistic
             if (hasMesh) {
                 DrawComponent<MeshComponent>((const char*)u8"\uF1C0 Mesh Component", selected, [&]() {
                     auto& mesh = selected.get<MeshComponent>();
+
+                    auto meshManager = GetRoot()->GetMeshManager();
+
+                    const auto& allMetadata = meshManager->GetAllMetadata();
+                    if (!allMetadata.empty()) {
+                        std::vector<std::string> names;
+                        int currentIndex = 0;
+                        for (size_t i = 0; i < allMetadata.size(); ++i) {
+                            names.push_back(allMetadata[i].name);
+                            if (allMetadata[i].guid == mesh.mesh)
+                                currentIndex = static_cast<int>(i);
+                        }
+
+                        // Dropdown
+                        if (ImGui::BeginCombo("Mesh", names[currentIndex].c_str())) {
+                            for (int i = 0; i < names.size(); ++i) {
+                                bool isSelected = (i == currentIndex);
+                                if (ImGui::Selectable(names[i].c_str(), isSelected)) {
+                                    currentIndex = i;
+                                    mesh.mesh = allMetadata[i].guid;
+                                }
+                                if (isSelected)
+                                    ImGui::SetItemDefaultFocus();
+                            }
+                            ImGui::EndCombo();
+                        }
+                    } else {
+                        ImGui::TextDisabled("No meshes available");
+                    }
                 });
             }
             

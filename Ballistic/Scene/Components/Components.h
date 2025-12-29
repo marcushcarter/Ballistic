@@ -1,10 +1,9 @@
 #pragma once
 #include "bepch.h"
+#include "Utility/GUID.h"
 
 namespace ballistic
 {
-    struct GUID;
-
     struct Parent {
         GUID parent;
         Parent(GUID parent) : parent(parent) {}
@@ -46,14 +45,14 @@ namespace ballistic
     };
 
     struct MeshComponent {
-        GUID guid;
+        GUID mesh;
         // MeshComponent(GUID meshID = GUID::Invalid) {
         //     guid.value = 0;
         // }
     };
 
     struct MaterialComponent {
-        GUID guid;
+        GUID material;
         // MaterialComponent(GUID materialID = GUID::Invalid) : guid.value(materialID) {}
     };
 
