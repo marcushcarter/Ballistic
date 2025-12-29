@@ -32,7 +32,6 @@ namespace ballistic
 			if (!m_renderDevice->Init())
 				return false;
 				
-			LogDebug("OpenGL renderer Initialized");
 		} else if (m_api == RendererAPI::Vulkan) {
 			LogDebug("No Vulkan renderer yet");
 			return false;
@@ -41,6 +40,7 @@ namespace ballistic
 			return false;
 		}
 
+		LogDebug("Renderer Initialized");
 		return true;
 	}
 	

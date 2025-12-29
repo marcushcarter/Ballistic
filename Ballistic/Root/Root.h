@@ -2,7 +2,10 @@
 #include "bepch.h"
 #include "Singleton.h"
 #include "Root/LogManager/LogManager.h"
+#include "Root/MeshManager/MeshManager.h"
 #include "Core/IApplication.h"
+
+#define BALLISTIC_ENGINE_VERSION "v1.0"
 
 namespace ballistic
 {
@@ -22,10 +25,12 @@ namespace ballistic
 
         void RequestShutdown() { m_running = false; }
 
-        LogManager* GetLogManager() { return m_logger.get(); }
+        LogManager* GetLogManager() { return m_logManager.get(); }
+        MeshManager* GetMeshManager() { return m_meshManager.get(); }
     
     private:
-        std::unique_ptr<LogManager> m_logger;
+        std::unique_ptr<LogManager> m_logManager;
+        std::unique_ptr<MeshManager> m_meshManager;
         
         bool m_running = false;
         std::unique_ptr<IApplication> m_app;

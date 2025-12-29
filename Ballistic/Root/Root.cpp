@@ -9,15 +9,20 @@ namespace ballistic
     }
 
     bool Root::Init() {
-        m_logger = std::make_unique<LogManager>();
-        if (!m_logger->Init()) {
+        m_logManager = std::make_unique<LogManager>();
+        if (!m_logManager->Init())
             return false;
-        }
-
-        if (!m_app->Init()) {
+            
+		LogInfo("Ballistic Engine ", BALLISTIC_ENGINE_VERSION, " (c) 2025-present Marcus Carter.");
+        
+        m_meshManager = std::make_unique<MeshManager>();
+        if (!m_meshManager->Init())
             return false;
-        }
 
+        if (!m_app->Init())
+            return false;
+            
+        LogDebug("Root initialized");
         return true;
     }
 
@@ -45,8 +50,12 @@ namespace ballistic
             m_app->Shutdown();
         }
 
-        if (m_logger) {
-            m_logger->Shutdown();
+        if (m_meshManager) {
+            m_meshManager->Shutdown();
+        }
+
+        if (m_logManager) {
+            m_logManager->Shutdown();
         }
         
         m_running = false;

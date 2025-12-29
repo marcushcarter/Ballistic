@@ -5,9 +5,14 @@
 #include "Scene/SceneManager.h"
 #include "Root/Root.h"
 
+#include "Root/LogManager/Log.h"
+
 namespace ballistic
 {   
     bool IApplication::Init() {
+        
+        // LogDebug("Application initialized");
+
         m_layerStack = std::make_shared<LayerStack>();
 
         m_sceneManager = std::make_unique<SceneManager>();

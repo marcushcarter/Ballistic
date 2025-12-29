@@ -164,7 +164,7 @@ namespace ballistic
                 }
             }
 
-            std::string text = nodeText + sceneText + projectText + "Ballsitic Engine";
+            std::string text = nodeText + sceneText + projectText + "Ballistic Engine";
             float textWidth = ImGui::CalcTextSize(text.c_str()).x;
             float extraPadding = 20.0f;
 

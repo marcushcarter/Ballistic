@@ -56,6 +56,15 @@ namespace ballistic
 		m_blitVAO = std::make_shared<gl::VertexArray>();
 		m_blitVAO->create();
 
+		LogInfo(
+			"OpenGL Info: ", 
+			"Renderer: ", glGetString(GL_RENDERER), ", ",
+			"Vendor: ", glGetString(GL_VENDOR), ", ",
+			"Version: ", glGetString(GL_VERSION), ", ",
+			"GLSL Version: ", glGetString(GL_SHADING_LANGUAGE_VERSION)
+		);
+
+		LogDebug("OpenGL render device Initialized");
 		return true;
     }
 
