@@ -2,7 +2,11 @@ file(GLOB_RECURSE EDITOR_SRC
     ${CMAKE_CURRENT_SOURCE_DIR}/*.cpp
 )
 
-add_executable(BallisticEditor ${EDITOR_SRC})
+if(WIN32)
+    add_executable(BallisticEditor WIN32 ${EDITOR_SRC})
+else()
+    add_executable(BallisticEditor ${EDITOR_SRC})
+endif()
 
 if(WIN32)
     set(EDITOR_ICON "${CMAKE_SOURCE_DIR}/Resources/Icons/icon.rc")
