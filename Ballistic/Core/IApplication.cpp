@@ -10,8 +10,6 @@
 namespace ballistic
 {   
     bool IApplication::Init() {
-        
-        // LogDebug("Application initialized");
 
         m_layerStack = std::make_shared<LayerStack>();
 

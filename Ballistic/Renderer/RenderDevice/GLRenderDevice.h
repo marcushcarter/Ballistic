@@ -39,6 +39,7 @@ namespace ballistic
         glm::vec2 viewportSize;
 
         void CreateFramebuffer(uint32_t w, uint32_t h);
+        GLuint CreateShader(const char* vertexSrc, const char* fragmentSrc);
     };
 
 } // namespace ballistic

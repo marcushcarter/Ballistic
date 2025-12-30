@@ -38,10 +38,10 @@ namespace ballistic
 
 		// INDIRECT BUFFER
 
-		glGenBuffers(1, &m_indirectBuffer);
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirectBuffer);
-		glBufferData(GL_DRAW_INDIRECT_BUFFER, 1024 * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+		// glGenBuffers(1, &m_indirectBuffer);
+		// glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirectBuffer);
+		// glBufferData(GL_DRAW_INDIRECT_BUFFER, 1024 * sizeof(DrawElementsIndirectCommand), nullptr, GL_DYNAMIC_DRAW);
+		// glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 
 		// RENDER TARGET AND FRAMEBUFFER
 
@@ -49,99 +49,73 @@ namespace ballistic
 
 		// BLIT SHADER
 
-		{
-			const char* vertexShaderSrc = R"(
-			#version 460 core
-			out vec2 TexCoords;
-			void main() {
-				const vec2 verts[3] = vec2[3](
-					vec2(-1.0, -1.0),
-					vec2( 3.0, -1.0),
-					vec2(-1.0,  3.0)
-				);
-				gl_Position = vec4(verts[gl_VertexID], 0.0, 1.0);
-				TexCoords = (gl_Position.xy + 1.0) * 0.5;
-			}
-			)";
-			
-			const char* fragmentShaderSrc = R"(
-			#version 460 core
-			in vec2 TexCoords;
-			out vec4 FragColor;
-			uniform sampler2D screenTexture;
-			void main() {
-				FragColor = texture(screenTexture, TexCoords);
-				// FragColor = vec4(TexCoords, 0.0, 1.0);
-			}
-			)";
-
-			GLuint vert = glCreateShader(GL_VERTEX_SHADER);
-			glShaderSource(vert, 1, &vertexShaderSrc, nullptr);
-			glCompileShader(vert);
-
-			GLuint frag = glCreateShader(GL_FRAGMENT_SHADER);
-			glShaderSource(frag, 1, &fragmentShaderSrc, nullptr);
-			glCompileShader(frag);
-
-			m_blitShader = glCreateProgram();
-			glAttachShader(m_blitShader, vert);
-			glAttachShader(m_blitShader, frag);
-			glLinkProgram(m_blitShader);
+		const char* blitVert = R"(
+		#version 460 core
+		out vec2 TexCoords;
+		void main() {
+			const vec2 verts[3] = vec2[3](
+				vec2(-1.0, -1.0),
+				vec2( 3.0, -1.0),
+				vec2(-1.0,  3.0)
+			);
+			gl_Position = vec4(verts[gl_VertexID], 0.0, 1.0);
+			TexCoords = (gl_Position.xy + 1.0) * 0.5;
 		}
-
-		// TEMP SHADER
-
-		{
-			const char* vertexShaderSrc = R"(
-			#version 460 core
-
-			layout(location = 0) in vec3 aPos;
-			layout(location = 1) in vec3 aNormal;
-			layout(location = 2) in vec2 aUV;
-
-			uniform mat4 uModel;
-			uniform mat4 uView;
-			uniform mat4 uProj;
-
-			out vec3 FragPos;
-			out vec3 Normal;
-			out vec2 UV;
-
-			void main() {
-				FragPos = vec3(uModel * vec4(aPos, 1.0));
-				Normal = mat3(transpose(inverse(uModel))) * aNormal;
-				UV = aUV;
-				gl_Position = uProj * uView * vec4(FragPos, 1.0);
-			}
-			)";
-			
-			const char* fragmentShaderSrc = R"(
-			#version 460 core
-
-			in vec3 FragPos;
-			in vec3 Normal;
-			in vec2 UV;
-
-			out vec4 FragColor;
-
-			void main() {
-				FragColor = vec4(UV, 0.0, 1.0);
-			}
-			)";
-
-			GLuint vert = glCreateShader(GL_VERTEX_SHADER);
-			glShaderSource(vert, 1, &vertexShaderSrc, nullptr);
-			glCompileShader(vert);
-
-			GLuint frag = glCreateShader(GL_FRAGMENT_SHADER);
-			glShaderSource(frag, 1, &fragmentShaderSrc, nullptr);
-			glCompileShader(frag);
-
-			tempShader = glCreateProgram();
-			glAttachShader(tempShader, vert);
-			glAttachShader(tempShader, frag);
-			glLinkProgram(tempShader);
+		)";
+		
+		const char* blitFrag = R"(
+		#version 460 core
+		in vec2 TexCoords;
+		out vec4 FragColor;
+		uniform sampler2D screenTexture;
+		void main() {
+			FragColor = texture(screenTexture, TexCoords);
+			// FragColor = vec4(TexCoords, 0.0, 1.0);
 		}
+		)";
+
+		m_blitShader = CreateShader(blitVert, blitFrag);
+
+		// SCENE SHADER
+
+		const char* sceneVert = R"(
+		#version 460 core
+
+		layout(location = 0) in vec3 aPos;
+		layout(location = 1) in vec3 aNormal;
+		layout(location = 2) in vec2 aUV;
+
+		uniform mat4 uModel;
+		uniform mat4 uView;
+		uniform mat4 uProj;
+
+		out vec3 FragPos;
+		out vec3 Normal;
+		out vec2 UV;
+
+		void main() {
+			FragPos = vec3(uModel * vec4(aPos, 1.0));
+			Normal = mat3(transpose(inverse(uModel))) * aNormal;
+			UV = aUV;
+			gl_Position = uProj * uView * vec4(FragPos, 1.0);
+		}
+		)";
+		
+		const char* sceneFrag = R"(
+		#version 460 core
+
+		in vec3 FragPos;
+		in vec3 Normal;
+		in vec2 UV;
+
+		out vec4 FragColor;
+
+		void main() {
+			FragColor = vec4(UV, 0.0, 1.0);
+		}
+		)";
+
+		tempShader = CreateShader(sceneVert, sceneFrag);
 
 		LogInfo(
 			"OpenGL Info: ", 
@@ -186,20 +160,20 @@ namespace ballistic
 			LogWarn("Updated VAO");
 		}
 
-		const auto& meta = meshManager->GetAllMetadata()[0]; // just the first mesh
+		// const auto& meta = meshManager->GetAllMetadata()[0]; // just the first mesh
 
-		DrawElementsIndirectCommand cmd{};
-		cmd.count = (GLuint)meta.indexCount;
-		cmd.instanceCount = 1;
-		cmd.firstIndex = 0;
-		cmd.baseVertex = (GLuint)meta.vertexOffset;
-		cmd.baseInstance = 0;
+		// DrawElementsIndirectCommand cmd{};
+		// cmd.count = (GLuint)meta.indexCount;
+		// cmd.instanceCount = 1;
+		// cmd.firstIndex = 0;
+		// cmd.baseVertex = (GLuint)meta.vertexOffset;
+		// cmd.baseInstance = 0;
 
-		std::vector<DrawElementsIndirectCommand> cmds = { cmd };
+		// std::vector<DrawElementsIndirectCommand> cmds = { cmd };
 
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirectBuffer);
-		glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, cmds.size() * sizeof(DrawElementsIndirectCommand), cmds.data());
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+		// glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirectBuffer);
+		// glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, cmds.size() * sizeof(DrawElementsIndirectCommand), cmds.data());
+		// glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
 
 		glUseProgram(tempShader);
 
@@ -211,17 +185,21 @@ namespace ballistic
 		glUniformMatrix4fv(glGetUniformLocation(tempShader, "uView"), 1, GL_FALSE, &view[0][0]);
 		glUniformMatrix4fv(glGetUniformLocation(tempShader, "uProj"), 1, GL_FALSE, &proj[0][0]);
 
+		// glBindVertexArray(m_meshVAO);
+		// glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirectBuffer);
+		// glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, (GLsizei)cmds.size(), 0);
+		// glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+		// glBindVertexArray(0);
+
 		glBindVertexArray(m_meshVAO);
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirectBuffer);
-		glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, (GLsizei)cmds.size(), 0);
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
+		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
 		glBindVertexArray(0);
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     
 	void GLRenderDevice::Clear(float r, float g, float b, float a) {
-		glClearColor(1.0f, 0.0f, 0.0f, 1.0f);
+		glClearColor(r, g, b, a);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	}
     
@@ -267,6 +245,65 @@ namespace ballistic
 		}
 
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+
+	GLuint GLRenderDevice::CreateShader(const char* vertexSrc, const char* fragmentSrc) {
+		auto compileShader = [](GLenum type, const char* src) -> GLuint {
+			GLuint shader = glCreateShader(type);
+			glShaderSource(shader, 1, &src, nullptr);
+			glCompileShader(shader);
+
+			GLint success = 0;
+			glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+			if (!success) {
+				char infoLog[1024];
+				glGetShaderInfoLog(shader, sizeof(infoLog), nullptr, infoLog);
+
+				const char* typeName =
+					(type == GL_VERTEX_SHADER) ? "VERTEX" :
+					(type == GL_FRAGMENT_SHADER) ? "FRAGMENT" : "UNKNOWN";
+
+				LogError(typeName, " SHADER COMPILATION FAILED:\n", infoLog);
+				glDeleteShader(shader);
+				return 0;
+			}
+
+			return shader;
+		};
+
+		GLuint vert = compileShader(GL_VERTEX_SHADER, vertexSrc);
+		if (!vert) return 0;
+
+		GLuint frag = compileShader(GL_FRAGMENT_SHADER, fragmentSrc);
+		if (!frag) {
+			glDeleteShader(vert);
+			return 0;
+		}
+
+		GLuint program = glCreateProgram();
+		glAttachShader(program, vert);
+		glAttachShader(program, frag);
+		glLinkProgram(program);
+
+		GLint linked = 0;
+		glGetProgramiv(program, GL_LINK_STATUS, &linked);
+		if (!linked) {
+			char infoLog[1024];
+			glGetProgramInfoLog(program, sizeof(infoLog), nullptr, infoLog);
+			LogWarn("SHADER PROGRAM LINK FAILED:\n", infoLog);
+
+			glDeleteProgram(program);
+			glDeleteShader(vert);
+			glDeleteShader(frag);
+			return 0;
+		}
+
+		glDetachShader(program, vert);
+		glDetachShader(program, frag);
+		glDeleteShader(vert);
+		glDeleteShader(frag);
+
+		return program;
 	}
 
     void* GLRenderDevice::GetNativeTextureHandle() {
