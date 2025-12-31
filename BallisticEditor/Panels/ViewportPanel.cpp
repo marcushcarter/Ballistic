@@ -1,4 +1,5 @@
 #include "Panels/ViewportPanel.h"
+#include <ImGuizmo.h>
 
 namespace ballistic
 {
@@ -62,8 +63,6 @@ namespace ballistic
         //     IM_COL32(255, 255, 255, 255)
         // );
         
-        // ImGuizmoGUI(scene, renderer, selected, topLeftTextureCoords, viewportSize, camera.m_View, camera.m_Projection);
-        
         float buttonPadding = 6.0f;
         ImVec2 buttonSize = ImVec2(24, 24);
         ImVec2 buttonStart = ImVec2(
@@ -89,6 +88,69 @@ namespace ballistic
         
         ImGui::SetCursorPos(ImVec2(buttonStart.x, buttonStart.y + 2 * (buttonSize.y + buttonPadding)));
         if (ImGui::Button((const char*)u8"\uF065##3", buttonSize)) {}
+
+        auto* scene = m_context.sceneManager->GetActiveScene();
+        EntityHandle e(scene->GetSelected(), scene->GetRegistry());
+        if (e.has<TransformComponent>()) {
+            auto& t = e.get<TransformComponent>();
+            
+            ImGuizmo::SetOrthographic(false);
+            ImGuizmo::SetDrawlist(ImGui::GetWindowDrawList());
+            ImGuizmo::SetRect(
+                topLeftTextureCoords.x,
+                topLeftTextureCoords.y,
+                viewportSize.x,
+                viewportSize.y
+            );
+
+            glm::mat4 view = m_context.renderer->GetDevice()->m_renderParams.camView;
+            glm::mat4 proj = m_context.renderer->GetDevice()->m_renderParams.camProj;
+
+            glm::mat4 worldMatrix = scene->ComputeWorldTransform(scene->GetSelected());
+
+            ImGuizmo::Manipulate(
+                glm::value_ptr(view),
+                glm::value_ptr(proj),
+                ImGuizmo::TRANSLATE,
+                ImGuizmo::WORLD,
+                glm::value_ptr(worldMatrix)
+            );
+
+            if (ImGuizmo::IsUsing()) {
+
+                glm::mat4 parentWorld(1.0f);
+                entt::entity parent = entt::null;
+
+                if (scene->GetRegistry().all_of<Parent>(scene->GetSelected()))
+                    parent = scene->ConvertEntity(scene->GetRegistry().get<Parent>(scene->GetSelected()).parent);
+
+                while (parent != entt::null && !scene->GetRegistry().all_of<TransformComponent>(parent)) {
+                    if (!scene->GetRegistry().all_of<Parent>(parent)) {
+                        parent = entt::null;
+                        break;
+                    }
+                    parent = scene->ConvertEntity(scene->GetRegistry().get<Parent>(parent).parent);
+                }
+
+                if (parent != entt::null)
+                    parentWorld = scene->ComputeWorldTransform(parent);
+
+                glm::mat4 local = glm::inverse(parentWorld) * worldMatrix;
+
+                glm::vec3 lTrans, lRot, lScale;
+                ImGuizmo::DecomposeMatrixToComponents(
+                    glm::value_ptr(local),
+                    glm::value_ptr(lTrans),
+                    glm::value_ptr(lRot),
+                    glm::value_ptr(lScale)
+                );
+
+                t.position = lTrans;
+                t.rotation = lRot;
+                t.scale = lScale;
+
+            }
+        }
 
         ImGui::End();
         ImGui::PopStyleVar();

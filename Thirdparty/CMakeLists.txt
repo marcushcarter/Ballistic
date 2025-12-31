@@ -26,6 +26,16 @@ add_library(imgui STATIC ${IMGUI_SRC})
 target_include_directories(imgui PUBLIC imgui)
 target_link_libraries(imgui PUBLIC glfw)
 
+# ImGuizmo
+add_library(ImGuizmo STATIC
+    imguizmo/ImGuizmo.cpp
+)
+target_include_directories(ImGuizmo PUBLIC
+    imguizmo
+    imgui
+)
+target_link_libraries(ImGuizmo PUBLIC imgui)
+
 # # EnTT
 add_subdirectory(entt)
 

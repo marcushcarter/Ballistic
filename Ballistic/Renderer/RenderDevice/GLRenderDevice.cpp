@@ -137,7 +137,7 @@ namespace ballistic
 		uniform sampler2D screenTexture;
 		void main() {
 			// FragColor = texture(screenTexture, TexCoords);
-			FragColor = vec4(UV, 0.0, 1.0);
+			FragColor = vec4(TexCoords, 0.0, 1.0);
 		}
 		)";
 
@@ -150,10 +150,10 @@ namespace ballistic
 		layout(location = 1) in vec3 aNormal;
 		layout(location = 2) in vec2 aUV;
 
-		layout(std140, binding = 0) uniform CameraUBO {
-			mat4 u_View;
-			mat4 u_Projection;
-			vec3 u_CameraPos;
+		layout(std140, binding = 0) uniform ParametersUBO {
+			mat4 camView;
+			mat4 camProj;
+			vec3 camPos;
 			float _padding;
 		};
 
@@ -169,19 +169,19 @@ namespace ballistic
 			mat4 model = uModel[gl_InstanceID];
 			FragPos = vec3(model * vec4(aPos, 1.0));
 			Normal = mat3(transpose(inverse(model))) * aNormal;
-			gl_Position = u_Projection * u_View * vec4(FragPos, 1.0);
+			gl_Position = camProj * camView * vec4(FragPos, 1.0);
+			UV = aUV;
 		}
 		)";
 		
 		const char* sceneFrag = R"(
 		#version 460 core
 
-		layout(std140, binding = 0) uniform CameraUBO
-		{
-			mat4 u_View;
-			mat4 u_Projection;
-			vec3 u_CameraPos;
-			float _padding; // REQUIRED
+		layout(std140, binding = 0) uniform ParametersUBO {
+			mat4 camView;
+			mat4 camProj;
+			vec3 camPos;
+			float _padding;
 		};
 
 		in vec3 FragPos;
@@ -191,7 +191,7 @@ namespace ballistic
 		out vec4 FragColor;
 
 		void main() {
-			FragColor = vec4(u_CameraPos, 1.0);
+			FragColor = vec4(UV, 0.0, 1.0);
 		}
 		)";
 
