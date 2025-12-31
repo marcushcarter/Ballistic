@@ -8,7 +8,7 @@ namespace ballistic
 {
     bool GLRenderDevice::Init() {
 		InitMeshBuffers();
-		InitIndirectBuffer();
+		InitShaderBuffers();
 		InitFramebuffer(800, 600);
 		InitShaders();
 
@@ -30,16 +30,16 @@ namespace ballistic
 		auto vertices = manager->GetVertexBuffer();
 		auto indices = manager->GetIndexBuffer();
 
-		glGenVertexArrays(1, &m_meshVAO);
-		glBindVertexArray(m_meshVAO);
+		glGenVertexArrays(1, &m_vertexArray);
+		glBindVertexArray(m_vertexArray);
 
-		glGenBuffers(1, &m_meshVBO);
-		glBindBuffer(GL_ARRAY_BUFFER, m_meshVBO);
+		glGenBuffers(1, &m_vertexBuffer);
+		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
 		m_vertexCapacityBytes = 1000 * sizeof(Vertex);
 		glBufferData(GL_ARRAY_BUFFER, m_vertexCapacityBytes, nullptr, GL_DYNAMIC_DRAW);
 
-		glGenBuffers(1, &m_meshEBO);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_meshEBO);
+		glGenBuffers(1, &m_indexBuffer);
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_indexBuffer);
 		m_indexCapacityBytes = 3000 * sizeof(uint32_t);
 		glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexCapacityBytes, nullptr, GL_DYNAMIC_DRAW);
 
@@ -54,19 +54,35 @@ namespace ballistic
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	}
-
-	void GLRenderDevice::InitIndirectBuffer() {
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirectBuffer);
-		m_indirectCapacityBytes = 1024 * sizeof(DrawElementsIndirectCommand);
-		glBufferData(GL_DRAW_INDIRECT_BUFFER, m_indirectCapacityBytes, nullptr, GL_DYNAMIC_DRAW);
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-	}
     
 	void GLRenderDevice::InitShaderBuffers() {
+
+		glGenBuffers(1, &m_instanceSSBO);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
+		m_instanceCapacityBytes = 1024 * sizeof(glm::mat4);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, m_instanceCapacityBytes, nullptr, GL_DYNAMIC_DRAW);
+
+		glGenBuffers(1, &m_vertexSSBO);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_vertexSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, m_vertexCapacityBytes, nullptr, GL_DYNAMIC_DRAW);
+
+		glGenBuffers(1, &m_indexSSBO);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_indexSSBO);
+		glBufferData(GL_SHADER_STORAGE_BUFFER, m_indexCapacityBytes, nullptr, GL_DYNAMIC_DRAW);
+
 		glGenBuffers(1, &m_renderParamsUBO);
 		glBindBuffer(GL_UNIFORM_BUFFER, m_renderParamsUBO);
-		glBufferData(GL_UNIFORM_BUFFER, sizeof(RenderParameters), nullptr, GL_DYNAMIC_DRAW);
+		m_renderParamsCapacityBytes = sizeof(RenderParameters);
+		glBufferData(GL_UNIFORM_BUFFER, m_renderParamsCapacityBytes, nullptr, GL_DYNAMIC_DRAW);
+		
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, m_instanceSSBO);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, m_vertexSSBO);
+		glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 2, m_indexSSBO);
+		
 		glBindBufferBase(GL_UNIFORM_BUFFER, 0, m_renderParamsUBO);
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
 	}
 	
     void GLRenderDevice::InitFramebuffer(uint32_t w, uint32_t h) {
@@ -120,8 +136,8 @@ namespace ballistic
 		out vec4 FragColor;
 		uniform sampler2D screenTexture;
 		void main() {
-			FragColor = texture(screenTexture, TexCoords);
-			// FragColor = vec4(TexCoords, 0.0, 1.0);
+			// FragColor = texture(screenTexture, TexCoords);
+			FragColor = vec4(UV, 0.0, 1.0);
 		}
 		)";
 
@@ -134,24 +150,39 @@ namespace ballistic
 		layout(location = 1) in vec3 aNormal;
 		layout(location = 2) in vec2 aUV;
 
-		uniform mat4 uModel;
-		uniform mat4 uView;
-		uniform mat4 uProj;
+		layout(std140, binding = 0) uniform CameraUBO {
+			mat4 u_View;
+			mat4 u_Projection;
+			vec3 u_CameraPos;
+			float _padding;
+		};
+
+		layout(std430, binding = 0) buffer InstanceBuffer {
+			mat4 uModel[];
+		};
 
 		out vec3 FragPos;
 		out vec3 Normal;
 		out vec2 UV;
 
 		void main() {
-			FragPos = vec3(uModel * vec4(aPos, 1.0));
-			Normal = mat3(transpose(inverse(uModel))) * aNormal;
-			UV = aUV;
-			gl_Position = uProj * uView * vec4(FragPos, 1.0);
+			mat4 model = uModel[gl_InstanceID];
+			FragPos = vec3(model * vec4(aPos, 1.0));
+			Normal = mat3(transpose(inverse(model))) * aNormal;
+			gl_Position = u_Projection * u_View * vec4(FragPos, 1.0);
 		}
 		)";
 		
 		const char* sceneFrag = R"(
 		#version 460 core
+
+		layout(std140, binding = 0) uniform CameraUBO
+		{
+			mat4 u_View;
+			mat4 u_Projection;
+			vec3 u_CameraPos;
+			float _padding; // REQUIRED
+		};
 
 		in vec3 FragPos;
 		in vec3 Normal;
@@ -160,97 +191,111 @@ namespace ballistic
 		out vec4 FragColor;
 
 		void main() {
-			FragColor = vec4(UV, 0.0, 1.0);
+			FragColor = vec4(u_CameraPos, 1.0);
 		}
 		)";
 
 		tempShader = CreateShader(sceneVert, sceneFrag);
 	}
 
-	// void GLRenderDevice::CreateMeshBuffers() {
-	// }
-
 	void GLRenderDevice::EnsureVertexBuffer(const Vertex* data, size_t count) {
 		size_t requiredBytes = count * sizeof(Vertex);
-		glBindBuffer(GL_ARRAY_BUFFER, m_meshVBO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_vertexBuffer);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_vertexSSBO);
 
 		if (requiredBytes > m_vertexCapacityBytes) {
 			m_vertexCapacityBytes = std::max(requiredBytes, m_vertexCapacityBytes * 2);
 			glBufferData(GL_ARRAY_BUFFER, m_vertexCapacityBytes, data, GL_DYNAMIC_DRAW);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, m_vertexCapacityBytes, data, GL_DYNAMIC_DRAW);
 			LogWarn("Vertex buffer resized - new size: ", m_vertexCapacityBytes);
 		} else {
 			glBufferSubData(GL_ARRAY_BUFFER, 0, requiredBytes, data);
+			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, requiredBytes, data);
 		}
     }
 
     void GLRenderDevice::EnsureIndexBuffer(const uint32_t* data, size_t count) {
 		size_t requiredBytes = count * sizeof(uint32_t);
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_meshEBO);
+
+		glBindBuffer(GL_ARRAY_BUFFER, m_indexBuffer);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_indexSSBO);
 
 		if (requiredBytes > m_indexCapacityBytes) {
 			m_indexCapacityBytes = std::max(requiredBytes, m_indexCapacityBytes * 2);
-			glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indexCapacityBytes, data, GL_DYNAMIC_DRAW);
-			LogWarn("Index buffer resized - new size: ", m_indexCapacityBytes);
+			glBufferData(GL_ARRAY_BUFFER, m_indexCapacityBytes, data, GL_DYNAMIC_DRAW);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, m_indexCapacityBytes, data, GL_DYNAMIC_DRAW);
+			LogWarn("Vertex buffer resized - new size: ", m_indexCapacityBytes);
 		} else {
-			glBufferSubData(GL_ELEMENT_ARRAY_BUFFER, 0, requiredBytes, data);
+			glBufferSubData(GL_ARRAY_BUFFER, 0, requiredBytes, data);
+			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, requiredBytes, data);
 		}
     }
 
-    void GLRenderDevice::EnsureIndirectBuffer(const DrawElementsIndirectCommand* data, size_t count) {
-		size_t requiredBytes = count * sizeof(uint32_t);
-		glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirectBuffer);
+	void GLRenderDevice::EnsureRenderParamsUBO(const RenderParameters* data) {
+		size_t dataBytes = sizeof(RenderParameters);
+		glBindBuffer(GL_UNIFORM_BUFFER, m_renderParamsUBO);
 
-		if (requiredBytes > m_indirectCapacityBytes) {
-			m_indirectCapacityBytes = std::max(requiredBytes, m_indirectCapacityBytes * 2);
-			glBufferData(GL_DRAW_INDIRECT_BUFFER, m_indirectCapacityBytes, data, GL_DYNAMIC_DRAW);
-			LogWarn("Indirect buffer resized - new size: ", m_indirectCapacityBytes);
+		if (dataBytes > m_renderParamsCapacityBytes) {
+			m_renderParamsCapacityBytes = std::max(dataBytes, m_renderParamsCapacityBytes * 2);
+			glBufferData(GL_UNIFORM_BUFFER, m_renderParamsCapacityBytes, data, GL_DYNAMIC_DRAW);
+			LogWarn("RenderParams UBO resized - new size: ", m_renderParamsCapacityBytes);
 		} else {
-			glBufferSubData(GL_DRAW_INDIRECT_BUFFER, 0, requiredBytes, data);
+			glBufferSubData(GL_UNIFORM_BUFFER, 0, dataBytes, data);
 		}
-    }
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+	}
 
-    void GLRenderDevice::Execute(const std::vector<DrawElementsIndirectCommand>& commands) {
+	void GLRenderDevice::EnsureInstanceSSBO(const glm::mat4* data, size_t count) {
+		size_t requiredBytes = count * sizeof(glm::mat4);
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, m_instanceSSBO);
+
+		if (requiredBytes > m_instanceCapacityBytes) {
+			m_instanceCapacityBytes = std::max(requiredBytes, m_instanceCapacityBytes * 2);
+			glBufferData(GL_SHADER_STORAGE_BUFFER, m_instanceCapacityBytes, data, GL_DYNAMIC_DRAW);
+			LogWarn("Instance SSBO resized - new size: ", m_instanceCapacityBytes);
+		} else {
+			glBufferSubData(GL_SHADER_STORAGE_BUFFER, 0, requiredBytes, data);
+		}
+
+		glBindBuffer(GL_SHADER_STORAGE_BUFFER, 0);
+	}
+
+    void GLRenderDevice::Execute(const std::vector<DrawElementsIndirectCommand>& commands, const std::vector<glm::mat4>& instanceMatrices) {
 		glBindFramebuffer(GL_FRAMEBUFFER, m_mainFramebuffer);
-		Clear(1.0f, 0.0f, 0.0f, 1.0f);
+		Clear(0.1f, 0.1f, 0.1f, 1.0f);
 		glEnable(GL_DEPTH_TEST);
+		
+		m_renderParams.camView = glm::lookAt(glm::vec3(0,0,5), glm::vec3(0,0,0), glm::vec3(0,1,0));
+		m_renderParams.camProj = glm::perspective(glm::radians(60.0f), (float)(viewportSize.x/viewportSize.y), 0.1f, 100.0f);
+		m_renderParams.camPos = glm::vec3(sinf(glfwGetTime()), 0.0, 1.0);
+		EnsureRenderParamsUBO(&m_renderParams);
 
 		auto meshManager = GetRoot()->GetMeshManager();
 		auto& vertices = meshManager->GetVertexBuffer();
 		auto& indices = meshManager->GetIndexBuffer();
-
 		if (!meshManager->GetDirtyMetadata().empty()) {
-			glBindVertexArray(m_meshVAO);
-
+			glBindVertexArray(m_vertexArray);
 			EnsureVertexBuffer(vertices.data(), vertices.size());
 			EnsureIndexBuffer(indices.data(), indices.size());
-
 			glBindVertexArray(0);
-			LogWarn("Updated VAO");
 			meshManager->ClearDirty();
 		}
 
-		EnsureIndirectBuffer(commands.data(), commands.size());
+		EnsureInstanceSSBO(instanceMatrices.data(), instanceMatrices.size());
 
 		glUseProgram(tempShader);
-
-		glm::mat4 model = glm::rotate(glm::mat4(1.0f), (float)glfwGetTime(), glm::vec3(0.0f, 1.0f, 0.0f));
-		glm::mat4 view = glm::lookAt(glm::vec3(0,0,5), glm::vec3(0,0,0), glm::vec3(0,1,0));
-		glm::mat4 proj = glm::perspective(glm::radians(60.0f), (float)(viewportSize.x/viewportSize.y), 0.1f, 100.0f);
-
-		glUniformMatrix4fv(glGetUniformLocation(tempShader, "uModel"), 1, GL_FALSE, &model[0][0]);
-		glUniformMatrix4fv(glGetUniformLocation(tempShader, "uView"), 1, GL_FALSE, &view[0][0]);
-		glUniformMatrix4fv(glGetUniformLocation(tempShader, "uProj"), 1, GL_FALSE, &proj[0][0]);
-
-		// glBindVertexArray(m_meshVAO);
-		// glBindBuffer(GL_DRAW_INDIRECT_BUFFER, m_indirectBuffer);
-		// glMultiDrawElementsIndirect(GL_TRIANGLES, GL_UNSIGNED_INT, nullptr, (GLsizei)commands.size(), 0);
-		// glBindBuffer(GL_DRAW_INDIRECT_BUFFER, 0);
-		// glBindVertexArray(0);
-
-		glBindVertexArray(m_meshVAO);
-		glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, (void*)0);
+		glBindVertexArray(m_vertexArray);
+		for (auto& cmd : commands) {
+			glDrawElementsInstanced(
+				GL_TRIANGLES,
+				cmd.count,
+				GL_UNSIGNED_INT,
+				(void*)(cmd.firstIndex * sizeof(uint32_t)),
+				cmd.instanceCount
+			);
+		}
 		glBindVertexArray(0);
-
 		glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
     
@@ -337,10 +382,9 @@ namespace ballistic
 		glDeleteProgram(m_blitShader);
 		glDeleteProgram(tempShader);
 
-		glDeleteVertexArrays(1, &m_meshVAO);
-		glDeleteBuffers(1, &m_meshVBO);
-		glDeleteBuffers(1, &m_meshEBO);
-		glDeleteBuffers(1, &m_indirectBuffer);
+		glDeleteVertexArrays(1, &m_vertexArray);
+		glDeleteBuffers(1, &m_vertexBuffer);
+		glDeleteBuffers(1, &m_indexBuffer);
     }
         
 } // namespace ballistic

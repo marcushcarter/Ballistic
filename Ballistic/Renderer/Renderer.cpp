@@ -59,29 +59,46 @@ namespace ballistic
 			m_pendingResize = false;
 		}
 
-		std::vector<DrawElementsIndirectCommand> commands;
+		if (!scene) return;
 
-		if (scene) {
-			for (auto entity : scene->GetAllEntitiesFlattened()) {
-				EntityHandle e(entity, scene->GetRegistry());
+		struct MeshInstance {
+			const MeshMetadata* meta;
+			std::vector<glm::mat4> models;
+		};
+		std::unordered_map<GUID, MeshInstance> meshInstances;
 
-				if (e.has<MeshComponent>()) {
-					const MeshMetadata* meta = GetRoot()->GetMeshManager()->GetMeshMetadata(e.get<MeshComponent>().mesh);
-					if (!meta) continue;
+		for (auto entity : scene->GetAllEntitiesFlattened()) {
+			EntityHandle e(entity, scene->GetRegistry());
+			if (!e.has<MeshComponent>() || !e.has<TransformComponent>()) continue;
 
-					DrawElementsIndirectCommand cmd{};
-					cmd.count = meta->indexCount;
-					cmd.instanceCount = 1;
-					cmd.firstIndex = meta->indexOffset;
-					cmd.baseVertex = meta->vertexOffset;
-					cmd.baseInstance = 0;
-
-					commands.push_back(cmd);
-				}
-			}
+			GUID meshID = e.get<MeshComponent>().mesh;
+			const MeshMetadata* meta = GetRoot()->GetMeshManager()->GetMeshMetadata(meshID);
+			if (!meta) continue;
+			
+			auto& entry = meshInstances[meshID];
+			entry.meta = meta;
+			entry.models.push_back(scene->ComputeWorldTransform(e.handle()));
 		}
 
-		m_renderDevice->Execute(commands);
+		std::vector<DrawElementsIndirectCommand> commands;
+		std::vector<glm::mat4> instanceMatrices;
+		size_t baseInstance = 0;
+
+		for (auto& [meshID, entry] : meshInstances) {
+			DrawElementsIndirectCommand cmd{};
+			cmd.count = entry.meta->indexCount;
+			cmd.instanceCount = (uint32_t)entry.models.size();
+			cmd.firstIndex = entry.meta->indexOffset;
+			cmd.baseVertex = entry.meta->vertexOffset;
+			cmd.baseInstance = (uint32_t)baseInstance;
+
+			commands.push_back(cmd);
+
+			instanceMatrices.insert(instanceMatrices.end(), entry.models.begin(), entry.models.end());
+			baseInstance += entry.models.size();
+		}
+
+		m_renderDevice->Execute(commands, instanceMatrices);
 	}
 
 	void Renderer::RequestResize(glm::vec2 dim) {

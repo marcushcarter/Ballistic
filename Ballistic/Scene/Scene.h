@@ -26,6 +26,8 @@ namespace ballistic
         std::vector<entt::entity> GetAllEntitiesFlattened();
         
         glm::mat4 ComputeWorldTransform(entt::entity entity);
+        
+        // bool HasMainCamera();
         void SetMainCamera(entt::entity entity);
         CameraComponent* GetMainCamera();
         
@@ -34,13 +36,11 @@ namespace ballistic
 
         void SetSelected(entt::entity entity) { m_selected = entity; }
         entt::entity GetSelected() const { return m_selected; }
-        entt::entity& GetSelected() { return m_selected; }
 
         entt::registry& GetRegistry() { return m_registry; }
-
         const GUID& GetGUID() const { return m_guid; }
-        void SetName(const std::string& name) { m_name = name; }
         const std::string& GetName() const { return m_name; }
+        void SetName(const std::string& name) { m_name = name; }
 
     private:
         GUID m_guid;
