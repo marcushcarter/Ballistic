@@ -28,8 +28,8 @@ namespace ballistic
         glm::mat4 ComputeWorldTransform(entt::entity entity);
         
         // bool HasMainCamera();
-        void SetMainCamera(entt::entity entity);
-        CameraComponent* GetMainCamera();
+        void SetMainCamera(entt::entity target);
+        entt::entity GetMainCamera();
         
         GUID ConvertGUID(entt::entity e) { return m_registry.get<GUID>(e); }
         entt::entity ConvertEntity(GUID id) { auto it = guidToEntity.find(id); return it != guidToEntity.end() ? it->second : entt::null; }

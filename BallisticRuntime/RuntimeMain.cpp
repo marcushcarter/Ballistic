@@ -14,8 +14,19 @@ namespace ballistic
         void OnUpdate(float deltaTime) override {
             auto windowState = m_window->GetState();
             m_renderer->RequestResize(glm::vec2(windowState.width, windowState.height));
-            // resize camera
 
+            auto* scene = m_sceneManager->GetActiveScene();
+            if (scene->GetMainCamera() != entt::null) {
+                EntityHandle e(scene->GetMainCamera(), scene->GetRegistry());
+                if (e.has<TransformComponent>() && e.has<CameraComponent>()) {
+                    auto& camComp = e.get<CameraComponent>();
+                    auto& tfmComp = e.get<TransformComponent>();
+
+                    camComp.OnUpdate(tfmComp);
+
+                    m_renderer->SubmitCamera(camComp.view, camComp.projection, tfmComp.position);
+                }
+            }
         }
 
         void OnShutdown() override {

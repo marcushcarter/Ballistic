@@ -80,12 +80,7 @@ namespace ballistic
         ImGui::PopStyleVar();
 
         if (ImGui::BeginPopup("ViewportButtonMenu")) {
-            // static bool useMainCamera = false;
             if (ImGui::Checkbox("Use Main Camera", &m_context.renderer->useMainCamera)) {}
-            // if (ImGui::MenuItem("Option 1")) { /* handle click */ }
-            // if (ImGui::MenuItem("Option 2")) { /* handle click */ }
-            // if (ImGui::MenuItem("Option 3")) { /* handle click */ }
-
             ImGui::EndPopup();
         }
         
@@ -155,6 +150,20 @@ namespace ballistic
                 t.rotation = lRot;
                 t.scale = lScale;
 
+            }
+        }
+        
+        ImVec2 mousePos = ImGui::GetMousePos();
+        bool insideViewport =
+            mousePos.x >= topLeftTextureCoords.x &&
+            mousePos.x <= bottomRightTextureCoords.x &&
+            mousePos.y >= topLeftTextureCoords.y &&
+            mousePos.y <= bottomRightTextureCoords.y;
+
+        if (insideViewport && !ImGuizmo::IsUsing() && !ImGuizmo::IsOver()) {
+            if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+                scene->SetSelected(entt::null);
+                // later on image entity selecting
             }
         }
 

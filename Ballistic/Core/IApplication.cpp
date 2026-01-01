@@ -42,9 +42,9 @@ namespace ballistic
 
         m_layerStack->OnUpdate(deltaTime);
         
-        m_renderer->OnUpdate(m_sceneManager->GetActiveScene());
-        
         OnUpdate(deltaTime);
+        
+        m_renderer->OnUpdate(m_sceneManager->GetActiveScene());
 
         m_window->Update(deltaTime);
     }

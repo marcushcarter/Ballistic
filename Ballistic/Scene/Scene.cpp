@@ -138,7 +138,10 @@ namespace ballistic
             if (srcEnt.has<SphereComponent>()) copy.add<SphereComponent>(srcEnt.get<SphereComponent>());
             if (srcEnt.has<MeshComponent>()) copy.add<MeshComponent>(srcEnt.get<MeshComponent>());
             if (srcEnt.has<MaterialComponent>()) copy.add<MaterialComponent>(srcEnt.get<MaterialComponent>());
-            if (srcEnt.has<CameraComponent>()) copy.add<CameraComponent>(srcEnt.get<CameraComponent>());
+            if (srcEnt.has<CameraComponent>()) {
+                copy.add<CameraComponent>(srcEnt.get<CameraComponent>());
+                copy.get<CameraComponent>().mainCamera = false;
+            }
 
             if (parentID != entt::null) {
                 EntityHandle p(parentID, m_registry);
@@ -226,28 +229,34 @@ namespace ballistic
         return world;
     }
 
-    void Scene::SetMainCamera(entt::entity entity) {
-        for (auto& entity : GetAllEntitiesFlattened()) {
-            EntityHandle e(entity, m_registry);
+    void Scene::SetMainCamera(entt::entity target) {
+        EntityHandle targetHandle(target, m_registry);
+        if (!targetHandle.valid() || !targetHandle.has<CameraComponent>())
+            return;
+
+        bool isAlreadyMain = targetHandle.get<CameraComponent>().mainCamera;
+
+        // Deselect all cameras
+        for (auto& eID : GetAllEntitiesFlattened()) {
+            EntityHandle e(eID, m_registry);
             if (e.has<CameraComponent>()) {
                 e.get<CameraComponent>().mainCamera = false;
             }
         }
-        
-        EntityHandle set(entity, m_registry);
-        if (set.has<CameraComponent>()) {
-            set.get<CameraComponent>().mainCamera = !set.get<CameraComponent>().mainCamera;
+
+        // If it wasn't main, select it
+        if (!isAlreadyMain) {
+            targetHandle.get<CameraComponent>().mainCamera = true;
         }
     }
 
-    CameraComponent* Scene::GetMainCamera() {
+    entt::entity Scene::GetMainCamera() {
         for (auto& entity : GetAllEntitiesFlattened()) {
             EntityHandle e(entity, m_registry);
-            if (e.has<CameraComponent>()) {
-                return &e.get<CameraComponent>();
-            }
+            if (e.has<CameraComponent>() && e.get<CameraComponent>().mainCamera)
+                return entity;
         }
-        return nullptr;
+        return entt::null;
     }
 
 } // namespace ballistic

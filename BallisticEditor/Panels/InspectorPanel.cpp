@@ -131,8 +131,9 @@ namespace ballistic
             if (hasCamera) {
                 DrawComponent<CameraComponent>((const char*)u8"\uF03D Camera Component", selected, [&]() {
                     auto& cam = selected.get<CameraComponent>();
+                    bool isMain = cam.mainCamera;
+                    if (ImGui::Checkbox("Main Camera", &isMain)) scene->SetMainCamera(selected.handle());
                     if (ImGui::DragFloat("FOV", &cam.fov, 0.1f, 1.0f, 179.0f)) {}
-                    if (ImGui::Checkbox("Main Camera", &cam.mainCamera)) scene->SetMainCamera(selected.handle());
                 });
             }
 

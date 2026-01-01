@@ -20,6 +20,8 @@ namespace ballistic
 		void Shutdown();
 		void OnUpdate(Scene* scene = nullptr);
 
+		void SubmitCamera(const glm::mat4& view, const glm::mat4& proj, const glm::vec3& pos);
+
 		void RequestResize(glm::vec2 dim);
 		glm::vec2 GetSize() const { return m_currentSize; }
 		
@@ -30,7 +32,7 @@ namespace ballistic
 
 	private:
 		RendererAPI m_api;
-		glm::vec2 m_currentSize{};
+		glm::vec2 m_currentSize{1, 1};
 		glm::vec2 m_resizeSize{};
 		bool m_pendingResize = true;
 
