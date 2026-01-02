@@ -1,6 +1,5 @@
 #include "Root/ProjectManager/ProjectManager.h"
 #include "Root/LogManager/Log.h"
-#include <nlohmann/json.hpp>
 
 namespace ballistic
 {
@@ -15,19 +14,21 @@ namespace ballistic
     
     bool ProjectManager::CreateNewProject(const std::filesystem::path& parentPath, const std::string& name) {
         m_projectName = (name.empty()) ? "New Project" : name;
+        m_projectRoot = parentPath / m_projectName;
 
-        std::filesystem::path projectDir = parentPath / m_projectName;
-
-        if (std::filesystem::exists(projectDir)) {
-            LogError("Project directory already exists: ", projectDir.string());
+        if (std::filesystem::exists(m_projectRoot)) {
+            LogError("Project directory already exists: ", m_projectRoot.string());
             return false;
         }
 
-        // Create project directory
-        std::filesystem::create_directories(projectDir);
+        std::filesystem::create_directories(m_projectRoot);
 
-        // Create config file
-        std::filesystem::path configPath = projectDir / "project.config";
+        std::filesystem::create_directories(m_projectRoot / "Resources" / "Meshes");
+        // std::filesystem::create_directories(m_projectRoot / "Resources" / "Textures");
+        // std::filesystem::create_directories(m_projectRoot / "Resources" / "Shaders");
+        // std::filesystem::create_directories(m_projectRoot / "Scenes");
+
+        std::filesystem::path configPath = m_projectRoot / "project.config";
 
         nlohmann::json j;
         j["name"] = m_projectName;
@@ -72,6 +73,8 @@ namespace ballistic
         }
 
         m_projectName = j["name"].get<std::string>();
+
+        m_projectRoot = configPath.parent_path();
 
         LogInfo("Opened project: ", m_projectName);
         return true;

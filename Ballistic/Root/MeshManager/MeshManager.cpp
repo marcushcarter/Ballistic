@@ -5,6 +5,8 @@
 #include <assimp/scene.h>
 #include <assimp/postprocess.h>
 
+#include <nlohmann/json.hpp>
+
 namespace ballistic
 {
     bool MeshManager::Init() {
@@ -146,7 +148,43 @@ namespace ballistic
             ? mesh->mName.C_Str()
             : path.filename().string();
 
-        return AddMesh(name, vertices, indices);
+        GUID guid = AddMesh(name, vertices, indices);
+
+        const MeshMetadata& meta = *GetMeshMetadata(guid);
+        SaveMeshMeta(GetRoot()->GetProjectManager()->GetProjectRoot(), meta, path);
+
+        return guid;
+    }
+
+    void MeshManager::SaveMeshMeta(const std::filesystem::path& projectRoot, const MeshMetadata& meta, const std::filesystem::path& sourceMeshPath) {
+        std::filesystem::path destDir = projectRoot / "Resources" / "Meshes";
+        std::filesystem::create_directories(destDir);
+
+        std::filesystem::path destMeshFile = destDir / sourceMeshPath.filename();
+        std::filesystem::copy_file(sourceMeshPath, destMeshFile, std::filesystem::copy_options::overwrite_existing);
+        
+        LogInfo("Project root: ", projectRoot.string());
+        LogInfo("Copying mesh from ", sourceMeshPath.string(), " to ", destMeshFile.string());
+
+        std::filesystem::path metaFile = destMeshFile;
+        metaFile.replace_extension(".meta.json");
+
+        nlohmann::json j;
+        j["guid"] = std::to_string(meta.guid.value);
+        j["name"] = meta.name;
+        j["path"] = std::filesystem::relative(destMeshFile, projectRoot).string();
+
+        std::ofstream out(metaFile);
+        if (!out.is_open()) {
+            LogError("Failed to write mesh metadata: ", metaFile.string());
+            return;
+        }
+        LogInfo("Meta file path: ", metaFile.string());
+
+        out << j.dump(4);
+        out.close();
+
+        LogInfo("Saved mesh metadata: ", metaFile.string());
     }
 
     void MeshManager::Clear() {

@@ -18,6 +18,8 @@ namespace ballistic
         GUID LoadMesh(const std::filesystem::path& path);
         void Clear();
 
+        void SaveMeshMeta(const std::filesystem::path& projectRoot, const MeshMetadata& meta, const std::filesystem::path& sourceMeshPath);
+
         GUID GetMeshGUIDByName(const std::string& name) const;
         const MeshMetadata* GetMeshMetadata(GUID guid) const;
 

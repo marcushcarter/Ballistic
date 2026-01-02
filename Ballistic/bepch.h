@@ -37,3 +37,5 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include <entt/entt.hpp>
+
+#include <nlohmann/json.hpp>

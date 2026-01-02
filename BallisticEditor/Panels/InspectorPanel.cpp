@@ -1,4 +1,5 @@
 #include "Panels/InspectorPanel.h"
+#include <tinyfiledialogs.h>
 
 namespace ballistic
 {
@@ -92,6 +93,13 @@ namespace ballistic
                     auto& mesh = selected.get<MeshComponent>();
 
                     auto meshManager = GetRoot()->GetMeshManager();
+
+                    if (ImGui::Button("Import Mesh")) {
+                        const char* filters[] = {"*.obj","*.fbx","*.dae","*.gltf"};
+                        if (const char* file = tinyfd_openFileDialog("Select Mesh", "", 4, filters, "3D Mesh Files", 0)) {
+                            meshManager->LoadMesh(file ? std::filesystem::path(file) : std::filesystem::path());
+                        }
+                    }
 
                     const auto& allMetadata = meshManager->GetAllMetadata();
                     if (!allMetadata.empty()) {
