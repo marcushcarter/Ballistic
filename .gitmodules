@@ -13,3 +13,6 @@
 [submodule "Thirdparty/vma"]
 	path = Thirdparty/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
+[submodule "Thirdparty/vulkan-hpp"]
+	path = Thirdparty/vulkan-hpp
+	url = https://github.com/KhronosGroup/Vulkan-Hpp.git
