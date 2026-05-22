@@ -1,13 +1,9 @@
 #pragma once
 
-#include <iostream>
-#include <string>
-
-#ifndef _WIN32
-#include <windows.h>
-#endif
+#pragma comment(lib, "dwmapi.lib")
 
 #define GLFW_INCLUDE_VULKAN
+#define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 
@@ -27,3 +23,10 @@ using namespace glm;
 #include <backends/imgui_impl_glfw.h>
 
 #include <stb_image.h>
+
+#include <windows.h>
+#include <dwmapi.h>
+#include <iostream>
+#include <string>
+
+#include "core/log.h"

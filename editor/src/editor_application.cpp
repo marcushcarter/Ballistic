@@ -3,16 +3,17 @@
 
 void EditorApplication::OnInit()
 {
-    printf("Editor initialized\n");
+    LOG_DEBUG("Editor initialized");
     window.DefaultIcon();
+    window.SetTitlebarColor(0.2f, 0.2f, 0.2f);
 }
 
 void EditorApplication::OnUpdate()
 {
-    printf("Editor update\n");
+    // LOG_TRACE("Editor update");
 }
 
 void EditorApplication::OnShutdown()
 {
-    printf("Editor shutdown\n");
+    LOG_DEBUG("Editor shutdown");
 }
