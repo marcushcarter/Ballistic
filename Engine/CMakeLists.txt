@@ -1,6 +1,8 @@
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS "src/*.h")
 
+add_subdirectory(src/Graphics/Shaders)
+
 add_library(ballistic_engine STATIC
     ${ENGINE_SOURCES}
     ${ENGINE_HEADERS}

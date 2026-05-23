@@ -26,18 +26,6 @@ inline static std::vector<uint32_t> LoadSPV(const std::filesystem::path& path)
     return out;
 }
 
-inline std::vector<uint32_t> LoadEmbeddedSPV(int resourceID)
-{
-    HRSRC res = FindResource(nullptr, MAKEINTRESOURCE(resourceID), RT_RCDATA);
-    HGLOBAL mem = LoadResource(nullptr, res);
-    void* data = LockResource(mem);
-    DWORD size = SizeofResource(nullptr, res);
-
-    std::vector<uint32_t> spv(size / 4);
-    memcpy(spv.data(), data, size);
-    return spv;
-}
-
 struct Shader
 {
     VkShaderModule shader = VK_NULL_HANDLE;
@@ -45,7 +33,6 @@ struct Shader
     std::vector<uint32_t> spirv;
     
     bool Compile(VkDevice device, VkShaderStageFlagBits stage, const std::vector<uint32_t>& code);
-    // bool CompileGLSL(VkDevice device, VkShaderStageFlagBits shaderStage, const char* source, const char* name);
     void Destroy();
     
     VkShaderModule Get() const { return shader; }

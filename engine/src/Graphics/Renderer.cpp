@@ -1,5 +1,6 @@
 #include "Renderer.h"
 #include "Core/Window.h"
+#include "Shaders/Shaders.h"
 
 bool Renderer::Start(Window& window)
 {
@@ -69,38 +70,18 @@ bool Renderer::Start(Window& window)
     finalImageInputSet.SetImages(0, { finalImage.GetView() }, nearestSampler.Get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     BE_ASSERT(blitPipelineLayout.Create(device.Get(), { finalImageInputSetLayout.Get() }, {}));
 
-//     static constexpr const char* fullscreen_vert_glsl = R"(
-// #version 450
-// layout(location = 0) out vec2 outUV;
-// void main()
-// {
-//     outUV = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);
-//     gl_Position = vec4(outUV * 2.0 - 1.0, 0.0, 1.0);
-// }
-// )";
+    Shader vert{}, frag{};
+    BE_ASSERT(vert.Compile(device.Get(), VK_SHADER_STAGE_VERTEX_BIT, { FULLSCREEN_VERT_SPV, FULLSCREEN_VERT_SPV + FULLSCREEN_VERT_SPV_SIZE / 4 }));    
+    BE_ASSERT(frag.Compile(device.Get(), VK_SHADER_STAGE_FRAGMENT_BIT, { BLIT_FRAG_SPV, BLIT_FRAG_SPV + BLIT_FRAG_SPV_SIZE / 4 }));
 
-//     static constexpr const char* blit_frag_glsl = R"(
-// #version 450
-// layout(location = 0) in vec2 inUV;
-// layout(location = 0) out vec4 outColor;
-// layout(set = 0, binding = 0) uniform sampler2D finalImage;
-// void main()
-// {
-//     outColor = texture(finalImage, inUV);
-// }
-// )";
+    PipelineRenderingInfo renderingInfo;
+    renderingInfo.colorFormats = { swapchain.format };
+    auto renderingCreateInfo = renderingInfo.Get();
 
-    // Shader vert{}, frag{};
-    // // BE_ASSERT(vert.Compile(device.Get(), VK_SHADER_STAGE_VERTEX_BIT, CompileGLSL(fullscreen_vert_glsl, "fullscreen.vert")));
-    // // BE_ASSERT(frag.Compile(device.Get(), VK_SHADER_STAGE_FRAGMENT_BIT, CompileGLSL(blit_frag_glsl, "blit.frag")));
-    // BE_ASSERT(vert.CompileGLSL(device.Get(), VK_SHADER_STAGE_VERTEX_BIT,   fullscreen_vert_glsl, "fullscreen.vert"));
-    // BE_ASSERT(frag.CompileGLSL(device.Get(), VK_SHADER_STAGE_FRAGMENT_BIT, blit_frag_glsl, "blit.frag"));
-
-    // auto renderingInfo = PipelineRenderingInfo({ swapchain.format });
-    // BE_ASSERT(blitPipeline.Create(device.Get(), blitPipelineLayout.Get(), VK_NULL_HANDLE, {
-    //     .pNext = &renderingInfo,
-    //     .shaderStages = { PipelineShaderStage(vert.Get(), vert.stage), PipelineShaderStage(frag.Get(), frag.stage) }
-    // }));
+    BE_ASSERT(blitPipeline.Create(device.Get(), blitPipelineLayout.Get(), VK_NULL_HANDLE, {
+        .pNext = &renderingCreateInfo,
+        .shaderStages = { PipelineShaderStage(vert.Get(), vert.stage), PipelineShaderStage(frag.Get(), frag.stage) }
+    }));
 
     return true;
 }

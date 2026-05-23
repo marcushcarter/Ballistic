@@ -21,15 +21,21 @@ inline VkVertexInputAttributeDescription VertexAttribute(uint32_t location, uint
     return a;
 }
 
-inline VkPipelineRenderingCreateInfo PipelineRenderingInfo(std::vector<VkFormat> colorFormats, VkFormat depthFormat = VK_FORMAT_UNDEFINED)
+struct PipelineRenderingInfo
 {
-    VkPipelineRenderingCreateInfo info{};
-    info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-    info.colorAttachmentCount = static_cast<uint32_t>(colorFormats.size());
-    info.pColorAttachmentFormats = colorFormats.data();
-    info.depthAttachmentFormat = depthFormat;
-    return info;
-}
+    std::vector<VkFormat> colorFormats;
+    VkFormat depthFormat = VK_FORMAT_UNDEFINED;
+
+    VkPipelineRenderingCreateInfo Get() const
+    {
+        VkPipelineRenderingCreateInfo info{};
+        info.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+        info.colorAttachmentCount    = static_cast<uint32_t>(colorFormats.size());
+        info.pColorAttachmentFormats = colorFormats.data();
+        info.depthAttachmentFormat   = depthFormat;
+        return info;
+    }
+};
 
 struct GraphicsPipelineDesc
 {
@@ -56,6 +62,5 @@ struct GraphicsPipelineDesc
 struct GraphicsPipeline : Pipeline
 {
     GraphicsPipeline() : Pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS) {}
-
     bool Create(VkDevice device, VkPipelineLayout layout, VkPipelineCache pipelineCache, const GraphicsPipelineDesc& desc);
 };

@@ -2,8 +2,8 @@
 
 bool ImageView::Create(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageViewType type, uint32_t baseMip, uint32_t mipCount, uint32_t baseLayer, uint32_t layerCount)
 {
-    // VK_CHECK_HANDLE(device, VkDevice, false);
-    // VK_CHECK_HANDLE(image, VkImage, false);
+    VK_CHECK_HANDLE(device, VkDevice);
+    VK_CHECK_HANDLE(image, VkImage);
     
     Destroy();
     deviceHandle = device;
