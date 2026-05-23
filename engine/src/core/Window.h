@@ -25,7 +25,7 @@ struct Window
     void SetTitlebarColor(float r, float g, float b);
     
     bool SetIcon(const char* path);
-    void DefaultIcon();
+    void SetEmbeddedIcon(int resourceID);
 
 private:
     inline static Window* instance;

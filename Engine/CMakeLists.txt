@@ -1,15 +1,19 @@
 file(GLOB_RECURSE ENGINE_SOURCES CONFIGURE_DEPENDS "src/*.cpp")
 file(GLOB_RECURSE ENGINE_HEADERS CONFIGURE_DEPENDS "src/*.h")
 
-add_subdirectory(src/Graphics/Shaders)
+add_subdirectory(res)
 
 add_library(ballistic_engine STATIC
     ${ENGINE_SOURCES}
     ${ENGINE_HEADERS}
 )
 
+add_dependencies(ballistic_engine CompileEngineShaders)
+
 target_include_directories(ballistic_engine
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/res"
 )
 
 target_link_libraries(ballistic_engine

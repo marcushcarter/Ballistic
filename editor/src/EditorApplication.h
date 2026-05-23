@@ -5,6 +5,8 @@
 struct EditorApplication : Application
 {
     VkDescriptorSet finalTextureID = VK_NULL_HANDLE;
+    VkDescriptorSet logoTextureID = VK_NULL_HANDLE;
+    VkDescriptorSet logoLongTextureID = VK_NULL_HANDLE;
     
     void OnInit() override;
     void OnUpdate() override;

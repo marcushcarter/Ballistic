@@ -4,8 +4,10 @@ set(H_CONTENT "#pragma once\n#include <cstdint>\n\n")
 
 foreach(SPV_FILE ${SPIRV_LIST})
     get_filename_component(FNAME ${SPV_FILE} NAME)
+    string(REGEX REPLACE "\\.spv$" "" FNAME ${FNAME})
     string(REPLACE "." "_" VAR_NAME ${FNAME})
     string(TOUPPER ${VAR_NAME} VAR_NAME)
+    set(VAR_NAME "SHADER_${VAR_NAME}")
 
     file(READ ${SPV_FILE} SPV_HEX HEX)
     string(LENGTH ${SPV_HEX} HEX_LEN)
@@ -27,7 +29,7 @@ foreach(SPV_FILE ${SPIRV_LIST})
 
     list(JOIN WORDS ", " WORDS_STR)
     string(APPEND H_CONTENT "static constexpr uint32_t ${VAR_NAME}[] = { ${WORDS_STR} };\n")
-    string(APPEND H_CONTENT "static constexpr size_t   ${VAR_NAME}_SIZE = sizeof(${VAR_NAME});\n\n")
+    string(APPEND H_CONTENT "static constexpr size_t ${VAR_NAME}_SIZE = sizeof(${VAR_NAME});\n\n")
 endforeach()
 
 file(WRITE "${OUTPUT_FILE}" "${H_CONTENT}")

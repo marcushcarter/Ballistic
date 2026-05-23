@@ -20,7 +20,6 @@ bool Shader::Compile(VkDevice device, VkShaderStageFlagBits inStage, const std::
         return false;
     }
 
-    LOG_DEBUG("Shader created");
     return true;
 }
 
@@ -29,7 +28,5 @@ void Shader::Destroy()
     if (shader != VK_NULL_HANDLE) {
         vkDestroyShaderModule(deviceHandle, shader, nullptr);
         shader = VK_NULL_HANDLE;
-        deviceHandle = VK_NULL_HANDLE;
-        LOG_DEBUG("Shader destroyed");
     }
 }

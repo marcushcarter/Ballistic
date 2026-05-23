@@ -5,12 +5,9 @@
 #include <vulkan/vulkan.hpp>
 
 #define GLFW_INCLUDE_NONE
-// #define GLFW_INCLUDE_VULKAN
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
-
-// #include <vulkan/vulkan_to_string.hpp>
 #include <vk_mem_alloc.h>
 
 #include <shaderc/shaderc.hpp>
@@ -44,5 +41,3 @@ using namespace glm;
 
 #include "Core/Log.h"
 #include "Core/Assert.h"
-
-#define FMT_STR(fmt) #fmt

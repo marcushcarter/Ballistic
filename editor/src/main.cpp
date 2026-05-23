@@ -6,7 +6,6 @@ int Main()
     app.Create("Ballistic Editor", 1280, 720);
     app.Run();
     app.Destroy();
-    while(true){}
     return 0;
 }
 

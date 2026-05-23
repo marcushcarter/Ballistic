@@ -1,14 +1,42 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(SHADER_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
+# ---- Images ----
+
+file(GLOB_RECURSE IMAGES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Images/*.png"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Images/*.jpg"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Images/*.jpeg"
+)
+
+set(RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Images.rc")
+set(H_FILE  "${CMAKE_CURRENT_SOURCE_DIR}/Images.h")
+set(RC_CONTENT "")
+set(H_CONTENT  "#pragma once\n\n")
+set(IMAGE_ID   300)
+
+foreach(IMAGE_FILE ${IMAGES})
+    get_filename_component(FNAME ${IMAGE_FILE} NAME)
+    string(TOUPPER ${FNAME} FNAME_UPPER)
+    string(REPLACE "." "_" RES_NAME ${FNAME_UPPER})
+    set(RES_NAME "IMG_${RES_NAME}")
+
+    string(APPEND RC_CONTENT "${IMAGE_ID} RCDATA \"${IMAGE_FILE}\"\n")
+    string(APPEND H_CONTENT "#define ${RES_NAME} ${IMAGE_ID}\n")
+    math(EXPR IMAGE_ID "${IMAGE_ID} + 1")
+endforeach()
+
+file(WRITE ${RC_FILE} ${RC_CONTENT})
+file(WRITE ${H_FILE}  ${H_CONTENT})
+
+# ---- Shaders ----
 
 file(GLOB_RECURSE SHADERS
-    "${SHADER_SRC_DIR}/*.vert"
-    "${SHADER_SRC_DIR}/*.frag"
-    "${SHADER_SRC_DIR}/*.comp"
-    "${SHADER_SRC_DIR}/*.geom"
-    "${SHADER_SRC_DIR}/*.tesc"
-    "${SHADER_SRC_DIR}/*.tese"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.vert"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.frag"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.comp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.geom"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.tesc"
+    "${CMAKE_CURRENT_SOURCE_DIR}/Shaders/*.tese"
 )
 
 set(SPIRV_FILES)
@@ -62,3 +90,8 @@ add_custom_command(
 )
 
 add_custom_target(CompileEngineShaders ALL DEPENDS ${SHADERS_HEADER})
+
+set(BALLISTIC_ENGINE_RC_FILES
+    "${CMAKE_CURRENT_SOURCE_DIR}/Images.rc"
+    CACHE INTERNAL "Engine RC files"
+)

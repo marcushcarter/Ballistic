@@ -1,6 +1,52 @@
 #include "Renderer.h"
 #include "Core/Window.h"
-#include "Shaders/Shaders.h"
+#include "Shaders.h"
+#include "Images.h"
+
+inline bool LoadRCImage(VkDevice device, const VkPhysicalDeviceMemoryProperties& props, VkCommandBuffer cmd, int resourceID, Image2D& outImage, Buffer& outStaging, const char* debugName = nullptr)
+{
+    HRSRC res = FindResource(nullptr, MAKEINTRESOURCE(resourceID), RT_RCDATA);
+    if (!res) {
+        LOG_ERROR("LoadRCImage failed: resource %d not found", resourceID);
+        return false;
+    }
+    
+    HGLOBAL mem = LoadResource(nullptr, res);
+    void* data = LockResource(mem);
+    DWORD size = SizeofResource(nullptr, res);
+
+    int w, h, channels;
+    stbi_uc* pixels = stbi_load_from_memory((const stbi_uc*)data, (int)size, &w, &h, &channels, 4);
+    if (!pixels) {
+        LOG_ERROR("LoadRCImage failed: stbi decode failed for resource %d", resourceID);
+        return false;
+    }
+
+    VkDeviceSize imageSize = (VkDeviceSize)w * h * 4;
+
+    if (!outImage.Create(device, props, {
+        .extent = { (uint32_t)w, (uint32_t)h },
+        .format = VK_FORMAT_R8G8B8A8_UNORM,
+        .usage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+        .debugName = debugName
+    })) { stbi_image_free(pixels); return false; }
+
+    if (!outStaging.Create(device, props, {
+        .size = imageSize,
+        .usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+        .hostVisible = true
+    })) { stbi_image_free(pixels); return false; }
+
+    outStaging.Update(pixels, imageSize);
+    stbi_image_free(pixels);
+
+    outImage.Transition(cmd, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_ACCESS_TRANSFER_WRITE_BIT);
+    outImage.CopyBuffer(cmd, outStaging.Get());
+    outImage.Transition(cmd, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT);
+
+    return true;
+}
 
 bool Renderer::Start(Window& window)
 {
@@ -76,11 +122,11 @@ bool Renderer::Start(Window& window)
         .debugName = "FinalImage"
     }));
 
-    BE_ASSERT(nearestSampler.Create(device.Get(), {
-        .magFilter = VK_FILTER_NEAREST,
-        .minFilter = VK_FILTER_NEAREST,
-        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST,
-        .debugName = "NearestSampler"
+    BE_ASSERT(linearSampler.Create(device.Get(), {
+        .magFilter = VK_FILTER_LINEAR,
+        .minFilter = VK_FILTER_LINEAR,
+        .mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR,
+        .debugName  = "LinearSampler"
     }));
 
     BE_ASSERT(finalImageInputSetLayout.Create(device.Get(), {
@@ -93,7 +139,7 @@ bool Renderer::Start(Window& window)
         .setLayout = finalImageInputSetLayout.Get(),
         .debugName = "FinalImageInputSet"
     }));
-    finalImageInputSet.SetImages(0, { finalImage.GetView() }, nearestSampler.Get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    finalImageInputSet.SetImages(0, { finalImage.GetView() }, linearSampler.Get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     
     BE_ASSERT(blitPipelineLayout.Create(device.Get(), {
         .setLayouts = { finalImageInputSetLayout.Get() },
@@ -101,8 +147,8 @@ bool Renderer::Start(Window& window)
     }));
 
     Shader vert{}, frag{};
-    BE_ASSERT(vert.Compile(device.Get(), VK_SHADER_STAGE_VERTEX_BIT, { FULLSCREEN_VERT_SPV, FULLSCREEN_VERT_SPV + FULLSCREEN_VERT_SPV_SIZE / 4 }));    
-    BE_ASSERT(frag.Compile(device.Get(), VK_SHADER_STAGE_FRAGMENT_BIT, { BLIT_FRAG_SPV, BLIT_FRAG_SPV + BLIT_FRAG_SPV_SIZE / 4 }));
+    BE_ASSERT(vert.Compile(device.Get(), VK_SHADER_STAGE_VERTEX_BIT, { SHADER_FULLSCREEN_VERT, SHADER_FULLSCREEN_VERT + SHADER_FULLSCREEN_VERT_SIZE / 4 }));    
+    BE_ASSERT(frag.Compile(device.Get(), VK_SHADER_STAGE_FRAGMENT_BIT, { SHADER_BLIT_FRAG, SHADER_BLIT_FRAG + SHADER_BLIT_FRAG_SIZE / 4 }));
 
     PipelineRenderingInfo renderingInfo;
     renderingInfo.colorFormats = { swapchain.format };
@@ -118,21 +164,34 @@ bool Renderer::Start(Window& window)
     vert.Destroy();
     frag.Destroy();
 
-    // Buffer buffer{};
-    // BE_ASSERT(buffer.Create(device.Get(), physicalDevice.memory, {
-    //     .size = sizeof(float) * 4,
-    //     .usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-    //     .hostVisible = false,
-    //     .debugName = "Fullscreen Quad VB"
-    // }));
-    // buffer.Resize(sizeof(float) * 100);
-    // float chars[9] = {
-    //     -1.0f, -1.0f, 0.0f, 1.0f,
-    //      3.0f, -1.0f, 0.0f, 1.0f,
-    //     -1.0f
-    // };
-    // buffer.Update(chars, sizeof(chars));
-    // buffer.Destroy();
+    CommandPool transferCommandPool;
+    BE_ASSERT(transferCommandPool.Create(device.Get(), {
+        .queueFamilyIndex = transferQueue.familyIndex,
+        .transient = true,
+        .debugName = "TransferCommandPool"
+    }));
+    
+    CommandBuffer transferCmd;
+    BE_ASSERT(transferCmd.Allocate(device.Get(), transferCommandPool.Get(), false, "TransferCommandBuffer"));
+    transferCmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+    std::vector<Buffer> stagingBuffers;
+    
+    Buffer& logoStaging = stagingBuffers.emplace_back();
+    BE_ASSERT(LoadRCImage(device.Get(), physicalDevice.memory, transferCmd.Get(),
+        IMG_LOGO_PNG, logoImage, logoStaging, "LogoImage"));
+
+    Buffer& logoLongStaging = stagingBuffers.emplace_back();
+    BE_ASSERT(LoadRCImage(device.Get(), physicalDevice.memory, transferCmd.Get(),
+        IMG_LOGO_LONG_PNG, logoLongImage, logoLongStaging, "LogoLongImage"));
+    
+    transferCmd.End();
+    transferQueue.Submit(transferCmd.Get());
+    transferQueue.WaitIdle();
+
+    for (auto& s : stagingBuffers) s.Destroy();
+    transferCmd.Free();
+    transferCommandPool.Destroy();
 
     return true;
 }
@@ -151,6 +210,7 @@ bool Renderer::CreateImGui(GLFWwindow* window)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
     io.IniFilename = nullptr;
     ImGui::StyleColorsDark();
 
@@ -180,6 +240,10 @@ bool Renderer::CreateImGui(GLFWwindow* window)
     return true;
 }
 
+bool Renderer::Deserialize() {
+    return true;
+}
+
 void Renderer::Shutdown()
 {
     device.Wait();
@@ -187,7 +251,7 @@ void Renderer::Shutdown()
     blitPipeline.Destroy();
     blitPipelineLayout.Destroy();
     finalImageInputSetLayout.Destroy();
-    nearestSampler.Destroy();
+    linearSampler.Destroy();
     finalImage.Destroy();
 
     descriptorPool.Destroy();

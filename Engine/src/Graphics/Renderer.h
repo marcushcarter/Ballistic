@@ -11,8 +11,6 @@ struct Renderer
     // float aspect = 1.0f;
     // bool resizeRequested = false;
 
-    // RenderSettings settings;
-
     // CORE
 
     uint32_t frameCount = 0;
@@ -39,12 +37,15 @@ struct Renderer
     std::vector<Image2D> swapchainImages;
     
     Allocator allocator;
-    
+
     DescriptorPool descriptorPool;
     DescriptorPool imguiDescriptorPool;
 
     Image2D finalImage;
-    Sampler nearestSampler;
+    Image2D logoImage;
+    Image2D logoLongImage;
+    Sampler linearSampler;
+
     DescriptorSetLayout finalImageInputSetLayout;
     DescriptorSet finalImageInputSet;
     PipelineLayout blitPipelineLayout;
@@ -65,9 +66,10 @@ struct Renderer
     std::function<void(VkCommandBuffer)> onSwapchainPass;
 
     bool Start(Window& window);
-    void Shutdown();
-
     bool CreateImGui(GLFWwindow* window);
+    bool Deserialize();
+    
+    void Shutdown();
     void DestroyImGui();
 
     bool BeginFrame();

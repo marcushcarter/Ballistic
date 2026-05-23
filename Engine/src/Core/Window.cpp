@@ -1,7 +1,5 @@
 #include "Window.h"
 
-#define IDR_WIN_ICON 101
-
 bool Window::Create(const char* title, uint32_t w, uint32_t h)
 {
     if (!glfwInit()) {
@@ -101,24 +99,26 @@ bool Window::SetIcon(const char* path)
     return true;
 }
 
-void Window::DefaultIcon()
+void Window::SetEmbeddedIcon(int resourceID)
 {
-    HRSRC res = FindResource(nullptr, MAKEINTRESOURCE(IDR_WIN_ICON), RT_RCDATA);
-    if (!res) { LOG_ERROR("Window failed to find default icon"); return; }
+    if (!glfwWindow) return;
+
+    HRSRC res = FindResource(nullptr, MAKEINTRESOURCE(resourceID), RT_RCDATA);
+    if (!res) { LOG_ERROR("Window failed to find resource: %d", resourceID); return; }
 
     HGLOBAL mem = LoadResource(nullptr, res);
-    if (!mem) { LOG_ERROR("Window failed to load default icon"); return; }
+    if (!mem) { LOG_ERROR("Window failed to load resource: %d", resourceID); return; }
 
     void* data = LockResource(mem);
-    if (!data) { LOG_ERROR("Window failed to lock default icon"); return; }
+    if (!data) { LOG_ERROR("Window failed to lock resource: %d", resourceID); return; }
 
     DWORD size = SizeofResource(nullptr, res);
 
-    int iconW, iconH, channels;
-    unsigned char* pixels = stbi_load_from_memory((const stbi_uc*)data, (int)size, &iconW, &iconH, &channels, 4);
-    if (!pixels) { LOG_ERROR("Window failed to load default icon from memory"); return; }
+    int w, h, channels;
+    stbi_uc* pixels = stbi_load_from_memory((const stbi_uc*)data, (int)size, &w, &h, &channels, 4);
+    if (!pixels) { LOG_ERROR("Window failed to decode icon from resource: %d", resourceID); return; }
 
-    GLFWimage icon{ iconW, iconH, pixels };
+    GLFWimage icon{ w, h, pixels };
     glfwSetWindowIcon(glfwWindow, 1, &icon);
     stbi_image_free(pixels);
 }
