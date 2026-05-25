@@ -30,3 +30,43 @@ void Application::Destroy()
     renderer.Shutdown();
     window.Destroy();
 }
+
+void Application::OpenProject(const std::filesystem::path& path)
+{
+    projectLoading = true;
+
+    loadFuture = std::async(std::launch::async, [this, path]() {
+        projectLoadFailed = !DeserializeProject(path);
+        projectLoading = false;
+    });
+
+    while (projectLoading && !window.ShouldClose()) {
+        window.PollEvents();
+        renderer.RenderLoadingScreen();
+    }
+
+    if (projectLoadFailed) {
+        projectLoadFailed = false;
+        CloseProject();
+        if (onProjectLoadFailed) onProjectLoadFailed();
+        LOG_ERROR("Failed to open project: %s", path.string().c_str());
+    }
+}
+
+bool Application::DeserializeProject(const std::filesystem::path& path)
+{
+    if (!std::filesystem::exists(path)) {
+        LOG_ERROR("Project path does not exist: %s", path.string().c_str());
+        return false;
+    }
+
+    // (void)path;
+    // std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    return false;
+}
+
+void Application::CloseProject()
+{
+    // destroy vulkan and scene stuff
+}

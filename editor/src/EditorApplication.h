@@ -18,16 +18,13 @@ struct EditorApplication : Application
     };
 
     std::vector<ProjectEntry> projects;
+    char filterBuffer[256] = {};
     int currentProjectIndex = -1;
     int selectedIndex = -1;
     int sortIndex = 0;
-    char filterBuffer[256] = {};
 
-    std::string pendingOpenPath;
+    std::filesystem::path pendingOpenPath;
     bool openProjectRequested = false;
-    
-    std::atomic<bool> projectLoading{false};
-    std::future<void> loadFuture;
 
     // struct Theme {
     //     ImVec4 background = ImVec4(0.05f, 0.05f, 0.05f, 1.0f);

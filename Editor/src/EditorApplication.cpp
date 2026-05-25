@@ -36,6 +36,10 @@ void EditorApplication::OnInit()
         renderer.logoLongImage.GetView(),
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     );
+
+    onProjectLoadFailed = [this]() {
+        inProjectManager = true;
+    };
     
     LOG_DEBUG("Editor initialized");
 }
@@ -52,24 +56,24 @@ void EditorApplication::OnUpdate()
         DrawEditor();
     }
 
+    ImGui::Render();
+    
     if (openProjectRequested) {
         openProjectRequested = false;
         inProjectManager = false;
-        projectLoading = true;
-        LOG_INFO("Opening project: %s", pendingOpenPath.c_str());
+        OpenProject(pendingOpenPath);
 
-        loadFuture = std::async(std::launch::async, [this]() {
-            std::this_thread::sleep_for(std::chrono::seconds(5));
-            projectLoading = false;
-        });
+        // if  (!projectLoadFailed && currentProjectIndex >= 0 && currentProjectIndex < (int)projects.size()) {
+        //     auto now = std::chrono::system_clock::now();
+        //     std::time_t t = std::chrono::system_clock::to_time_t(now);
+        //     std::tm tm{};
+        //     localtime_s(&tm, &t);
+        //     char buf[32];
+        //     strftime(buf, sizeof(buf), "%Y-%m-%d", &tm);
+        //     projects[currentProjectIndex].lastOpened = buf;
+        //     SaveProjects();
+        // }
     }
-
-    while (projectLoading && !window.ShouldClose()) {
-        window.PollEvents();
-        renderer.RenderLoadingScreen();
-    }
-
-    ImGui::Render();
 }
 
 void EditorApplication::OnShutdown()

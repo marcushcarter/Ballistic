@@ -13,8 +13,6 @@ void GameApplication::OnInit()
         renderer.blitPipeline.DescriptorSets(cmd, { renderer.finalImageInputSet.Get() });
         vkCmdDraw(cmd, 3, 1, 0, 0);
 
-        
-
         float imgW = (float)renderer.logoImage.extent.width  / (float)renderer.swapchain.extent.width;
         float imgH = (float)renderer.logoImage.extent.height / (float)renderer.swapchain.extent.height;
         Renderer::SplashPushConstants pc = { (1.0f - imgW) * 0.5f, (1.0f - imgH) * 0.5f, imgW, imgH };
@@ -24,7 +22,13 @@ void GameApplication::OnInit()
         renderer.splashPipeline.PushConstants(cmd, VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(pc), &pc);
         vkCmdDraw(cmd, 6, 1, 0, 0);
     };
-    
+
+    OpenProject(std::filesystem::current_path());
+
+    onProjectLoadFailed = [this]() {
+        Destroy();
+    };
+
     // window.SetFullscreen(true);
     
     LOG_DEBUG("Game initialized");
