@@ -31,6 +31,8 @@ using namespace glm;
 
 #include <IconsFontAwesome6.h>
 
+#include <tinyfiledialogs.h>
+
 #include <windows.h>
 #include <dwmapi.h>
 #include <iostream>
@@ -45,6 +47,7 @@ using namespace glm;
 #include <stdexcept>
 #include <future>
 #include <atomic>
+#include <shellapi.h>
 
 #include "Core/Log.h"
 #include "Core/Assert.h"

@@ -1,5 +1,6 @@
 #include "EditorApplication.h"
 #include "Resources.h"
+#include "FileDialog.h"
 
 void EditorApplication::OnInit()
 {
@@ -181,6 +182,7 @@ void EditorApplication::DrawProjectManager()
     ImGui::PopStyleColor(3);
     ImGui::Spacing();
     
+    bool openCreatePopup = false;
     float mainBoxHeight = ImGui::GetContentRegionAvail().y - bottomBarHeight;
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
     ImGui::BeginChild("MainBox", ImVec2(0, mainBoxHeight), ImGuiChildFlags_Borders);
@@ -190,9 +192,58 @@ void EditorApplication::DrawProjectManager()
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 5.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 8.0f));
     ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4.0f);
-    ImGui::Button(ICON_FA_PLUS " Create");
+    if (ImGui::Button(ICON_FA_PLUS " Create")) openCreatePopup = true;
     ImGui::SameLine();
-    ImGui::Button(ICON_FA_FOLDER " Import");
+    
+    if (ImGui::Button(ICON_FA_FOLDER " Import")) {
+        std::string picked = FileDialog("Import Project", nullptr, false, {
+        { L"Ballistic Project", L"*.blstc" },
+        { L"All Files", L"*.*" }
+    });
+
+    if (!picked.empty()) {
+        std::filesystem::path blstcPath(picked);
+        std::filesystem::path projectFolder = blstcPath.parent_path();
+
+        std::string name;
+        std::string engineVersion;
+        std::ifstream file(blstcPath);
+        std::string line;
+        while (std::getline(file, line)) {
+            auto eq = line.find('=');
+            if (eq == std::string::npos) continue;
+            std::string key = line.substr(0, eq);
+            std::string val = line.substr(eq + 1);
+            if (key == "name") name = val;
+            else if (key == "engine_version") engineVersion = val;
+        }
+
+        bool alreadyExists = false;
+        for (auto& p : projects) {
+            if (p.path == projectFolder.string()) { alreadyExists = true; break; }
+        }
+
+        if (!alreadyExists) {
+            ProjectEntry entry;
+            entry.name = name.empty() ? projectFolder.filename().string() : name;
+            entry.path = projectFolder.string();
+            entry.favorite = false;
+            entry.engineVersion = engineVersion.empty() ? std::to_string(APP_VERSION_MAJOR) + "." + std::to_string(APP_VERSION_MINOR) + "." + std::to_string(APP_VERSION_PATCH) : engineVersion;
+
+            auto now = std::chrono::system_clock::now();
+            std::time_t t = std::chrono::system_clock::to_time_t(now);
+            std::tm tm{};
+            localtime_s(&tm, &t);
+            char dateBuf[32];
+            strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%d %H:%M", &tm);
+            entry.lastOpened = dateBuf;
+
+            projects.push_back(entry);
+            SaveProjects();
+        }
+    }
+    }
+    
     ImGui::SameLine();
     float sortLabelW = ImGui::CalcTextSize("Sort:").x + ImGui::GetStyle().ItemSpacing.x;
     float filterWidth = ImGui::GetContentRegionAvail().x - sortWidth - sortLabelW - ImGui::GetStyle().ItemSpacing.x * 3;
@@ -223,14 +274,26 @@ void EditorApplication::DrawProjectManager()
     ImGui::Separator();
     bool hasSelection = (selectedIndex >= 0 && selectedIndex < (int)projects.size());
     if (!hasSelection) ImGui::BeginDisabled();
+    
     if (ImGui::Button(ICON_FA_PENCIL " Edit", ImVec2(-1, 0))) RequestOpenProject(selectedIndex);
+    
     if (ImGui::Button(ICON_FA_I_CURSOR " Rename", ImVec2(-1, 0))) {}
-    if (ImGui::Button(ICON_FA_TRASH " Remove", ImVec2(-1, 0))) {}
+    
+    if (ImGui::Button(ICON_FA_TRASH " Remove", ImVec2(-1, 0))) {
+        removeConfirmIndex = selectedIndex;
+    }
+
     if (!hasSelection) ImGui::EndDisabled();
     ImGui::PopStyleVar(2);
     ImGui::EndChild();
 
     ImGui::EndChild();
+
+    if (openCreatePopup)
+        ImGui::OpenPopup("CreateProject");
+
+    if (removeConfirmIndex >= 0)
+        ImGui::OpenPopup("RemoveProject");
 
     char versionText[128];
     snprintf(versionText, sizeof(versionText), "Ballistic Engine v%d.%d.%d.stable.official[%s]", APP_VERSION_MAJOR, APP_VERSION_MINOR, APP_VERSION_PATCH, APP_COMMIT);
@@ -238,6 +301,9 @@ void EditorApplication::DrawProjectManager()
     ImGui::SetCursorPosY(ImGui::GetWindowHeight() - ImGui::GetFrameHeightWithSpacing());
     ImGui::SetCursorPosX(ImGui::GetWindowWidth() - textW - ImGui::GetStyle().WindowPadding.x);
     ImGui::TextDisabled("%s", versionText);
+    
+    DrawCreateProjectPopup();
+    DrawRemoveProjectPopup();
     
     ImGui::End();
 }
@@ -268,6 +334,15 @@ void EditorApplication::DrawProjectList()
         if (sortIndex == 3) return projects[a].path < projects[b].path;
         return false;
     });
+
+    if (sortedIndices.empty()) {
+        ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.4f, 0.4f, 0.4f, 1.0f));
+        float textW = ImGui::CalcTextSize("No projects found.").x;
+        ImGui::SetCursorPosX((ImGui::GetContentRegionAvail().x - textW) * 0.5f);
+        ImGui::SetCursorPosY(ImGui::GetContentRegionAvail().y * 0.5f);
+        ImGui::TextUnformatted("No projects found.");
+        ImGui::PopStyleColor();
+    }
 
     ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
 
@@ -309,6 +384,7 @@ void EditorApplication::DrawProjectList()
         }
 
         ImGui::PushID(i);
+
         float starSize = ImGui::GetTextLineHeight();
         float starX = rowMin.x + pad * 0.5f;
         float starY = rowMin.y + (rowH - starSize) * 0.5f;
@@ -318,16 +394,18 @@ void EditorApplication::DrawProjectList()
             SaveProjects();
         }
         bool starHovered = ImGui::IsItemHovered();
+
         ImGui::SetCursorScreenPos(ImVec2(rowMin.x + starSize + pad, rowMin.y));
-        bool rowClicked = ImGui::InvisibleButton("##row", ImVec2(availW - starSize - pad, rowH));
-        bool rowDoubleClicked = ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered();
-        if (rowClicked) selectedIndex = i;
-        if (rowDoubleClicked) RequestOpenProject(i);
+        if (ImGui::InvisibleButton("##row", ImVec2(availW - starSize - pad, rowH)))
+            selectedIndex = i;
+        if (ImGui::IsMouseDoubleClicked(0) && ImGui::IsItemHovered())
+            RequestOpenProject(i);
+        
         ImGui::PopID();
 
-        dl->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(starX, starY), p.favorite ? IM_COL32(255,180,0,255) : starHovered ? IM_COL32(255,255,255,255) : IM_COL32(80,80,80,255), ICON_FA_STAR);
-
         float textX = contentX + thumbSize + pad;
+        
+        dl->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(starX, starY), p.favorite ? IM_COL32(255,180,0,255) : starHovered ? IM_COL32(255,255,255,255) : IM_COL32(80,80,80,255), ICON_FA_STAR);
         dl->AddText(ImGui::GetFont(), ImGui::GetFontSize(), ImVec2(textX, contentY), IM_COL32(220, 220, 220, 255), p.name.c_str());
         dl->AddText(ImGui::GetFont(), ImGui::GetFontSize() * 0.85f, ImVec2(textX, contentY + ImGui::GetTextLineHeight() + 3.0f), IM_COL32(110, 110, 110, 255), p.path.c_str());
 
@@ -341,6 +419,162 @@ void EditorApplication::DrawProjectList()
 
     ImGui::Dummy(ImVec2(0, rowPad));
     ImGui::PopStyleVar();
+}
+
+void EditorApplication::DrawCreateProjectPopup()
+{
+    bool open = true;
+    if (ImGui::BeginPopupModal("Create Project", &open, ImGuiWindowFlags_AlwaysAutoResize)) {
+
+        ImGui::Text("Project Name");
+        ImGui::SetNextItemWidth(-1);
+        ImGui::InputTextWithHint("##createname", "My Project", createNameBuffer, sizeof(createNameBuffer));
+
+        std::string folderName = createNameBuffer;
+        std::replace(folderName.begin(), folderName.end(), ' ', '_');
+        folderName.erase(std::remove_if(folderName.begin(), folderName.end(), [](char c) {
+            return !std::isalnum(c) && c != '_' && c != '-';
+        }), folderName.end());
+
+        std::filesystem::path projectFolder = std::filesystem::path(createPathBuffer) / folderName;
+
+        bool folderExistsOnDisk = !folderName.empty() && createPathBuffer[0] != '\0' && std::filesystem::exists(projectFolder);
+
+        bool alreadyRegistered = false;
+        for (auto& p : projects) {
+            if (std::filesystem::path(p.path) == projectFolder) {
+                alreadyRegistered = true;
+                break;
+            }
+        }
+
+        bool parentPathInvalid = createPathBuffer[0] != '\0' && !std::filesystem::exists(createPathBuffer);
+        bool pathInvalid = parentPathInvalid || folderExistsOnDisk || alreadyRegistered;
+
+        ImGui::Text("Project Path");
+        if (pathInvalid) ImGui::PushStyleColor(ImGuiCol_FrameBg, ImVec4(0.4f, 0.1f, 0.1f, 1.0f));
+        ImGui::SetNextItemWidth(-80);
+        ImGui::InputTextWithHint("##createpath", "C:/Projects", createPathBuffer, sizeof(createPathBuffer));
+        if (pathInvalid) ImGui::PopStyleColor();
+        ImGui::SameLine();
+        if (ImGui::Button("Browse", ImVec2(-1, 0))) {
+            std::string picked = FileDialog("Select Project Location", nullptr, true);
+            if (!picked.empty())
+                strncpy_s(createPathBuffer, sizeof(createPathBuffer), picked.c_str(), sizeof(createPathBuffer) - 1);
+        }
+
+        if (!folderName.empty() && createPathBuffer[0] != '\0') {
+            ImGui::TextDisabled("Folder: %s", projectFolder.string().c_str());
+        }
+
+        if (pathInvalid) {
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+            if (parentPathInvalid) ImGui::TextUnformatted("Path does not exist.");
+            else if (alreadyRegistered) ImGui::TextUnformatted("Project already registered.");
+            else ImGui::TextUnformatted("Project folder already exists.");
+            ImGui::PopStyleColor();
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        ImGui::Checkbox("Edit Now", &createEditNow);
+
+        bool canCreate = createNameBuffer[0] != '\0' && createPathBuffer[0] != '\0' && !folderName.empty() && !pathInvalid;
+
+        if (!canCreate) ImGui::BeginDisabled();
+        if (ImGui::Button("Create", ImVec2(120, 0))) {
+            std::filesystem::create_directories(projectFolder);
+
+            std::ofstream blstc(projectFolder / "project.blstc");
+            blstc << "name=" << createNameBuffer << "\n";
+            blstc << "engine_version=" << APP_VERSION_MAJOR << "." << APP_VERSION_MINOR << "." << APP_VERSION_PATCH << "\n";
+
+            ProjectEntry entry;
+            entry.name = createNameBuffer;
+            entry.path = projectFolder.string();
+            entry.favorite = false;
+            entry.engineVersion = std::to_string(APP_VERSION_MAJOR) + "." + std::to_string(APP_VERSION_MINOR) + "." + std::to_string(APP_VERSION_PATCH);
+
+            auto now = std::chrono::system_clock::now();
+            std::time_t t = std::chrono::system_clock::to_time_t(now);
+            std::tm tm{};
+            localtime_s(&tm, &t);
+            char dateBuf[32];
+            strftime(dateBuf, sizeof(dateBuf), "%Y-%m-%d %H:%M", &tm);
+            entry.lastOpened = dateBuf;
+
+            projects.push_back(entry);
+            SaveProjects();
+
+            if (createEditNow)
+                RequestOpenProject((int)projects.size() - 1);
+
+            createNameBuffer[0] = '\0';
+            createPathBuffer[0] = '\0';
+
+            ImGui::CloseCurrentPopup();
+        }
+        if (!canCreate) ImGui::EndDisabled();
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+            createNameBuffer[0] = '\0';
+            createPathBuffer[0] = '\0';
+            ImGui::CloseCurrentPopup();
+        }
+
+        ImGui::EndPopup();
+    }
+
+    if (!open) {
+        createNameBuffer[0] = '\0';
+        createPathBuffer[0] = '\0';
+    }
+}
+
+void EditorApplication::DrawRemoveProjectPopup()
+{
+    bool open = true;
+    if (ImGui::BeginPopupModal("RemoveProject", &open, ImGuiWindowFlags_AlwaysAutoResize)) {
+        if (removeConfirmIndex >= 0 && removeConfirmIndex < (int)projects.size()) {
+            ImGui::Text("Are you sure you want to remove:");
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(1,1,1,1), "%s", projects[removeConfirmIndex].name.c_str());
+            ImGui::TextDisabled("%s", projects[removeConfirmIndex].path.c_str());
+            ImGui::Spacing();
+            ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "This will delete the project folder from disk.");
+            ImGui::Spacing();
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            if (ImGui::Button("Yes, Delete", ImVec2(120, 0))) {
+                std::filesystem::path projectPath2 = projects[removeConfirmIndex].path;
+                if (std::filesystem::exists(projectPath2))
+                    std::filesystem::remove_all(projectPath2);
+
+                projects.erase(projects.begin() + removeConfirmIndex);
+                if (selectedIndex == removeConfirmIndex)
+                    selectedIndex = -1;
+                else if (selectedIndex > removeConfirmIndex)
+                    selectedIndex--;
+
+                removeConfirmIndex = -1;
+                SaveProjects();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120, 0))) {
+                removeConfirmIndex = -1;
+                ImGui::CloseCurrentPopup();
+            }
+        }
+        ImGui::EndPopup();
+    }
+
+    if (!open)
+        removeConfirmIndex = -1;
 }
 
 void EditorApplication::RequestOpenProject(int index)

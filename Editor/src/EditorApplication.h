@@ -20,8 +20,13 @@ struct EditorApplication : Application
     std::vector<ProjectEntry> projects;
     char filterBuffer[256] = {};
     int currentProjectIndex = -1;
+    int removeConfirmIndex = -1;
     int selectedIndex = -1;
     int sortIndex = 0;
+
+    char createNameBuffer[256] = {};
+    char createPathBuffer[512] = {};
+    bool createEditNow = true;
 
     std::filesystem::path pendingOpenPath;
     bool openProjectRequested = false;
@@ -43,12 +48,14 @@ struct EditorApplication : Application
     void OnShutdown() override;
 
     void SetupAppData();
-
     void LoadProjects();
     void SaveProjects();
+
     void DrawProjectManager();
     void DrawProjectList();
+    void DrawCreateProjectPopup();
+    void DrawRemoveProjectPopup();
     void RequestOpenProject(int index);
-
+    
     void DrawEditor();
 };

@@ -25,6 +25,8 @@ target_link_libraries(ballistic_engine
     PUBLIC imgui
     PUBLIC glm
     PUBLIC iconfontcppheaders
+    PUBLIC tinyfiledialogs
+    PUBLIC Shell32
 )
 
 target_precompile_headers(ballistic_engine PRIVATE src/pch.h)

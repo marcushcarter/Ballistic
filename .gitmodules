@@ -16,3 +16,6 @@
 [submodule "Thirdparty/iconfontcppheaders"]
 	path = Thirdparty/iconfontcppheaders
 	url = https://github.com/juliettef/IconFontCppHeaders
+[submodule "Thirdparty/tinyfiledialogs"]
+	path = Thirdparty/tinyfiledialogs
+	url = https://github.com/native-toolkit/tinyfiledialogs.git
