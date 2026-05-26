@@ -1,24 +1,24 @@
 [submodule "Thirdparty/glfw"]
-	path = Thirdparty/glfw
+	path = thirdparty/glfw
 	url = https://github.com/glfw/glfw.git
 [submodule "Thirdparty/stb"]
-	path = Thirdparty/stb
+	path = thirdparty/stb
 	url = https://github.com/nothings/stb.git
 [submodule "Thirdparty/glm"]
-	path = Thirdparty/glm
+	path = thirdparty/glm
 	url = https://github.com/g-truc/glm.git
 [submodule "Thirdparty/imgui"]
-	path = Thirdparty/imgui
+	path = thirdparty/imgui
 	url = https://github.com/ocornut/imgui.git
 [submodule "Thirdparty/vma"]
-	path = Thirdparty/vma
+	path = thirdparty/vma
 	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator.git
 [submodule "Thirdparty/iconfontcppheaders"]
-	path = Thirdparty/iconfontcppheaders
+	path = thirdparty/iconfontcppheaders
 	url = https://github.com/juliettef/IconFontCppHeaders
 [submodule "Thirdparty/tinyfiledialogs"]
-	path = Thirdparty/tinyfiledialogs
+	path = thirdparty/tinyfiledialogs
 	url = https://github.com/native-toolkit/tinyfiledialogs.git
 [submodule "Thirdparty/tomlplusplus"]
-	path = Thirdparty/tomlplusplus
+	path = thirdparty/tomlplusplus
 	url = https://github.com/marzer/tomlplusplus.git
