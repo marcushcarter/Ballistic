@@ -1,7 +1,8 @@
 #include "project_manager.h"
 #include "project/project.h"
-#include "file_dialog.h"
 #include "core/timestamp.h"
+#include "utils/file_dialog.h"
+#include "utils/process.h"
 
 void ProjectManager::Start(EditorWorkspace& ws, VkDescriptorSet tex, VkExtent2D extent)
 {
@@ -134,6 +135,22 @@ std::filesystem::path ProjectManager::Draw()
     if (ImGui::Button(ICON_FA_TRASH " Remove", ImVec2(-1, 0))) {
         removeConfirmIndex = selectedIndex;
     }
+
+    // bool canRun = hasSelection && std::filesystem::exists(registry.entries[selectedIndex].path / "ballistic_game.exe");
+    // if (!canRun) ImGui::BeginDisabled();
+    // if (ImGui::Button(ICON_FA_PLAY " Run", ImVec2(-1, 0))) {
+    //     LaunchProcess(registry.entries[selectedIndex].path / "ballistic_game.exe", registry.entries[selectedIndex].path);
+    // }
+    // if (!canRun) ImGui::EndDisabled();
+
+    bool canRun = hasSelection && std::filesystem::exists(std::filesystem::path(registry.entries[selectedIndex].path) / "ballistic_game.exe");
+    if (!canRun) ImGui::BeginDisabled();
+    if (ImGui::Button(ICON_FA_PLAY " Run", ImVec2(-1, 0))) {
+        std::filesystem::path projectRoot = registry.entries[selectedIndex].path;   // string → path here
+        std::wstring args = L"\"" + projectRoot.wstring() + L"\"";
+        LaunchProcess(projectRoot / "ballistic_game.exe", projectRoot, args);
+    }
+    if (!canRun) ImGui::EndDisabled();
 
     if (!hasSelection) ImGui::EndDisabled();
     ImGui::PopStyleVar(2);

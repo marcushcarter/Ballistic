@@ -1,8 +1,6 @@
-#pragma once
-#include "pch.h"
-#include <shobjidl.h>
+#include "file_dialog.h"
 
-inline std::string FileDialog(const char* title = "Select", const char* defaultPath = nullptr, bool pickFolder = false, const std::vector<std::pair<std::wstring, std::wstring>>& filters = {})
+std::string FileDialog(const char* title, const char* defaultPath, bool pickFolder, const std::vector<std::pair<std::wstring, std::wstring>>& filters)
 {
     std::string result;
 

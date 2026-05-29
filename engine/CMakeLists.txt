@@ -12,8 +12,8 @@ add_dependencies(ballistic_engine CompileEngineShaders)
 
 target_include_directories(ballistic_engine
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src"
-    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}"
     PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/res"
+    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}"
 )
 
 target_link_libraries(ballistic_engine

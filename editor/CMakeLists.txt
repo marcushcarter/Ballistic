@@ -9,6 +9,13 @@ add_executable(ballistic_editor_app WIN32
     ${BALLISTIC_ENGINE_RC_FILES}
 )
 
+target_include_directories(ballistic_engine
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/src"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/stub"
+    PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/res"
+    PUBLIC "${CMAKE_CURRENT_BINARY_DIR}"
+)
+
 target_link_libraries(ballistic_editor_app PRIVATE ballistic_engine)
 target_compile_definitions(ballistic_editor_app PRIVATE BALLISTIC_EDITOR)
 target_precompile_headers(ballistic_editor_app REUSE_FROM ballistic_engine)

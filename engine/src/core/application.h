@@ -33,7 +33,6 @@ struct Application
     virtual void OnInit() {}
     virtual void OnUpdate() {}
     virtual void OnShutdown() {}
-
     virtual void OnProjectOpened(const std::filesystem::path& path) { (void)path; }
     virtual void OnProjectClosed() {}
 

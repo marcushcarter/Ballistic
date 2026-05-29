@@ -1,12 +1,15 @@
 #pragma once
 #include "pch.h"
 #include "editor_context.h"
+#include "panels/viewport_panel.h"
 
 struct Project;
 struct Renderer;
 
 struct Editor
 {
+    ViewportPanel viewport;
+
     std::string activeIniPath;
     ImNodesEditorContext* renderGraphContext = nullptr;
 
@@ -20,12 +23,6 @@ struct Editor
     uint32_t addImageFixedW = 1920;
     uint32_t addImageFixedH = 1080;
 
-    uint32_t lastViewportW = 0;
-    uint32_t lastViewportH = 0;
-    uint32_t pendingViewportW = 0;
-    uint32_t pendingViewportH = 0;
-    bool viewportSizeChanged = false;
-
     void OpenProject(const std::filesystem::path& path);
     void CloseProject(const std::filesystem::path& path);
     void SaveLayout(const std::filesystem::path& path);
@@ -34,8 +31,6 @@ struct Editor
     void Update(EditorContext& ctx);
     void Draw(EditorContext& ctx);
 
-    void DrawDockSpace();
-    void DrawViewport(EditorContext& ctx);
     void DrawProjectPanel(EditorContext& ctx);
     void DrawRenderGraphPanel();
 };
