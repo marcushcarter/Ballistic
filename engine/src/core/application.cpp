@@ -24,11 +24,7 @@ void Application::Run()
         }
 
         OnUpdate();
-        
-        if (renderer.BeginFrame()) {
-            renderer.RecordSwapchainPass(renderer.onSwapchainPass);
-            renderer.EndFrame();
-        }
+        renderer.Render();
     }
 }
 
@@ -64,7 +60,6 @@ void Application::TickLoading()
         case ProjectLoader::Status::Succeeded: {
             loader.Reset();
             state = AppState::Active;
- 
             OnProjectOpened(project.path);
             return;
         }

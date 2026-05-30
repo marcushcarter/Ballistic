@@ -1,5 +1,6 @@
 #include "editor_application.h"
 #include "resources.h"
+#include "graphics/render_paths/editor_render_path.h"
 
 void EditorApplication::OnInit()
 {
@@ -37,10 +38,8 @@ void EditorApplication::OnInit()
         io.Fonts->AddFontFromMemoryTTF(faData, (int)faSize, 14.0f, &faCfg, faRanges);
         io.Fonts->Build();
     }
-
-    renderer.onSwapchainPass = [this](VkCommandBuffer cmd) {
-        imguiLayer.RecordDraw(cmd);
-    };
+    
+    renderer.SetRenderPath(std::make_unique<EditorRenderPath>(renderer, imguiLayer));
 
     finalTextureID = ImGui_ImplVulkan_AddTexture(
         renderer.linearSampler.Get(),

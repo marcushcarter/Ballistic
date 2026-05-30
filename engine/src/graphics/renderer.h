@@ -1,6 +1,8 @@
 #pragma once
 #include "pch.h"
 #include "vk/vk.h"
+#include "render_graph/render_graph.h"
+#include "render_graph/render_path.h"
 
 struct Window;
 struct Project;
@@ -40,7 +42,6 @@ struct Renderer
     std::vector<Image2D> swapchainImages;
     
     Allocator allocator;
-
     DescriptorPool descriptorPool;
 
     Image2D finalImage;
@@ -50,6 +51,9 @@ struct Renderer
     DescriptorSet finalImageInputSet;
     PipelineLayout blitPipelineLayout;
     GraphicsPipeline blitPipeline;
+
+    RenderGraph graph;
+    std::unique_ptr<RenderPath> renderPath;
 
     // std::vector<Sampler> samplers;
     // std::vector<RenderPass> renderPasses;
@@ -63,7 +67,6 @@ struct Renderer
     // std::vector<CommandBuffer> commandBuffers;
 
     std::function<void()> onViewportResized; // pretty much only for updatign the imgui final texture descriptor set
-    std::function<void(VkCommandBuffer)> onSwapchainPass;
 
     bool Start(Window& window);
     void Shutdown();
@@ -76,7 +79,11 @@ struct Renderer
     void ViewportResize();
     void ApplyVSync();
 
+    void SetRenderPath(std::unique_ptr<RenderPath> path) { renderPath = std::move(path); }
+
+    void Render();
+    void Render(RenderPath& path);
+
     bool BeginFrame();
-    void RecordSwapchainPass(const std::function<void(VkCommandBuffer)>& content);
     void EndFrame();
 };

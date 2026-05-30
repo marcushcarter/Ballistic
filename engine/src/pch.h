@@ -51,6 +51,7 @@ using namespace glm;
 #include <future>
 #include <atomic>
 #include <shellapi.h>
+#include <memory>
 
 #include "core/log.h"
 #include "core/assert.h"

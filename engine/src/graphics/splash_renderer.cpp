@@ -2,6 +2,7 @@
 #include "renderer.h"
 #include "shaders.h"
 #include "resources.h"
+#include "graphics/render_paths/splash_render_path.h"
 
 inline bool LoadRCImage(VkDevice device, const VkPhysicalDeviceMemoryProperties& props, VkCommandBuffer cmd, int resourceID, Image2D& outImage, Buffer& outStaging, const char* debugName = nullptr)
 {
@@ -49,20 +50,15 @@ inline bool LoadRCImage(VkDevice device, const VkPhysicalDeviceMemoryProperties&
 }
 
 bool SplashRenderer::Create(Renderer& renderer)
-{    
-    BE_ASSERT(splashSetLayout.Create(renderer.device.Get(), {
-        .bindings = { SetLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT) },
-        .debugName = "SplashSetLayout"
-    }));
-
+{
     BE_ASSERT(splashSet.Allocate(renderer.device.Get(), {
         .pool = renderer.descriptorPool.Get(),
-        .setLayout = splashSetLayout.Get(),
+        .setLayout = renderer.imageInputSetLayout.Get(),
         .debugName = "SplashSet"
     }));
 
     BE_ASSERT(splashPipelineLayout.Create(renderer.device.Get(), {
-        .setLayouts = { splashSetLayout.Get() },
+        .setLayouts = { renderer.imageInputSetLayout.Get() },
         .pushConstants = { PushConstant(VK_SHADER_STAGE_VERTEX_BIT, 0, sizeof(PushConstants)) },
         .debugName = "SplashPipelineLayout"
     }));
@@ -127,37 +123,36 @@ void SplashRenderer::Destroy()
 
     splashPipeline.Destroy();
     splashPipelineLayout.Destroy();
-    splashSetLayout.Destroy();
     
     LOG_DEBUG("Splash Renderer destroyed");
 }
 
+void SplashRenderer::RecordSplashContent(VkCommandBuffer cmd, Renderer& renderer)
+{
+    VkClearAttachment clearAttachment{};
+    clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    clearAttachment.colorAttachment = 0;
+    clearAttachment.clearValue.color = { { 0.05f, 0.05f, 0.05f, 1.0f } };
+
+    VkClearRect clearRect{};
+    clearRect.rect.offset = { 0, 0 };
+    clearRect.rect.extent = renderer.swapchain.extent;
+    clearRect.baseArrayLayer = 0;
+    clearRect.layerCount = 1;
+
+    vkCmdClearAttachments(cmd, 1, &clearAttachment, 1, &clearRect);
+
+    float scale  = 0.3f;
+    float aspect = (float)logoImage.extent.width / (float)logoImage.extent.height;
+    float imgH = scale;
+    float imgW = scale * aspect * ((float)renderer.swapchain.extent.height / (float)renderer.swapchain.extent.width);
+    RecordQuad(renderer, cmd, (1.0f - imgW) * 0.5f, (1.0f - imgH) * 0.5f, imgW, imgH);
+}
+
 bool SplashRenderer::RenderLoadingFrame(Renderer& renderer)
 {
-    if (!renderer.BeginFrame()) return false;
-
-    renderer.RecordSwapchainPass([this, &renderer](VkCommandBuffer cmd) {
-        VkClearAttachment clearAttachment{};
-        clearAttachment.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        clearAttachment.colorAttachment = 0;
-        clearAttachment.clearValue.color = { { 0.2f,     0.4f, 0.8f, 1.0f } };
-
-        VkClearRect clearRect{};
-        clearRect.rect.offset = { 0, 0 };
-        clearRect.rect.extent = renderer.swapchain.extent;
-        clearRect.baseArrayLayer = 0;
-        clearRect.layerCount = 1;
-
-        vkCmdClearAttachments(cmd, 1, &clearAttachment, 1, &clearRect);
-
-        float scale  = 0.3f;
-        float aspect = (float)logoImage.extent.width / (float)logoImage.extent.height;
-        float imgH = scale;
-        float imgW = scale * aspect * ((float)renderer.swapchain.extent.height / (float)renderer.swapchain.extent.width);
-        RecordQuad(renderer, cmd, (1.0f - imgW) * 0.5f, (1.0f - imgH) * 0.5f, imgW, imgH);
-    });
-
-    renderer.EndFrame();
+    SplashRenderPath path(renderer, *this);
+    renderer.Render(path);
     return true;
 }
 

@@ -3,6 +3,7 @@
 #include "project/project.h"
 #include "shaders.h"
 #include "resources.h"
+#include "render_graph/render_path.h"
 
 bool Renderer::Start(Window& window)
 {
@@ -55,6 +56,8 @@ bool Renderer::Start(Window& window)
     
     BE_ASSERT(allocator.Create(instance.Get(), physicalDevice.Get(), device.Get()));
 
+    graph.Start(device.Get(), physicalDevice.memory);
+
     BE_ASSERT(descriptorPool.Create(device.Get(), {
         .samplers = 1000,
         .combinedImageSamplers = 1000,
@@ -77,6 +80,8 @@ bool Renderer::Start(Window& window)
         .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
         .debugName = "FinalImage"
     }));
+
+    graph.SetViewport(finalImage.extent);
     
     BE_ASSERT(linearSampler.Create(device.Get(), {
         .magFilter = VK_FILTER_LINEAR,
@@ -135,6 +140,7 @@ void Renderer::Shutdown()
 
     linearSampler.Destroy();
     finalImage.Destroy();
+    graph.Shutdown();
 
     descriptorPool.Destroy();
     allocator.Destroy();
@@ -194,10 +200,9 @@ void Renderer::WindowResize()
 void Renderer::ViewportResize()
 {
     device.Wait();
-    
     finalImage.Resize({ pendingViewportW, pendingViewportH });
+    graph.SetViewport(finalImage.extent);
     finalImageInputSet.SetImages(0, { finalImage.GetView() }, linearSampler.Get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    
     if (onViewportResized) onViewportResized();
     viewportResizeRequested = false;
 }
@@ -210,6 +215,30 @@ void Renderer::ApplyVSync()
     for (uint32_t i = 0; i < frameCount; i++)
         swapchainImages[i].WrapSwapchainImage(device.Get(), rawImages[i], swapchain.format, swapchain.extent);
     vsyncChangeRequested = false;
+}
+
+void Renderer::Render()
+{
+    if (renderPath) Render(*renderPath);
+}
+
+void Renderer::Render(RenderPath& path)
+{
+    if (!BeginFrame()) return;
+
+    graph.Reset();
+    graph.Import("finalImage", &finalImage);
+    graph.Import("swapchain", &swapchainImages[imageIndex]);
+
+    path.Build(graph);
+    graph.Compile();
+    graph.Execute(cmd);
+
+    TransitionSet toPresent;
+    toPresent.AddImage(&swapchainImages[imageIndex], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, VK_IMAGE_ASPECT_COLOR_BIT);
+    toPresent.Transition(cmd);
+
+    EndFrame();
 }
 
 bool Renderer::BeginFrame()
@@ -231,64 +260,6 @@ bool Renderer::BeginFrame()
     cmd = commandBuffers[imageIndex].Get();
 
     return true;
-}
-
-void Renderer::RecordSwapchainPass(const std::function<void(VkCommandBuffer)>& content)
-{
-    // --- Final Image Purplification ---
-
-    TransitionSet toClear;
-    toClear.AddImage(&finalImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT);
-    toClear.Transition(cmd);
-
-    VkRenderingAttachmentInfo finalAttachment{};
-    finalAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-    finalAttachment.imageView = finalImage.GetView();
-    finalAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    finalAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    finalAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    finalAttachment.clearValue.color = { sinf((float)glfwGetTime()), 0.0f, 1.0f, 1.0f };
-
-    VkRenderingInfo finalRendering{};
-    finalRendering.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-    finalRendering.renderArea = { {0, 0}, finalImage.extent };
-    finalRendering.layerCount = 1;
-    finalRendering.colorAttachmentCount = 1;
-    finalRendering.pColorAttachments = &finalAttachment;
-
-    vkCmdBeginRendering(cmd, &finalRendering);
-    vkCmdEndRendering(cmd);
-
-    // --- Swapchain Pass ---
-
-    TransitionSet toAttachment;
-    toAttachment.AddImage(&swapchainImages[imageIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
-    toAttachment.AddImage(&finalImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT | VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT);
-    toAttachment.Transition(cmd);
-
-    VkRenderingAttachmentInfo colorAttachment{};
-    colorAttachment.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-    colorAttachment.imageView = swapchainImages[imageIndex].GetView();
-    colorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-    colorAttachment.clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
-
-    VkRenderingInfo renderingInfo{};
-    renderingInfo.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
-    renderingInfo.renderArea = { {0, 0}, swapchain.extent };
-    renderingInfo.layerCount = 1;
-    renderingInfo.colorAttachmentCount = 1;
-    renderingInfo.pColorAttachments = &colorAttachment;
-
-    vkCmdBeginRendering(cmd, &renderingInfo);
-    if (content) content(cmd);
-    vkCmdEndRendering(cmd);
-
-    TransitionSet toPresent;
-    toPresent.AddImage(&swapchainImages[imageIndex], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, VK_IMAGE_ASPECT_COLOR_BIT);
-    toPresent.Transition(cmd);
-
 }
 
 void Renderer::EndFrame()

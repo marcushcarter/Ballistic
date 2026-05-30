@@ -37,7 +37,6 @@
 
 #include "pass/render_pass.h"
 #include "pass/framebuffer.h"
-#include "pass/pass.h"
 #include "pass/transition_set.h"
 
 #include "misc/input_layout.h"
