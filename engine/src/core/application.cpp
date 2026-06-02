@@ -56,6 +56,7 @@ void Application::TickLoading()
         case ProjectLoader::Status::Succeeded: {
             loader.Reset();
             state = AppState::Active;
+            renderer.LoadProject(project.path);
             OnProjectOpened(project.path);
             return;
         }
@@ -69,6 +70,7 @@ void Application::TickLoading()
 
 void Application::CloseProject()
 {
+    renderer.UnloadProject();
     OnProjectClosed();
     project.Close();
 }

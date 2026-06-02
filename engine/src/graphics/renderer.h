@@ -44,20 +44,20 @@ struct Renderer
     std::vector<Image2D> swapchainImages;
     
     Allocator allocator;
-    DescriptorPool descriptorPool;
 
     Image2D finalImage;
     Image2D logoImage;
     Image2D logoLongImage;
     Sampler linearSampler;
 
+    GlobalDescriptorHeap globalDescriptorHeap;
+    PipelineLayout globalPipelineLayout;
+
+    PipelineCache pipelineCache;
     GraphicsPipeline blitPipeline;
 
     RenderGraph graph;
     std::unique_ptr<RenderPath> renderPath;
-
-    GlobalDescriptorHeap globalDescriptorHeap;
-    PipelineLayout globalPipelineLayout;
 
     // std::vector<Sampler> samplers;
     // std::vector<RenderPass> renderPasses;
@@ -74,6 +74,9 @@ struct Renderer
 
     bool Start(Window& window);
     void Shutdown();
+
+    bool LoadProject(const std::filesystem::path& path);
+    void UnloadProject();
 
     void RequestWindowResize(uint32_t w, uint32_t h);
     void RequestSceneResize(uint32_t w, uint32_t h);

@@ -9,7 +9,6 @@
 #include <GLFW/glfw3.h>
 #include <GLFW/glfw3native.h>
 #include <vk_mem_alloc.h>
-
 #include <shaderc/shaderc.hpp>
 
 #define GLM_FORCE_DEPTH_ZERO_TO_ONE

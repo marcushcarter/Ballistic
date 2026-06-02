@@ -3,3 +3,5 @@
 302 RCDATA "D:/Ballistic Games/ballistic-engine/engine/res/images/logo_long.png"
 500 RCDATA "D:/Ballistic Games/ballistic-engine/engine/res/fonts/fa-solid-900.otf"
 501 RCDATA "D:/Ballistic Games/ballistic-engine/engine/res/fonts/jetbrains-mono-regular.ttf"
+700 RCDATA "D:/Ballistic Games/ballistic-engine/engine/res/shaders/blit.frag"
+701 RCDATA "D:/Ballistic Games/ballistic-engine/engine/res/shaders/fullscreen.vert"

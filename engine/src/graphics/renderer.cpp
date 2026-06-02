@@ -1,7 +1,6 @@
 #include "renderer.h"
 #include "core/window.h"
 #include "project/project.h"
-#include "shaders.h"
 #include "resources.h"
 #include "render_graph/render_path.h"
 
@@ -101,21 +100,6 @@ bool Renderer::Start(Window& window)
     
     BE_ASSERT(allocator.Create(instance.Get(), physicalDevice.Get(), device.Get()));
 
-    // BE_ASSERT(descriptorPool.Create(device.Get(), {
-    //     .samplers = 1000,
-    //     .combinedImageSamplers = 1000,
-    //     .sampledImages = 1000,
-    //     .storageImages = 1000,
-    //     .uniformTexelBuffers = 1000,
-    //     .storageTexelBuffers = 1000,
-    //     .uniformBuffers = 1000,
-    //     .storageBuffers = 1000,
-    //     .uniformBuffersDynamic = 1000,
-    //     .storageBuffersDynamic = 1000,
-    //     .inputAttachments = 1000,
-    //     .debugName = "MainDescriptorPool"
-    // }));
-
     BE_ASSERT(finalImage.Create(device.Get(), allocator.Get(), {
         .extent = swapchain.extent,
         .format = VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -143,24 +127,6 @@ bool Renderer::Start(Window& window)
         .pushConstants = { PushConstant(VK_SHADER_STAGE_ALL, 0, 128) },
         .debugName = "GlobalPipelineLayout"
     }));
-
-    Shader vert{}, frag{};
-    BE_ASSERT(vert.Compile(device.Get(), VK_SHADER_STAGE_VERTEX_BIT, { SHADER_FULLSCREEN_VERT, SHADER_FULLSCREEN_VERT + SHADER_FULLSCREEN_VERT_SIZE / 4 }));    
-    BE_ASSERT(frag.Compile(device.Get(), VK_SHADER_STAGE_FRAGMENT_BIT, { SHADER_BLIT_FRAG, SHADER_BLIT_FRAG + SHADER_BLIT_FRAG_SIZE / 4 }));
-
-    PipelineRenderingInfo renderingInfo;
-    renderingInfo.colorFormats = { swapchain.format };
-    auto renderingCreateInfo = renderingInfo.Get();
-
-    BE_ASSERT(blitPipeline.Create(device.Get(), {
-        .pNext = &renderingCreateInfo,
-        .layout = globalPipelineLayout.Get(),
-        .shaderStages = { PipelineShaderStage(vert.Get(), vert.stage), PipelineShaderStage(frag.Get(), frag.stage) },
-        .debugName = "BlitPipeline"
-    }));
-
-    vert.Destroy();
-    frag.Destroy();
 
     {
         CommandPool transferCommandPool;
@@ -208,20 +174,18 @@ void Renderer::Shutdown()
 {
     device.Wait();
 
+    UnloadProject();
+
     graph.Shutdown();
-    
-    logoImage.Destroy();
-    logoLongImage.Destroy();
-    
-    blitPipeline.Destroy();
 
     globalPipelineLayout.Destroy();
     globalDescriptorHeap.Destroy();
 
     linearSampler.Destroy();
+    logoImage.Destroy();
+    logoLongImage.Destroy();
     finalImage.Destroy();
 
-    descriptorPool.Destroy();
     allocator.Destroy();
 
     for (uint32_t i = 0; i < frameCount; i++) {
@@ -241,6 +205,45 @@ void Renderer::Shutdown()
     instance.Destroy();
     
     LOG_DEBUG("Renderer shutdown");
+}
+
+bool Renderer::LoadProject(const std::filesystem::path& path)
+{
+    auto start = std::chrono::high_resolution_clock::now();
+    BE_ASSERT(pipelineCache.Load(device.Get(), path / ".ballistic/cache/pipelines/pipeline_cache.bin"));
+
+    Shader vert{}, frag{}, comp{};
+    BE_ASSERT(vert.LoadOrCompile(device.Get(), VK_SHADER_STAGE_VERTEX_BIT, LoadShaderSource(SHADER_FULLSCREEN_VERT), path / ".ballistic/cache/shaders/fullscreen.vert.spv", "fullscreen.vert"));    
+    BE_ASSERT(frag.LoadOrCompile(device.Get(), VK_SHADER_STAGE_FRAGMENT_BIT, LoadShaderSource(SHADER_BLIT_FRAG), path / ".ballistic/cache/shaders/blit.frag.spv", "blit.frag"));
+
+    PipelineRenderingInfo renderingInfo;
+    renderingInfo.colorFormats = { swapchain.format };
+    auto renderingCreateInfo = renderingInfo.Get();
+
+    BE_ASSERT(blitPipeline.Create(device.Get(), {
+        .pNext = &renderingCreateInfo,
+        .layout = globalPipelineLayout.Get(),
+        .cache = pipelineCache.Get(),
+        .shaderStages = { PipelineShaderStage(vert.Get(), vert.stage), PipelineShaderStage(frag.Get(), frag.stage) },
+        .debugName = "BlitPipeline"
+    }));
+
+    vert.Destroy();
+    frag.Destroy();
+    comp.Destroy();
+
+    BE_ASSERT(pipelineCache.Save(device.Get(), path / ".ballistic/cache/pipelines/pipeline_cache.bin"));
+    pipelineCache.Destroy();
+
+    auto end = std::chrono::high_resolution_clock::now();
+    LOG_INFO("Pipeline creation took %lld ms", std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+    return true;
+}
+
+void Renderer::UnloadProject()
+{
+    blitPipeline.Destroy();
+    LOG_INFO("PROJECT CLOSED NOW");
 }
 
 void Renderer::RequestWindowResize(uint32_t w, uint32_t h)
@@ -316,7 +319,7 @@ void Renderer::Render(RenderPath& path)
     
     VkDescriptorSet pDescriptorSets = { globalDescriptorHeap.GetSet() };
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, globalPipelineLayout.Get(), 0, 1, &pDescriptorSets, 0, nullptr);
-    // Every graphics/compute pipeline layout in the engine must declare globalHeap.GetLayout() as set 0. That's the cost of bindless: one reserved set index, engine-wide.
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, globalPipelineLayout.Get(), 0, 1, &pDescriptorSets, 0, nullptr);
 
     path.Build(graph);
     graph.Compile();

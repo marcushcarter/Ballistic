@@ -1,7 +1,7 @@
 #include "pipeline_cache.h"
 #include "graphics/vk/misc/utils.h"
 
-bool PipelineCache::Load(VkDevice device, const std::string& path)
+bool PipelineCache::Load(VkDevice device, const std::filesystem::path& path)
 {
     VK_CHECK_HANDLE(device, VkDevice);
 
@@ -37,7 +37,7 @@ bool PipelineCache::Load(VkDevice device, const std::string& path)
     return true;
 }
 
-bool PipelineCache::Save(VkDevice device, const std::string& path)
+bool PipelineCache::Save(VkDevice device, const std::filesystem::path& path)
 {
     VK_CHECK_HANDLE(device, VkDevice);
     VK_CHECK_HANDLE(cache, VkPipelineCache);
