@@ -34,6 +34,9 @@ struct PhysicalImage
     uint32_t mipLevels = 1, layers = 1;
     VkMemoryRequirements memReq = {};
 
+    uint32_t bindlessSampled = UINT32_MAX;
+    uint32_t bindlessStorage = UINT32_MAX;
+
     bool CreateUnbound(VkDevice device, const TransientImageDesc& desc, VkExtent2D resolved);
     bool BindAndView(VkDevice device, VmaAllocator vma, VmaAllocation backing, VkDeviceSize offset);
     void Destroy(VkDevice device);

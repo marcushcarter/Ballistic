@@ -15,7 +15,7 @@ static bool HasWrite(VkAccessFlags2 a)
     return (a & W) != 0;
 }
 
-void RenderGraph::Init(VkDevice d, VmaAllocator a) { device = d; vma = a; heap.Init(d, a); }
+void RenderGraph::Init(VkDevice d, VmaAllocator a, GlobalDescriptorHeap* h) { device = d; vma = a; heap.Init(d, a, h); }
 void RenderGraph::Shutdown() { heap.Shutdown(); }
 void RenderGraph::SetViewport(VkExtent2D e) { viewportExtent = e; }
 
@@ -428,7 +428,23 @@ VkImageView RenderGraph::GetImageView(ResourceHandle h)
     if (r.kind == Kind::ExternalImage && r.externalImage) return r.externalImage->GetView();
     return VK_NULL_HANDLE;
 }
- 
+
+uint32_t RenderGraph::GetBindlessSampled(ResourceHandle h)
+{
+    Resource& r = resources[h.resource];
+    if (r.kind == Kind::ExternalImage && r.externalImage) return r.externalImage->bindlessSampled;
+    if (r.kind == Kind::TransientImage) return heap.GetImage((uint32_t)r.heapSlot).bindlessSampled;
+    return UINT32_MAX;
+}
+
+uint32_t RenderGraph::GetBindlessStorage(ResourceHandle h)
+{    
+    Resource& r = resources[h.resource];
+    if (r.kind == Kind::ExternalImage && r.externalImage) return r.externalImage->bindlessStorage;
+    if (r.kind == Kind::TransientImage) return heap.GetImage((uint32_t)r.heapSlot).bindlessStorage;
+    return UINT32_MAX;
+}
+
 VkImage RenderGraph::GetVkImage(ResourceHandle h)
 {
     Resource& r = resources[h.resource];

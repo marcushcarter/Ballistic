@@ -25,6 +25,8 @@ struct Sampler
     VkSampler sampler = VK_NULL_HANDLE;
     const char* debugName = nullptr;
 
+    uint32_t bindlessSampler = UINT32_MAX;
+
     bool Create(VkDevice device, const SamplerDesc& desc);
     void Destroy();
 

@@ -2,6 +2,8 @@
 #include "pch.h"
 #include "transient_resource.h"
 
+struct GlobalDescriptorHeap;
+
 struct TransientRequest
 {
     enum class Kind : uint8_t { Image, Buffer };
@@ -31,12 +33,13 @@ struct TransientHeap
         std::vector<uint32_t> members;    
     };
 
-    struct RetiredImage { uint64_t frame; VkImage image; VkImageView view; };
+    struct RetiredImage { uint64_t frame; VkImage image; VkImageView view; uint32_t bindlessSampled; uint32_t bindlessStorage; };
     struct RetiredBuffer { uint64_t frame; VkBuffer buffer; };
     struct RetiredBacking { uint64_t frame; VmaAllocation backing; };
 
     VkDevice device = VK_NULL_HANDLE;
     VmaAllocator vma = VK_NULL_HANDLE;
+    GlobalDescriptorHeap* bindless = nullptr;
     uint64_t currentHash = 0;
     bool realizedOnce = false;
 
@@ -55,7 +58,7 @@ struct TransientHeap
         uint32_t bucketCount = 0, imageCount = 0, bufferCount = 0;
     } stats;
 
-    void Init(VkDevice device, VmaAllocator vma);
+    void Init(VkDevice device, VmaAllocator vma, GlobalDescriptorHeap* bindless);
     void Shutdown();
 
     bool Realize(const std::vector<TransientRequest>& requests, uint64_t frameIndex);

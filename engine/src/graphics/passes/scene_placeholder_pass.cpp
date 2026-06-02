@@ -7,14 +7,14 @@ ResourceHandle AddScenePlaceholderPass(RenderGraph& g)
     [&](RenderGraph& builder, PassData& data) {
         data.dst = builder.WriteImage("finalImage", VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
         
-        builder.CreateImage("Test Transient Image", {
-            .format = VK_FORMAT_R8G8B8A8_UNORM,
-            .usage  = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-            .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
-        },
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
-        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+        // builder.CreateImage("Test Transient Image", {
+        //     .format = VK_FORMAT_R8G8B8A8_UNORM,
+        //     .usage  = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+        //     .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
+        // },
+        // VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        // VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        // VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
         // builder.CreateBuffer("MyBuffer", {
         //     .size  = sizeof(float) * 1024,

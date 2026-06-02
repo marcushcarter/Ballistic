@@ -33,7 +33,10 @@ ResourceHandle AddBlitToSwapchainPass(RenderGraph& g, Renderer* renderer)
 
         ViewportScissor(cmd, 0, 0, (float)ext.width, (float)ext.height);
         renderer->blitPipeline.Bind(cmd);
-        renderer->blitPipeline.DescriptorSets(cmd, { renderer->finalImageInputSet.Get() });
+        struct { uint32_t srcIndex, samplerIndex; } pc;
+        pc.srcIndex = g.GetBindlessSampled(data.src);
+        pc.samplerIndex = renderer->linearSampler.bindlessSampler;
+        vkCmdPushConstants(cmd, renderer->globalPipelineLayout.Get(), VK_SHADER_STAGE_ALL, 0, sizeof(pc), &pc);
         vkCmdDraw(cmd, 3, 1, 0, 0);
 
         vkCmdEndRendering(cmd);

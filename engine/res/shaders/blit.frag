@@ -1,7 +1,10 @@
 #version 450
-layout(location = 0) in vec2 vUv;
+#extension GL_EXT_nonuniform_qualifier : require
+layout(set = 0, binding = 0) uniform texture2D uTextures[];
+layout(set = 0, binding = 2) uniform sampler uSamplers[];
+layout(push_constant) uniform PC { uint srcIndex; uint samplerIndex; } pc;
+layout(location = 0) in  vec2 vUV;
 layout(location = 0) out vec4 FragColor;
-layout(set = 0, binding = 0) uniform sampler2D image;
 void main() {
-    FragColor = texture(image, vUv);
+    FragColor = texture(sampler2D(uTextures[pc.srcIndex], uSamplers[pc.samplerIndex]), vUV);
 }

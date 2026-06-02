@@ -101,23 +101,20 @@ bool Renderer::Start(Window& window)
     
     BE_ASSERT(allocator.Create(instance.Get(), physicalDevice.Get(), device.Get()));
 
-    graph.Init(device.Get(), allocator.Get());
-    frameNumber = frameCount;
-
-    BE_ASSERT(descriptorPool.Create(device.Get(), {
-        .samplers = 1000,
-        .combinedImageSamplers = 1000,
-        .sampledImages = 1000,
-        .storageImages = 1000,
-        .uniformTexelBuffers = 1000,
-        .storageTexelBuffers = 1000,
-        .uniformBuffers = 1000,
-        .storageBuffers = 1000,
-        .uniformBuffersDynamic = 1000,
-        .storageBuffersDynamic = 1000,
-        .inputAttachments = 1000,
-        .debugName = "MainDescriptorPool"
-    }));
+    // BE_ASSERT(descriptorPool.Create(device.Get(), {
+    //     .samplers = 1000,
+    //     .combinedImageSamplers = 1000,
+    //     .sampledImages = 1000,
+    //     .storageImages = 1000,
+    //     .uniformTexelBuffers = 1000,
+    //     .storageTexelBuffers = 1000,
+    //     .uniformBuffers = 1000,
+    //     .storageBuffers = 1000,
+    //     .uniformBuffersDynamic = 1000,
+    //     .storageBuffersDynamic = 1000,
+    //     .inputAttachments = 1000,
+    //     .debugName = "MainDescriptorPool"
+    // }));
 
     BE_ASSERT(finalImage.Create(device.Get(), allocator.Get(), {
         .extent = swapchain.extent,
@@ -126,8 +123,6 @@ bool Renderer::Start(Window& window)
         .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
         .debugName = "FinalImage"
     }));
-
-    graph.SetViewport(finalImage.extent);
     
     BE_ASSERT(linearSampler.Create(device.Get(), {
         .magFilter = VK_FILTER_LINEAR,
@@ -136,20 +131,17 @@ bool Renderer::Start(Window& window)
         .debugName  = "LinearSampler"
     }));
 
-    BE_ASSERT(imageInputSetLayout.Create(device.Get(), {
-        .bindings = { SetLayoutBinding(0, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, VK_SHADER_STAGE_FRAGMENT_BIT) },
-        .debugName = "FinalImageInputSetLayout"
+    BE_ASSERT(globalDescriptorHeap.Create(device.Get(), {
+        .sampledImages = 16384,
+        .storageImages = 4096,
+        .samplers = 256,
+        .debugName = "GlobalDescriptorHeap"
     }));
 
-    BE_ASSERT(finalImageInputSet.Allocate(device.Get(), {
-        .pool = descriptorPool.Get(),
-        .setLayout = imageInputSetLayout.Get(),
-        .debugName = "FinalImageInputSet"
-    }));
-
-    BE_ASSERT(blitPipelineLayout.Create(device.Get(), {
-        .setLayouts = { imageInputSetLayout.Get() },
-        .debugName = "BlitPipelineLayout"
+    BE_ASSERT(globalPipelineLayout.Create(device.Get(), {
+        .setLayouts = { globalDescriptorHeap.GetLayout() },
+        .pushConstants = { PushConstant(VK_SHADER_STAGE_ALL, 0, 128) },
+        .debugName = "GlobalPipelineLayout"
     }));
 
     Shader vert{}, frag{};
@@ -162,7 +154,7 @@ bool Renderer::Start(Window& window)
 
     BE_ASSERT(blitPipeline.Create(device.Get(), {
         .pNext = &renderingCreateInfo,
-        .layout = blitPipelineLayout.Get(),
+        .layout = globalPipelineLayout.Get(),
         .shaderStages = { PipelineShaderStage(vert.Get(), vert.stage), PipelineShaderStage(frag.Get(), frag.stage) },
         .debugName = "BlitPipeline"
     }));
@@ -170,35 +162,44 @@ bool Renderer::Start(Window& window)
     vert.Destroy();
     frag.Destroy();
 
-    CommandPool transferCommandPool;
-    BE_ASSERT(transferCommandPool.Create(device.Get(), {
-        .queueFamilyIndex = transferQueue.familyIndex,
-        .transient = true,
-        .debugName = "TransferCommandPool"
-    }));
-    
-    CommandBuffer transferCmd;
-    BE_ASSERT(transferCmd.Allocate(device.Get(), transferCommandPool.Get(), false, "SplashTransferCommandBuffer"));
-    transferCmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    {
+        CommandPool transferCommandPool;
+        BE_ASSERT(transferCommandPool.Create(device.Get(), {
+            .queueFamilyIndex = transferQueue.familyIndex,
+            .transient = true,
+            .debugName = "TransferCommandPool"
+        }));
+        
+        CommandBuffer transferCmd;
+        BE_ASSERT(transferCmd.Allocate(device.Get(), transferCommandPool.Get(), false, "SplashTransferCommandBuffer"));
+        transferCmd.Begin(VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-    std::vector<Buffer> stagingBuffers;
-    
-    Buffer& logoStaging = stagingBuffers.emplace_back();
-    BE_ASSERT(LoadRCImage(device.Get(), allocator.Get(), transferCmd.Get(), IMG_LOGO_PNG, logoImage, logoStaging, "LogoImage"));
+        std::vector<Buffer> stagingBuffers;
+        
+        Buffer& logoStaging = stagingBuffers.emplace_back();
+        BE_ASSERT(LoadRCImage(device.Get(), allocator.Get(), transferCmd.Get(), IMG_LOGO_PNG, logoImage, logoStaging, "LogoImage"));
 
-    Buffer& logoLongStaging = stagingBuffers.emplace_back();
-    BE_ASSERT(LoadRCImage(device.Get(), allocator.Get(), transferCmd.Get(), IMG_LOGO_LONG_PNG, logoLongImage, logoLongStaging, "LogoLongImage"));
-    
-    transferCmd.End();
-    transferQueue.Submit(transferCmd.Get());
-    transferQueue.WaitIdle();
+        Buffer& logoLongStaging = stagingBuffers.emplace_back();
+        BE_ASSERT(LoadRCImage(device.Get(), allocator.Get(), transferCmd.Get(), IMG_LOGO_LONG_PNG, logoLongImage, logoLongStaging, "LogoLongImage"));
+        
+        transferCmd.End();
+        transferQueue.Submit(transferCmd.Get());
+        transferQueue.WaitIdle();
 
-    for (auto& s : stagingBuffers) s.Destroy();
-    transferCmd.Free();
-    transferCommandPool.Destroy();
-    
-    finalImageInputSet.SetImages(0, { finalImage.GetView() }, linearSampler.Get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    
+        for (auto& s : stagingBuffers) s.Destroy();
+        transferCmd.Free();
+        transferCommandPool.Destroy();
+    }
+
+    finalImage.bindlessSampled = globalDescriptorHeap.RegisterSampledImage(finalImage.GetView());
+    finalImage.bindlessStorage = globalDescriptorHeap.RegisterStorageImage(finalImage.GetView());
+    linearSampler.bindlessSampler = globalDescriptorHeap.RegisterSampler(linearSampler.Get());
+
+    graph.Init(device.Get(), allocator.Get(), &globalDescriptorHeap);
+    frameNumber = frameCount;
+
+    graph.SetViewport(finalImage.extent);
+
     LOG_DEBUG("Renderer started");
     return true;
 }
@@ -206,17 +207,19 @@ bool Renderer::Start(Window& window)
 void Renderer::Shutdown()
 {
     device.Wait();
+
+    graph.Shutdown();
     
     logoImage.Destroy();
     logoLongImage.Destroy();
-
+    
     blitPipeline.Destroy();
-    blitPipelineLayout.Destroy();
-    imageInputSetLayout.Destroy();
+
+    globalPipelineLayout.Destroy();
+    globalDescriptorHeap.Destroy();
 
     linearSampler.Destroy();
     finalImage.Destroy();
-    graph.Shutdown();
 
     descriptorPool.Destroy();
     allocator.Destroy();
@@ -276,9 +279,14 @@ void Renderer::WindowResize()
 void Renderer::ViewportResize()
 {
     device.Wait();
+    
     finalImage.Resize({ pendingViewportW, pendingViewportH });
     graph.SetViewport(finalImage.extent);
-    finalImageInputSet.SetImages(0, { finalImage.GetView() }, linearSampler.Get(), VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    globalDescriptorHeap.FreeSampledImage(finalImage.bindlessSampled);
+    globalDescriptorHeap.FreeStorageImage(finalImage.bindlessStorage);
+    finalImage.bindlessSampled = globalDescriptorHeap.RegisterSampledImage(finalImage.GetView());
+    finalImage.bindlessStorage = globalDescriptorHeap.RegisterStorageImage(finalImage.GetView());
+        
     if (onViewportResized) onViewportResized();
     viewportResizeRequested = false;
 }
@@ -305,6 +313,10 @@ void Renderer::Render(RenderPath& path)
     graph.BeginFrame(frameNumber, frameNumber - frameCount);
     graph.ImportImage("finalImage", &finalImage);
     graph.ImportImage("swapchain", &swapchainImages[imageIndex]);
+    
+    VkDescriptorSet pDescriptorSets = { globalDescriptorHeap.GetSet() };
+    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, globalPipelineLayout.Get(), 0, 1, &pDescriptorSets, 0, nullptr);
+    // Every graphics/compute pipeline layout in the engine must declare globalHeap.GetLayout() as set 0. That's the cost of bindless: one reserved set index, engine-wide.
 
     path.Build(graph);
     graph.Compile();

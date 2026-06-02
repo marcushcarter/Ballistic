@@ -3,6 +3,7 @@
 #include "vk/vk.h"
 #include "render_graph/render_graph.h"
 #include "render_graph/render_path.h"
+#include "render_graph/global_descriptor_heap.h"
 
 struct Window;
 struct Project;
@@ -50,13 +51,13 @@ struct Renderer
     Image2D logoLongImage;
     Sampler linearSampler;
 
-    DescriptorSetLayout imageInputSetLayout;
-    DescriptorSet finalImageInputSet;
-    PipelineLayout blitPipelineLayout;
     GraphicsPipeline blitPipeline;
 
     RenderGraph graph;
     std::unique_ptr<RenderPath> renderPath;
+
+    GlobalDescriptorHeap globalDescriptorHeap;
+    PipelineLayout globalPipelineLayout;
 
     // std::vector<Sampler> samplers;
     // std::vector<RenderPass> renderPasses;

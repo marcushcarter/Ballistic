@@ -24,6 +24,9 @@ struct Image2D
     VkImageUsageFlags usage = 0;
     uint32_t mipLevels = 1;
     uint32_t layers = 1;
+
+    uint32_t bindlessSampled = UINT32_MAX;
+    uint32_t bindlessStorage = UINT32_MAX;
     
     VkPipelineStageFlags stage = 0;
     VkAccessFlags access = 0;

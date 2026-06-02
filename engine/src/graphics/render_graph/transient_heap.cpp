@@ -1,4 +1,5 @@
 #include "transient_heap.h"
+#include "global_descriptor_heap.h"
 
 static VkDeviceSize AlignUp(VkDeviceSize v, VkDeviceSize a) { return (v + a - 1) & ~(a - 1); }
 
@@ -29,7 +30,7 @@ static uint64_t HashRequests(const std::vector<TransientRequest>& reqs)
     return h;
 }
 
-void TransientHeap::Init(VkDevice d, VmaAllocator a) { device = d; vma = a; }
+void TransientHeap::Init(VkDevice d, VmaAllocator a, GlobalDescriptorHeap* h) { device = d; vma = a; bindless = h; }
 
 void TransientHeap::Shutdown()
 {
@@ -68,13 +69,13 @@ bool TransientHeap::Realize(const std::vector<TransientRequest>& requests, uint6
             PhysicalImage img{};
             if (!img.CreateUnbound(device, r.imageDesc, r.extent)) return false;
             s.physIndex = (uint32_t)images.size();
-            s.memReq    = img.memReq;
+            s.memReq = img.memReq;
             images.push_back(img);
         } else {
             PhysicalBuffer buf{};
             if (!buf.CreateUnbound(device, r.bufferDesc)) return false;
             s.physIndex = (uint32_t)buffers.size();
-            s.memReq    = buf.memReq;
+            s.memReq = buf.memReq;
             buffers.push_back(buf);
         }
     }
@@ -100,6 +101,11 @@ bool TransientHeap::Realize(const std::vector<TransientRequest>& requests, uint6
         if (s.kind == TransientRequest::Kind::Image) {
             if (!images[s.physIndex].BindAndView(device, vma, backing, s.offset)) return false;
             stats.imageCount++;
+
+            PhysicalImage& img = images[s.physIndex];
+            const VkImageUsageFlags usage = requests[i].imageDesc.usage;
+            if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) img.bindlessSampled = bindless->RegisterSampledImage(img.view);
+            if (usage & VK_IMAGE_USAGE_STORAGE_BIT) img.bindlessStorage = bindless->RegisterStorageImage(img.view);
         } else {
             if (!buffers[s.physIndex].Bind(vma, backing, s.offset)) return false;
             stats.bufferCount++;
@@ -168,7 +174,7 @@ bool TransientHeap::EnsureBacking(Bucket& b)
 
 void TransientHeap::RetireCurrent(uint64_t frameIndex)
 {
-    for (auto& img : images) retiredImages.push_back({ frameIndex, img.image, img.view });
+    for (auto& img : images) retiredImages.push_back({ frameIndex, img.image, img.view, img.bindlessSampled, img.bindlessStorage });
     for (auto& buf : buffers) retiredBuffers.push_back({ frameIndex, buf.buffer });
     for (auto& b : buckets) if (b.backing) retiredBackings.push_back({ frameIndex, b.backing });
     images.clear();
@@ -187,9 +193,15 @@ void TransientHeap::Recycle(uint64_t completed)
         vec.resize(w);
     };
     
-    sweep(retiredImages,  [&](RetiredImage& e)  { if (e.view) vkDestroyImageView(device, e.view, nullptr); if (e.image) vkDestroyImage(device, e.image, nullptr); });
+    sweep(retiredImages, [&](RetiredImage& e) {
+        bindless->FreeSampledImage(e.bindlessSampled);
+        bindless->FreeStorageImage(e.bindlessStorage);
+        if (e.view) vkDestroyImageView(device, e.view, nullptr);
+        if (e.image) vkDestroyImage(device, e.image, nullptr);
+    });
+    
     sweep(retiredBuffers, [&](RetiredBuffer& e) { if (e.buffer) vkDestroyBuffer(device, e.buffer, nullptr); });
-    sweep(retiredBackings,[&](RetiredBacking& e){ if (e.backing) vmaFreeMemory(vma, e.backing); });
+    sweep(retiredBackings, [&](RetiredBacking& e){ if (e.backing) vmaFreeMemory(vma, e.backing); });
 }
 
 void TransientHeap::DumpStats() const
