@@ -1,10 +1,9 @@
 #include "descriptor_pool.h"
-#include "graphics/vk/misc/utils.h"
+#include <vector>
+// #include "graphics/vk/misc/utils.h"
 
 bool DescriptorPool::Create(VkDevice device, const DescriptorPoolDesc& desc)
-{
-    VK_CHECK_HANDLE(device, VkDevice);
-    
+{    
     Destroy();
     debugName = desc.debugName;
     deviceHandle = device;
@@ -32,7 +31,7 @@ bool DescriptorPool::Create(VkDevice device, const DescriptorPoolDesc& desc)
     add(VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, desc.inputAttachments);
 
     if (poolSizes.empty()) {
-        LOG_ERROR("Descriptor Pool create failed: %s - no pool sizes specified", debugName ? debugName : "Unnamed");
+        // LOG_ERROR("Descriptor Pool create failed: %s - no pool sizes specified", debugName ? debugName : "Unnamed");
         return false;
     }
 
@@ -48,21 +47,20 @@ bool DescriptorPool::Create(VkDevice device, const DescriptorPoolDesc& desc)
     createInfo.pPoolSizes = poolSizes.data();
 
     if (vkCreateDescriptorPool(deviceHandle, &createInfo, nullptr, &descriptorPool) != VK_SUCCESS) {
-        LOG_ERROR("Descriptor Pool create failed: %s - vkCreateDescriptorPool", debugName ? debugName : "Unnamed");
+        // LOG_ERROR("Descriptor Pool create failed: %s - vkCreateDescriptorPool", debugName ? debugName : "Unnamed");
         return false;
     }
 
-    SetObjectName(device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)descriptorPool, debugName);
-    LOG_DEBUG("Descriptor Pool created: %s (%u max sets)", debugName ? debugName : "Unnamed", maxSets);
+    // SetObjectName(device, VK_OBJECT_TYPE_DESCRIPTOR_POOL, (uint64_t)descriptorPool, debugName);
+    // LOG_DEBUG("Descriptor Pool created: %s (%u max sets)", debugName ? debugName : "Unnamed", maxSets);
     return true;
 }
 
 void DescriptorPool::Destroy()
 {
-    if (descriptorPool != VK_NULL_HANDLE) {
+    if (descriptorPool) {
         vkDestroyDescriptorPool(deviceHandle, descriptorPool, nullptr);
         descriptorPool = VK_NULL_HANDLE;
-        deviceHandle = VK_NULL_HANDLE;
-        LOG_DEBUG("Descriptor Pool destroyed: %s", debugName ? debugName : "Unnamed");
+        // LOG_DEBUG("Descriptor Pool destroyed: %s", debugName ? debugName : "Unnamed");
     }
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include "pch.h"
 #include "pipeline.h"
+#include <vector>
 
 inline VkVertexInputBindingDescription VertexBinding(uint32_t binding, uint32_t stride, VkVertexInputRate rate = VK_VERTEX_INPUT_RATE_VERTEX)
 {
@@ -26,13 +26,12 @@ struct PipelineRenderingInfo
     std::vector<VkFormat> colorFormats;
     VkFormat depthFormat = VK_FORMAT_UNDEFINED;
 
-    VkPipelineRenderingCreateInfo Get() const
-    {
+    VkPipelineRenderingCreateInfo Get() const {
         VkPipelineRenderingCreateInfo info{};
-        info.sType                   = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
-        info.colorAttachmentCount    = static_cast<uint32_t>(colorFormats.size());
+        info.sType = VK_STRUCTURE_TYPE_PIPELINE_RENDERING_CREATE_INFO;
+        info.colorAttachmentCount = static_cast<uint32_t>(colorFormats.size());
         info.pColorAttachmentFormats = colorFormats.data();
-        info.depthAttachmentFormat   = depthFormat;
+        info.depthAttachmentFormat = depthFormat;
         return info;
     }
 };

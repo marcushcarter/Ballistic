@@ -1,4 +1,6 @@
 #include "file_dialog.h"
+#include <shobjidl.h>
+#include <filesystem>
 
 std::string FileDialog(const char* title, const char* defaultPath, bool pickFolder, const std::vector<std::pair<std::wstring, std::wstring>>& filters)
 {

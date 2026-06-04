@@ -30,6 +30,7 @@ target_link_libraries(ballistic_engine
     PUBLIC tomlplusplus
     PUBLIC Shell32
     PUBLIC imnodes
+    PRIVATE dwmapi
 )
 
-target_precompile_headers(ballistic_engine PRIVATE src/pch.h)
+target_precompile_headers(ballistic_engine PRIVATE pch.h)

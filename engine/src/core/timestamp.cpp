@@ -1,4 +1,6 @@
 #include "timestamp.h"
+#include <chrono>
+#include <ctime>
 
 std::string FormatTimestampNow()
 {

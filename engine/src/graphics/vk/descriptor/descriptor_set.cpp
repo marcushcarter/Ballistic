@@ -1,11 +1,8 @@
 #include "descriptor_set.h"
-#include "graphics/vk/misc/utils.h"
+// #include "graphics/vk/misc/utils.h"
 
 bool DescriptorSet::Allocate(VkDevice device, const DescriptorSetDesc& desc)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-    VK_CHECK_HANDLE(desc.setLayout, VkDescriptorSetLayout);
-
     debugName = desc.debugName;
     deviceHandle = device;
 
@@ -16,12 +13,12 @@ bool DescriptorSet::Allocate(VkDevice device, const DescriptorSetDesc& desc)
     allocInfo.pSetLayouts = &desc.setLayout;
 
     if (vkAllocateDescriptorSets(device, &allocInfo, &set) != VK_SUCCESS) {
-        LOG_ERROR("Descriptor Set create failed: %s - vkAllocateDescriptorSets", debugName ? debugName : "Unnamed");
+        // LOG_ERROR("Descriptor Set create failed: %s - vkAllocateDescriptorSets", debugName ? debugName : "Unnamed");
         return false;
     }
 
-    SetObjectName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)set, debugName);
-    LOG_DEBUG("Descriptor Set allocated: %s", debugName ? debugName : "Unnamed");
+    // SetObjectName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)set, debugName);
+    // LOG_DEBUG("Descriptor Set allocated: %s", debugName ? debugName : "Unnamed");
     return true;
 }
 

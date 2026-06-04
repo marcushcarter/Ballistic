@@ -1,5 +1,8 @@
 #pragma once
-#include "pch.h"
+#include <vulkan/vulkan.h>
+#include <filesystem>
+#include <vector>
+#include <string>
 
 std::vector<uint32_t> LoadSPV(const std::filesystem::path& path);
 std::string LoadShaderSource(int resourceID);

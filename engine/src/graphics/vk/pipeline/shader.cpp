@@ -1,25 +1,27 @@
 #include "shader.h"
+#include <fstream>
+#include <shaderc/shaderc.hpp>
 
 std::vector<uint32_t> LoadSPV(const std::filesystem::path& path)
 {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
     if (!file.is_open()) {
-        LOG_DEBUG("[VULKAN] Failed to open SPV file: %s", std::filesystem::absolute(path).string().c_str());
+        // LOG_DEBUG("[VULKAN] Failed to open SPV file: %s", std::filesystem::absolute(path).string().c_str());
         return {};
     }
     std::streamsize size = file.tellg();
     if (size <= 0) {
-        LOG_DEBUG("[VULKAN] Invalid SPV file size: %s", std::filesystem::absolute(path).string().c_str());
+        // LOG_DEBUG("[VULKAN] Invalid SPV file size: %s", std::filesystem::absolute(path).string().c_str());
         return {};
     }
     if (size % 4 != 0) {
-        LOG_DEBUG("[VULKAN] SPV file size not multiple of 4 bytes: %s", std::filesystem::absolute(path).string().c_str());
+        // LOG_DEBUG("[VULKAN] SPV file size not multiple of 4 bytes: %s", std::filesystem::absolute(path).string().c_str());
         return {};
     }
     std::vector<uint32_t> out(size / 4);
     file.seekg(0);
     if (!file.read(reinterpret_cast<char*>(out.data()), size)) {
-        LOG_DEBUG("[VULKAN] Failed reading SPV file: %s", std::filesystem::absolute(path).string().c_str());
+        // LOG_DEBUG("[VULKAN] Failed reading SPV file: %s", std::filesystem::absolute(path).string().c_str());
         return {};
     }
     return out;
@@ -28,11 +30,11 @@ std::vector<uint32_t> LoadSPV(const std::filesystem::path& path)
 std::string LoadShaderSource(int resourceID)
 {
     HRSRC res = FindResource(nullptr, MAKEINTRESOURCE(resourceID), RT_RCDATA);
-    if (!res) { LOG_ERROR("LoadShaderSource: resource %d not found", resourceID); return {}; }
+    if (!res) { /* LOG_ERROR("LoadShaderSource: resource %d not found", resourceID); */ return {}; }
     HGLOBAL mem = LoadResource(nullptr, res);
     const char* data = (const char*)LockResource(mem);
     DWORD size = SizeofResource(nullptr, res);
-    if (!data || size == 0) { LOG_ERROR("LoadShaderSource: resource %d empty", resourceID); return {}; }
+    if (!data || size == 0) { /* LOG_ERROR("LoadShaderSource: resource %d empty", resourceID); */ return {}; }
     return std::string(data, size);
 }
 
@@ -49,16 +51,10 @@ static shaderc_shader_kind ToKind(VkShaderStageFlagBits s)
     }
 }
 
-static size_t HashGLSL(const std::string& glsl)
-{
-    return std::hash<std::string>{}(glsl);
-}
+static size_t HashGLSL(const std::string& glsl) { return std::hash<std::string>{}(glsl); }
 
 bool Shader::Compile(VkDevice device, VkShaderStageFlagBits inStage, const std::vector<uint32_t>& code)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-    CHECK_PTR(code.data(), "SPIR-V code is empty");
-
     Destroy();
     stage = inStage;
     spirv = code;
@@ -70,7 +66,7 @@ bool Shader::Compile(VkDevice device, VkShaderStageFlagBits inStage, const std::
     createInfo.pCode = spirv.data();
 
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shader) != VK_SUCCESS) {
-        LOG_ERROR("Failed to create Vulkan shader module");
+        // LOG_ERROR("Failed to create Vulkan shader module");
         return false;
     }
 
@@ -79,8 +75,6 @@ bool Shader::Compile(VkDevice device, VkShaderStageFlagBits inStage, const std::
 
 bool Shader::LoadOrCompile(VkDevice device, VkShaderStageFlagBits inStage, const std::string& glsl, const std::filesystem::path& cacheFile, const char* name)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-
     Destroy();
     stage = inStage;
     cachePath = cacheFile;
@@ -116,7 +110,7 @@ bool Shader::LoadOrCompile(VkDevice device, VkShaderStageFlagBits inStage, const
 
 void Shader::Destroy()
 {
-    if (shader != VK_NULL_HANDLE) {
+    if (shader) {
         vkDestroyShaderModule(deviceHandle, shader, nullptr);
         shader = VK_NULL_HANDLE;
     }
@@ -150,7 +144,7 @@ bool Shader::CompileFromGLSL(const std::string& glsl, const char* name)
     options.SetOptimizationLevel(shaderc_optimization_level_performance);
     auto result = compiler.CompileGlslToSpv(glsl, ToKind(stage), name, options);
     if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-        LOG_ERROR("Shader compile failed: %s\n%s", name, result.GetErrorMessage().c_str());
+        // LOG_ERROR("Shader compile failed: %s\n%s", name, result.GetErrorMessage().c_str());
         return false;
     }
     spirv = { result.cbegin(), result.cend() };
@@ -162,7 +156,7 @@ bool Shader::CreateModule(VkDevice device)
     deviceHandle = device;
 
     if (spirv.empty()) {
-        LOG_ERROR("Empty SPIR-V");
+        // LOG_ERROR("Empty SPIR-V");
         return false;
     }
 
@@ -172,7 +166,7 @@ bool Shader::CreateModule(VkDevice device)
     createInfo.pCode = spirv.data();
 
     if (vkCreateShaderModule(device, &createInfo, nullptr, &shader) != VK_SUCCESS) {
-        LOG_ERROR("Shader: vkCreateShaderModule failed");
+        // LOG_ERROR("Shader: vkCreateShaderModule failed");
         return false;
     }
 

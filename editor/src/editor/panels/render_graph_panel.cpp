@@ -2,6 +2,8 @@
 #include "editor/context.h"
 #include "graphics/renderer.h"
 #include "graphics/render_graph/render_graph.h"
+#include <imgui.h>
+#include <IconsFontAwesome6.h>
 
 static const char* ImageLayoutShortName(VkImageLayout layout)
 {

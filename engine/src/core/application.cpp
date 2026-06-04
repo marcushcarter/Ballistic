@@ -1,4 +1,5 @@
 #include "application.h"
+#include <core/log.h>
 
 bool Application::Create(const char* title, int width, int height)
 {

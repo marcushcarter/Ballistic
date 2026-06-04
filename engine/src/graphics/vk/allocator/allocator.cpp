@@ -1,11 +1,8 @@
 #include "allocator.h"
+#include <cstdint>
 
 bool Allocator::Create(VkInstance instance, VkPhysicalDevice physicalDevice, VkDevice device)
 {
-    VK_CHECK_HANDLE(instance, VkInstance);
-    VK_CHECK_HANDLE(physicalDevice, VkPhysicalDevice);
-    VK_CHECK_HANDLE(device, VkDevice);
-
     Destroy();
 
     VmaAllocatorCreateInfo createInfo{};
@@ -15,20 +12,20 @@ bool Allocator::Create(VkInstance instance, VkPhysicalDevice physicalDevice, VkD
     createInfo.vulkanApiVersion = VK_API_VERSION_1_3;
     
     if (vmaCreateAllocator(&createInfo, &allocator) != VK_SUCCESS) {
-        LOG_ERROR("Failed to create VMA allocator pipeline");
+        // LOG_ERROR("Failed to create VMA allocator pipeline");
         return false;
     }
 
-    LOG_DEBUG("Allocator created");
+    // LOG_DEBUG("Allocator created");
     return true;
 }
 
 void Allocator::Destroy()
 {
-    if (allocator != VK_NULL_HANDLE) {
+    if (allocator) {
         vmaDestroyAllocator(allocator);
         allocator = VK_NULL_HANDLE;
-        LOG_DEBUG("Allocator destroyed");
+        // LOG_DEBUG("Allocator destroyed");
     }
 }
 

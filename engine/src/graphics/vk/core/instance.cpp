@@ -18,12 +18,12 @@ bool Instance::Create(const char* name, uint32_t major, uint32_t minor, uint32_t
         layers.push_back("VK_LAYER_KHRONOS_validation");
 
     if (!CheckLayerSupport(layers)) {
-        LOG_ERROR("Instance validation layers unavailable");
+        // LOG_ERROR("Instance validation layers unavailable");
         layers.clear();
     }
 
     if (!CheckExtensionSupport(requiredExtensions)) {
-        LOG_ERROR("Required extensions missing");
+        // LOG_ERROR("Required extensions missing");
         return false;
     }
 
@@ -36,20 +36,20 @@ bool Instance::Create(const char* name, uint32_t major, uint32_t minor, uint32_t
     createInfo.ppEnabledLayerNames = layers.empty() ? nullptr : layers.data();
 
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {
-        LOG_ERROR("Failed to create Vulkan instance");
+        // LOG_ERROR("Failed to create Vulkan instance");
         return false;
     }
 
-    LOG_DEBUG("Instance Created");
+    // LOG_DEBUG("Instance Created");
     return true;
 }
 
 void Instance::Destroy()
 {
-    if (instance != VK_NULL_HANDLE) {
+    if (instance) {
         vkDestroyInstance(instance, nullptr);
         instance = VK_NULL_HANDLE;
-        LOG_DEBUG("Instance Destroyed");
+        // LOG_DEBUG("Instance Destroyed");
     }
 }
 

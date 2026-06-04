@@ -1,3 +1,5 @@
+#include <core/log.h>
+
 #ifdef _DEBUG
 #define BE_ASSERT(expr) \
     do { \

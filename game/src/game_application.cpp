@@ -17,7 +17,7 @@ void GameApplication::OnInit()
     // OpenProject(std::filesystem::current_path());
     OpenProject("D:/Ballistic Games/ballistic-engine/docs/samples/Test_Project");
     
-    LOG_DEBUG("Game initialized");
+    // LOG_DEBUG("Game initialized");
 }
 
 void GameApplication::OnUpdate()
@@ -27,7 +27,7 @@ void GameApplication::OnUpdate()
 
 void GameApplication::OnShutdown()
 {
-    LOG_DEBUG("Game shutdown");
+    // LOG_DEBUG("Game shutdown");
 }
 
 void GameApplication::OnProjectOpened(const std::filesystem::path& path)

@@ -5,7 +5,7 @@ struct EditorContext;
 
 struct RenderGraphPanel
 {
-    ImNodesEditorContext* context = nullptr;
+    // ImNodesEditorContext* context = nullptr;
 
     void Draw(EditorContext& ctx);
 };

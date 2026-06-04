@@ -1,12 +1,8 @@
 #include "graphics_pipeline.h"
-#include "graphics/vk/misc/utils.h"
+// #include "graphics/vk/misc/utils.h"
 
 bool GraphicsPipeline::Create(VkDevice device, const GraphicsPipelineDesc& desc)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-    VK_CHECK_HANDLE(desc.layout, VkPipelineLayout);
-    CHECK_PTR(desc.shaderStages.data(), "Pipeline requires at least one shader");
-
     Destroy();
     debugName = desc.debugName;
     deviceHandle = device;
@@ -80,11 +76,11 @@ bool GraphicsPipeline::Create(VkDevice device, const GraphicsPipelineDesc& desc)
     createInfo.subpass = desc.subpass;
 
     if (vkCreateGraphicsPipelines(device, desc.cache, 1, &createInfo, nullptr, &pipeline) != VK_SUCCESS) {
-        LOG_ERROR("Graphics Pipeline create failed: %s - vkCreateGraphicsPipelines", debugName ? debugName : "Unnamed");
+        // LOG_ERROR("Graphics Pipeline create failed: %s - vkCreateGraphicsPipelines", debugName ? debugName : "Unnamed");
         return false;
     }
 
-    SetObjectName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, debugName);
-    LOG_DEBUG("Graphics Pipeline created: %s", debugName ? debugName : "Unnamed");
+    // SetObjectName(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline, debugName);
+    // LOG_DEBUG("Graphics Pipeline created: %s", debugName ? debugName : "Unnamed");
     return true;
 }

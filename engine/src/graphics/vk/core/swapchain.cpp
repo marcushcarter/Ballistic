@@ -1,12 +1,9 @@
 #include "swapchain.h"
-#include "graphics/vk/misc/utils.h"
+#include <algorithm>
+// #include "graphics/vk/misc/utils.h"
 
 bool Swapchain::Create(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfaceKHR surface, VkExtent2D windowExtent, bool vsyncEnabled, VkSwapchainKHR oldSwapchain)
 {
-    VK_CHECK_HANDLE(physicalDevice, VkPhysicalDevice);
-    VK_CHECK_HANDLE(device, VkDevice);
-    VK_CHECK_HANDLE(surface, VkSurfaceKHR);
-
     vsync = vsyncEnabled;
     physicalDeviceHandle = physicalDevice;
     deviceHandle = device;
@@ -45,16 +42,16 @@ bool Swapchain::Create(VkPhysicalDevice physicalDevice, VkDevice device, VkSurfa
     createInfo.oldSwapchain = oldSwapchain;
 
     if (vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain) != VK_SUCCESS) {
-        LOG_ERROR("Failed to create Vulkan swapchain");
+        // LOG_ERROR("Failed to create Vulkan swapchain");
         return false;
     }
 
-    SetObjectName(device, VK_OBJECT_TYPE_SWAPCHAIN_KHR, (uint64_t)swapchain, "Swapchain");
+    // SetObjectName(device, VK_OBJECT_TYPE_SWAPCHAIN_KHR, (uint64_t)swapchain, "Swapchain");
 
-    LOG_DEBUG("Swapchain created: (%dx%d, vsync %s)",
-        extent.width, extent.height,
-        vsync ? "On" : "Off"
-    );
+    // LOG_DEBUG("Swapchain created: (%dx%d, vsync %s)",
+    //     extent.width, extent.height,
+    //     vsync ? "On" : "Off"
+    // );
 
     return true;
 }
@@ -65,7 +62,7 @@ bool Swapchain::Resize(VkExtent2D newExtent, bool newVsync)
 
     extent = newExtent;
     if (!Create(physicalDeviceHandle, deviceHandle, surfaceHandle, extent, newVsync, oldSwapchain)) {
-        LOG_ERROR("Failed to resize Vulkan swapchain");
+        // LOG_ERROR("Failed to resize Vulkan swapchain");
         return false;
     }
 
@@ -77,13 +74,10 @@ bool Swapchain::Resize(VkExtent2D newExtent, bool newVsync)
 
 void Swapchain::Destroy()
 {
-    if (swapchain != VK_NULL_HANDLE) {
+    if (swapchain) {
         vkDestroySwapchainKHR(deviceHandle, swapchain, nullptr);
         swapchain = VK_NULL_HANDLE;
-        physicalDeviceHandle = VK_NULL_HANDLE;
-        deviceHandle = VK_NULL_HANDLE;
-        surfaceHandle = VK_NULL_HANDLE;
-        LOG_DEBUG("Swapchain destroyed");
+        // LOG_DEBUG("Swapchain destroyed");
     }
 }
 

@@ -3,7 +3,7 @@
 #include "vk/vk.h"
 #include "render_graph/render_graph.h"
 #include "render_graph/render_path.h"
-#include "render_graph/bindless_heap.h"
+#include <functional>
 
 struct Window;
 struct Project;

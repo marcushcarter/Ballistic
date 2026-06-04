@@ -1,10 +1,7 @@
 #include "image_view.h"
 
 bool ImageView::Create(VkDevice device, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageViewType type, uint32_t baseMip, uint32_t mipCount, uint32_t baseLayer, uint32_t layerCount)
-{
-    VK_CHECK_HANDLE(device, VkDevice);
-    VK_CHECK_HANDLE(image, VkImage);
-    
+{    
     Destroy();
     deviceHandle = device;
 
@@ -21,20 +18,19 @@ bool ImageView::Create(VkDevice device, VkImage image, VkFormat format, VkImageA
     createInfo.subresourceRange.layerCount = layerCount;
 
     if (vkCreateImageView(device, &createInfo, nullptr, &imageView) != VK_SUCCESS) {
-        LOG_ERROR("Failed to create Vulkan image view");
+        // LOG_ERROR("Failed to create Vulkan image view");
         return false;
     }
 
-    LOG_DEBUG("Image View created");
+    // LOG_DEBUG("Image View created");
     return true;
 }
 
 void ImageView::Destroy()
 {
-    if (imageView != VK_NULL_HANDLE) {
+    if (imageView) {
         vkDestroyImageView(deviceHandle, imageView, nullptr);
         imageView = VK_NULL_HANDLE;
-        deviceHandle = VK_NULL_HANDLE;
-        LOG_DEBUG("Image View destroyed");
+        // LOG_DEBUG("Image View destroyed");
     }
 }

@@ -1,6 +1,6 @@
 #pragma once
-#include "pch.h"
 #include "project_registry.h"
+#include <filesystem>
 
 struct EditorConfig
 {

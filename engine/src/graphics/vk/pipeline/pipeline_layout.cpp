@@ -1,10 +1,8 @@
 #include "pipeline_layout.h"
-#include "graphics/vk/misc/utils.h"
+// #include "graphics/vk/misc/utils.h"
 
 bool PipelineLayout::Create(VkDevice device, const PipelineLayoutDesc& desc)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-
     Destroy();
     debugName = desc.debugName;
     deviceHandle = device;
@@ -17,20 +15,20 @@ bool PipelineLayout::Create(VkDevice device, const PipelineLayoutDesc& desc)
     createInfo.pPushConstantRanges = desc.pushConstants.data();
 
     if (vkCreatePipelineLayout(device, &createInfo, nullptr, &pipelineLayout) != VK_SUCCESS) {
-        LOG_ERROR("Pipeline Layout create failed: %s - vkCreatePipelineLayout", debugName ? debugName : "Unnamed");
+        // LOG_ERROR("Pipeline Layout create failed: %s - vkCreatePipelineLayout", debugName ? debugName : "Unnamed");
         return false;
     }
 
-    SetObjectName(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipelineLayout, debugName);
-    LOG_DEBUG("Pipeline Layout created: %s", debugName ? debugName : "Unnamed");
+    // SetObjectName(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipelineLayout, debugName);
+    // LOG_DEBUG("Pipeline Layout created: %s", debugName ? debugName : "Unnamed");
     return true;
 }
 
 void PipelineLayout::Destroy()
 {
-    if (pipelineLayout != VK_NULL_HANDLE) {
+    if (pipelineLayout) {
         vkDestroyPipelineLayout(deviceHandle, pipelineLayout, nullptr);
         pipelineLayout = VK_NULL_HANDLE;
-        LOG_DEBUG("Pipeline Layout destroyed: %s", debugName ? debugName : "Unnamed");
+        // LOG_DEBUG("Pipeline Layout destroyed: %s", debugName ? debugName : "Unnamed");
     }
 }

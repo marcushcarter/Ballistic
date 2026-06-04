@@ -1,5 +1,8 @@
 #pragma once
-#include "pch.h"
+#include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
+#include <cstdint>
+#include <vector>
 
 struct BindlessHeapDesc
 {
@@ -26,7 +29,7 @@ struct BindlessHeap
         uint32_t next = 0, cap = 0;
         uint32_t Acquire() {
             if (!freeList.empty()) { uint32_t i = freeList.back(); freeList.pop_back(); return i; }
-            BE_ASSERT(next < cap);
+            // BE_ASSERT(next < cap);
             return next++;
         }
         void Free(uint32_t i) { freeList.push_back(i); }

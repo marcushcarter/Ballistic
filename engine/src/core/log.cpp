@@ -1,4 +1,6 @@
 #include "log.h"
+#include <Windows.h>
+#include <cstdio>
 
 static const char* LevelString(LogLevel level)
 {

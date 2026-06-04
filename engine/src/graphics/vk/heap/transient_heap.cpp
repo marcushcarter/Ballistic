@@ -1,5 +1,6 @@
 #include "transient_heap.h"
 #include "bindless_heap.h"
+#include <algorithm>
 
 static VkDeviceSize AlignUp(VkDeviceSize v, VkDeviceSize a) { return (v + a - 1) & ~(a - 1); }
 
@@ -34,14 +35,17 @@ void TransientHeap::Init(VkDevice d, VmaAllocator a, BindlessHeap* h) { device =
 
 void TransientHeap::Shutdown()
 {
-    for (auto& img : images)  img.Destroy(device);
+    for (auto& img : images) img.Destroy(device);
     for (auto& buf : buffers) buf.Destroy(device);
-    for (auto& b : buckets)   if (b.backing) vmaFreeMemory(vma, b.backing);
-    images.clear(); buffers.clear(); buckets.clear();
+    for (auto& b : buckets) if (b.backing) vmaFreeMemory(vma, b.backing);
+    images.clear();
+    buffers.clear();
+    buckets.clear();
 
     Recycle(UINT64_MAX);
     slots.clear();
-    currentHash = 0; realizedOnce = false;
+    currentHash = 0;
+    realizedOnce = false;
 }
 
 bool TransientHeap::Realize(const std::vector<TransientRequest>& requests, uint64_t frameIndex)
@@ -166,7 +170,7 @@ bool TransientHeap::EnsureBacking(Bucket& b)
     aci.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;    // transient RTs/scratch are device-local
 
     if (vmaAllocateMemory(vma, &req, &aci, &b.backing, nullptr) != VK_SUCCESS) {
-        LOG_ERROR("TransientHeap: backing alloc failed (%llu bytes, typeBits 0x%x)", (unsigned long long)b.size, b.memoryTypeBits);
+        // LOG_ERROR("TransientHeap: backing alloc failed (%llu bytes, typeBits 0x%x)", (unsigned long long)b.size, b.memoryTypeBits);
         return false;
     }
     return true;
@@ -206,14 +210,14 @@ void TransientHeap::Recycle(uint64_t completed)
 
 void TransientHeap::DumpStats() const
 {
-    const VkDeviceSize saved = stats.sumResourceBytes > stats.totalBackingBytes ? stats.sumResourceBytes - stats.totalBackingBytes : 0;
-    LOG_DEBUG("TransientHeap: %u img, %u buf, %u buckets | backing %.2f MB | naive %.2f MB | saved %.2f MB (%.0f%%)",
-        stats.imageCount, stats.bufferCount, stats.bucketCount,
-        stats.totalBackingBytes / (1024.0 * 1024.0),
-        stats.sumResourceBytes  / (1024.0 * 1024.0),
-        saved / (1024.0 * 1024.0),
-        stats.sumResourceBytes ? (100.0 * saved / stats.sumResourceBytes) : 0.0
-    );
+    // const VkDeviceSize saved = stats.sumResourceBytes > stats.totalBackingBytes ? stats.sumResourceBytes - stats.totalBackingBytes : 0;
+    // LOG_DEBUG("TransientHeap: %u img, %u buf, %u buckets | backing %.2f MB | naive %.2f MB | saved %.2f MB (%.0f%%)",
+    //     stats.imageCount, stats.bufferCount, stats.bucketCount,
+    //     stats.totalBackingBytes / (1024.0 * 1024.0),
+    //     stats.sumResourceBytes  / (1024.0 * 1024.0),
+    //     saved / (1024.0 * 1024.0),
+    //     stats.sumResourceBytes ? (100.0 * saved / stats.sumResourceBytes) : 0.0
+    // );
 }
 
 PhysicalImage& TransientHeap::GetImage(uint32_t slot)

@@ -1,5 +1,6 @@
 #include "buffer.h"
-#include "graphics/vk/misc/utils.h"
+// #include "graphics/vk/misc/utils.h"
+#include <vector>
 
 inline VkDeviceSize NextPowerOfTwo(VkDeviceSize x)
 {
@@ -16,9 +17,6 @@ inline VkDeviceSize NextPowerOfTwo(VkDeviceSize x)
 
 bool Buffer::Create(VkDevice device, VmaAllocator vma, const BufferDesc& desc)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-    VK_CHECK_HANDLE(vma, VmaAllocator);
-
     Destroy();
     usage = desc.usage;
     hostVisible = desc.hostVisible;
@@ -48,7 +46,7 @@ bool Buffer::Create(VkDevice device, VmaAllocator vma, const BufferDesc& desc)
     VmaAllocationInfo allocationInfo{};
 
     if (vmaCreateBuffer(vma, &createInfo, &allocInfo, &buffer, &allocation, &allocationInfo) != VK_SUCCESS) {
-        LOG_ERROR("Buffer create failed: %s - vmaCreateBuffer", debugName ? debugName : "Unnamed");
+        // LOG_ERROR("Buffer create failed: %s - vmaCreateBuffer", debugName ? debugName : "Unnamed");
         return false;
     }
 
@@ -57,14 +55,14 @@ bool Buffer::Create(VkDevice device, VmaAllocator vma, const BufferDesc& desc)
     if (hostVisible)
         mappedPtr = allocationInfo.pMappedData;
 
-    SetObjectName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, debugName);
+    // SetObjectName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, debugName);
 
-    LOG_DEBUG("Buffer created: %s (%llu bytes, usage %s, %s)",
-        debugName ? debugName : "Unnamed",
-        static_cast<unsigned long long>(capacity),
-        vk::to_string(vk::BufferUsageFlags(usage)).c_str(),
-        hostVisible ? "Host Visible" : "Device Local"
-    );
+    // LOG_DEBUG("Buffer created: %s (%llu bytes, usage %s, %s)",
+    //     debugName ? debugName : "Unnamed",
+    //     static_cast<unsigned long long>(capacity),
+    //     vk::to_string(vk::BufferUsageFlags(usage)).c_str(),
+    //     hostVisible ? "Host Visible" : "Device Local"
+    // );
 
     return true;
 }
@@ -72,22 +70,18 @@ bool Buffer::Create(VkDevice device, VmaAllocator vma, const BufferDesc& desc)
 void Buffer::Destroy()
 {
     mappedPtr = nullptr;
-    if (buffer != VK_NULL_HANDLE) {
+    if (buffer) {
         vmaDestroyBuffer(vmaHandle, buffer, allocation);
         buffer = VK_NULL_HANDLE;
         allocation = VK_NULL_HANDLE;
-        LOG_DEBUG("Buffer destroyed: %s", debugName ? debugName : "Unnamed");
+        // LOG_DEBUG("Buffer destroyed: %s", debugName ? debugName : "Unnamed");
     }
-    size = 0;
-    capacity = 0;
-    stage = 0;
-    access = 0;
 }
 
 bool Buffer::Update(void* data, VkDeviceSize dataSize, VkDeviceSize offset)
 {
     if (!hostVisible || !mappedPtr) {
-        LOG_WARN("Buffer update failed: %s - not host visible", debugName ? debugName : "Unnamed");
+        // LOG_WARN("Buffer update failed: %s - not host visible", debugName ? debugName : "Unnamed");
         return false;
     }
 
@@ -133,11 +127,8 @@ bool Buffer::Resize(VkDeviceSize newSize)
 
 bool Buffer::Copy(VkCommandBuffer cmd, VkBuffer srcBuffer, VkDeviceSize copySize, VkDeviceSize srcOffset, VkDeviceSize dstOffset)
 {
-    VK_CHECK_HANDLE(cmd, VkCommandBuffer);
-    VK_CHECK_HANDLE(srcBuffer, VkBuffer);
-
     if (!(usage & VK_BUFFER_USAGE_TRANSFER_DST_BIT)) {
-        LOG_WARN("Buffer create failed: %s - missing TRANSFER_DST_BIT", debugName ? debugName : "Unnamed");
+        // LOG_WARN("Buffer create failed: %s - missing TRANSFER_DST_BIT", debugName ? debugName : "Unnamed");
         return false;
     }
 
@@ -170,10 +161,7 @@ void Buffer::Transition(VkCommandBuffer cmd, VkPipelineStageFlags dstStage, VkAc
     access = dstAccess;
 }
 
-void Buffer::BindIndex(VkCommandBuffer cmd)
-{
-    vkCmdBindIndexBuffer(cmd, buffer, 0, VK_INDEX_TYPE_UINT32);
-}
+void Buffer::BindIndex(VkCommandBuffer cmd) { vkCmdBindIndexBuffer(cmd, buffer, 0, VK_INDEX_TYPE_UINT32); }
 
 void Buffer::BindVertex(VkCommandBuffer cmd)
 {

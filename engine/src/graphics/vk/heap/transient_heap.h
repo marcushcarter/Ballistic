@@ -1,6 +1,6 @@
 #pragma once
-#include "pch.h"
 #include "transient_resource.h"
+#include <vector>
 
 struct BindlessHeap;
 
@@ -71,7 +71,7 @@ struct TransientHeap
     
     void DumpStats() const;
 
-    PhysicalImage&  GetImage (uint32_t slot);
+    PhysicalImage& GetImage (uint32_t slot);
     PhysicalBuffer& GetBuffer(uint32_t slot);
 
     const Stats& GetStats() const { return stats; }

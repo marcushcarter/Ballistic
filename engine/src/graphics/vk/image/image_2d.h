@@ -1,5 +1,7 @@
 #pragma once
-#include "pch.h"
+#include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
+#include <cstdint>
 
 struct Image2DDesc
 {
@@ -9,7 +11,7 @@ struct Image2DDesc
     VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT;
     uint32_t mipLevels = 1;
     uint32_t layers = 1;
-    std::string debugName;
+    const char* debugName = nullptr;
 };
 
 struct Image2D
@@ -17,7 +19,7 @@ struct Image2D
     VkImage image = VK_NULL_HANDLE;
     VkImageView view = VK_NULL_HANDLE;
     VmaAllocation allocation = VK_NULL_HANDLE;
-    std::string debugName;
+    const char* debugName = nullptr;
 
     VkFormat format = VK_FORMAT_UNDEFINED;
     VkExtent2D extent = {};

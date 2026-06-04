@@ -2,8 +2,12 @@
 #include "pch.h"
 #include "graphics/vk/image/image_2d.h"
 #include "graphics/vk/buffer/buffer.h"
-#include "transient_resource.h"
-#include "transient_heap.h"
+#include "graphics/vk/heap/transient_resource.h"
+#include "graphics/vk/heap/transient_heap.h"
+#include <functional>
+#include <unordered_map>
+#include <string>
+#include <vector>
 
 struct Image2D;
 struct BindlessHeap;

@@ -1,9 +1,18 @@
 #include "window.h"
 
+#include <windows.h>
+#include <dwmapi.h>
+
+#include <GLFW/glfw3.h>
+#define GLFW_EXPOSE_NATIVE_WIN32
+#include <GLFW/glfw3native.h>
+
+#include <stb_image.h>
+
 bool Window::Create(const char* title, uint32_t w, uint32_t h)
 {
     if (!glfwInit()) {
-        LOG_FATAL("Failed to initialize GLFW");
+        // LOG_FATAL("Failed to initialize GLFW");
         return false;
     }
 
@@ -17,7 +26,7 @@ bool Window::Create(const char* title, uint32_t w, uint32_t h)
 
     glfwWindow = glfwCreateWindow(w, h, title, nullptr, nullptr);
     if (!glfwWindow) {
-        LOG_FATAL("Failed to create GLFW window");
+        // LOG_FATAL("Failed to create GLFW window");
         glfwTerminate();
         return false;
     }
@@ -37,7 +46,7 @@ bool Window::Create(const char* title, uint32_t w, uint32_t h)
 
     instance = this;
 
-    LOG_DEBUG("Window created: %dx%d", w, h);
+    // LOG_DEBUG("Window created: %dx%d", w, h);
     return true;
 }
 
@@ -47,7 +56,7 @@ void Window::Destroy()
         glfwDestroyWindow(glfwWindow);
         glfwTerminate();
         glfwWindow = nullptr;
-        LOG_DEBUG("Window destroyed");
+        // LOG_DEBUG("Window destroyed");
     }
 }
 
@@ -92,7 +101,7 @@ bool Window::SetIcon(const char* path)
     int w, h, channels;
     stbi_uc* data = stbi_load(path, &w, &h, &channels, 4);
     if (!data) {
-        LOG_ERROR("Window failed to load icon: %s", path);
+        // LOG_ERROR("Window failed to load icon: %s", path);
         return false;
     }
 
@@ -111,19 +120,19 @@ void Window::SetEmbeddedIcon(int resourceID)
     if (!glfwWindow) return;
 
     HRSRC res = FindResource(nullptr, MAKEINTRESOURCE(resourceID), RT_RCDATA);
-    if (!res) { LOG_ERROR("Window failed to find resource: %d", resourceID); return; }
+    if (!res) { /* LOG_ERROR("Window failed to find resource: %d", resourceID); */ return; }
 
     HGLOBAL mem = LoadResource(nullptr, res);
-    if (!mem) { LOG_ERROR("Window failed to load resource: %d", resourceID); return; }
+    if (!mem) { /* LOG_ERROR("Window failed to load resource: %d", resourceID); */ return; }
 
     void* data = LockResource(mem);
-    if (!data) { LOG_ERROR("Window failed to lock resource: %d", resourceID); return; }
+    if (!data) { /* LOG_ERROR("Window failed to lock resource: %d", resourceID); */ return; }
 
     DWORD size = SizeofResource(nullptr, res);
 
     int w, h, channels;
     stbi_uc* pixels = stbi_load_from_memory((const stbi_uc*)data, (int)size, &w, &h, &channels, 4);
-    if (!pixels) { LOG_ERROR("Window failed to decode icon from resource: %d", resourceID); return; }
+    if (!pixels) { /* LOG_ERROR("Window failed to decode icon from resource: %d", resourceID); */ return; }
 
     GLFWimage icon{ w, h, pixels };
     glfwSetWindowIcon(glfwWindow, 1, &icon);

@@ -1,10 +1,8 @@
 #include "sampler.h"
-#include "graphics/vk/misc/utils.h"
+// #include "graphics/vk/misc/utils.h"
 
 bool Sampler::Create(VkDevice device, const SamplerDesc& desc)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-
     Destroy();
     debugName = desc.debugName;
     deviceHandle = device;
@@ -28,21 +26,20 @@ bool Sampler::Create(VkDevice device, const SamplerDesc& desc)
     createInfo.maxLod = desc.maxLod;
 
     if (vkCreateSampler(device, &createInfo, nullptr, &sampler) != VK_SUCCESS) {
-        LOG_ERROR("Sampler create failed: %s - vkCreateSampler", debugName ? debugName : "Unnamed");
+        // LOG_ERROR("Sampler create failed: %s - vkCreateSampler", debugName ? debugName : "Unnamed");
         return false;
     }
     
-    SetObjectName(device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, debugName);
-    LOG_DEBUG("Sampler created: %s", debugName ? debugName : "Unnamed");
+    // SetObjectName(device, VK_OBJECT_TYPE_SAMPLER, (uint64_t)sampler, debugName);
+    // LOG_DEBUG("Sampler created: %s", debugName ? debugName : "Unnamed");
     return true;
 }
 
 void Sampler::Destroy()
 {
-    if (sampler != VK_NULL_HANDLE) {
+    if (sampler) {
         vkDestroySampler(deviceHandle, sampler, nullptr);
         sampler = VK_NULL_HANDLE;
-        LOG_DEBUG("Sampler destroyed: %s", debugName ? debugName : "Unnamed");
+        // LOG_DEBUG("Sampler destroyed: %s", debugName ? debugName : "Unnamed");
     }
-    deviceHandle = VK_NULL_HANDLE;
 }

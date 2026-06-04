@@ -1,5 +1,6 @@
 #pragma once
-#include "pch.h"
+#include <vulkan/vulkan.h>
+#include <filesystem>
 #include "editor/workspace/workspace.h"
 
 struct ProjectManager

@@ -1,5 +1,7 @@
 #pragma once
-#include "pch.h"
+#include <vulkan/vulkan.h>
+#include <cstdint>
+#include <vector>
 
 struct Device
 {

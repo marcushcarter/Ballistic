@@ -1,5 +1,7 @@
 #pragma once
-#include "pch.h"
+#include <GLFW/glfw3.h>
+#include <cstdint>
+#include <functional>
 
 struct Window
 {

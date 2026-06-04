@@ -1,5 +1,7 @@
 #include "project.h"
 #include "serialization.h"
+#include <fstream>
+#include <Windows.h>
 
 bool Project::Create(const std::filesystem::path& projectFolder, const std::string& projectName, bool initGit)
 {
@@ -41,7 +43,7 @@ bool Project::Create(const std::filesystem::path& projectFolder, const std::stri
         gitattributes << "*.hlsl text eol=lf\n";
     }
 
-    LOG_INFO("Project created: %s", projectFolder.string().c_str());
+    // LOG_INFO("Project created: %s", projectFolder.string().c_str());
     return true;
 }
 
@@ -52,7 +54,7 @@ bool Project::Load(const std::filesystem::path& projectPath)
         path.clear();
         return false;
     }
-    LOG_DEBUG("Loaded project: %s (%s)", name.c_str(), path.string().c_str());
+    // LOG_DEBUG("Loaded project: %s (%s)", name.c_str(), path.string().c_str());
     return true;
 }
 
@@ -60,7 +62,7 @@ bool Project::Save()
 {
     if (path.empty()) return false;
     if (!Serialize(*this)) return false;
-    LOG_DEBUG("Project saved: %s", path.string().c_str());
+    // LOG_DEBUG("Project saved: %s", path.string().c_str());
     return true;
 }
 
@@ -69,5 +71,5 @@ void Project::Close()
     name.clear();
     engineVersion.clear();
     path.clear();
-    LOG_DEBUG("Project closed");
+    // LOG_DEBUG("Project closed");
 }

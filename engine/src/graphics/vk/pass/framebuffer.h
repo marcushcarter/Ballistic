@@ -1,5 +1,7 @@
 #pragma once
-#include "pch.h"
+#include <vulkan/vulkan.h>
+#include <vector>
+#include <cstdint>
 
 struct Framebuffer
 {

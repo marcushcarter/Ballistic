@@ -4,6 +4,11 @@
 #include "platform/file_dialog.h"
 #include "platform/process.h"
 
+#include <toml++/toml.hpp>
+#include <fstream>
+#include <imgui.h>
+#include <IconsFontAwesome6.h>
+
 void ProjectManager::Start(EditorWorkspace& ws, VkDescriptorSet tex, VkExtent2D extent)
 {
     workspace = &ws;

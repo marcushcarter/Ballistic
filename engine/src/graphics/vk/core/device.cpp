@@ -1,10 +1,9 @@
 #include "device.h"
-#include "graphics/vk/misc/utils.h"
+// #include "graphics/vk/misc/utils.h"
+#include <set>
 
 bool Device::Create(VkPhysicalDevice physicalDevice, uint32_t graphicsFamily, uint32_t presentFamily, uint32_t transferFamily, const std::vector<const char*>& requiredExtensions)
 {
-    VK_CHECK_HANDLE(physicalDevice, VkPhysicalDevice);
-
     Destroy();
 
     std::set<uint32_t> uniqueFamilies = { graphicsFamily, presentFamily, transferFamily };
@@ -33,7 +32,8 @@ bool Device::Create(VkPhysicalDevice physicalDevice, uint32_t graphicsFamily, ui
 
     auto Require = [](VkBool32 feature, const char* name) {
         if (!feature) {
-            LOG_ERROR("Required Vulkan feature not supported: %s", name);
+            (void)name;
+            // LOG_ERROR("Required Vulkan feature not supported: %s", name);
             return false;
         }
         return true;
@@ -91,21 +91,21 @@ bool Device::Create(VkPhysicalDevice physicalDevice, uint32_t graphicsFamily, ui
     createInfo.ppEnabledExtensionNames = requiredExtensions.data();
 
     if (vkCreateDevice(physicalDevice, &createInfo, nullptr, &device) != VK_SUCCESS) {
-        LOG_ERROR("Failed to create Vulkan device");
+        // LOG_ERROR("Failed to create Vulkan device");
         return false;
     }
     
-    SetObjectName(device, VK_OBJECT_TYPE_DEVICE, (uint64_t)device, "Device");
-    LOG_DEBUG("Logical Device created");
+    // SetObjectName(device, VK_OBJECT_TYPE_DEVICE, (uint64_t)device, "Device");
+    // LOG_DEBUG("Logical Device created");
     return true;
 }
 
 void Device::Destroy()
 {
-    if (device != VK_NULL_HANDLE) {
+    if (device) {
         vkDestroyDevice(device, nullptr);
         device = VK_NULL_HANDLE;
-        LOG_DEBUG("Logical Device destroyed");
+        // LOG_DEBUG("Logical Device destroyed");
     }
 }
 

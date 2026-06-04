@@ -1,5 +1,5 @@
 #pragma once
-#include "pch.h"
+#include <vulkan/vulkan.h>
 #include "core/application.h"
 #include "workspace/workspace.h"
 #include "workspace/settings.h"
@@ -7,6 +7,8 @@
 #include "screens/project_manager.h"
 #include "screens/editor.h"
 #include "graphics/imgui_layer.h"
+
+#include <filesystem>
 
 struct EditorApplication : Application
 {

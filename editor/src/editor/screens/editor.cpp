@@ -4,6 +4,10 @@
 #include "graphics/renderer.h"
 #include "platform/file_dialog.h"
 
+#include <imgui.h>
+#include <imnodes.h>
+#include <IconsFontAwesome6.h>
+
 void Editor::OpenProject(const std::filesystem::path& path)
 {
     std::filesystem::create_directories(path / ".ballistic" / "editor");
@@ -16,42 +20,46 @@ void Editor::OpenProject(const std::filesystem::path& path)
         // ImGui::LoadIniSettingsFromMemory(DEFAULT_EDITOR_INI, strlen(DEFAULT_EDITOR_INI));
     }
 
-    graph.context = ImNodes::EditorContextCreate();
-    ImNodes::EditorContextSet(graph.context);
-    std::string nodesPath = (path / ".ballistic/editor/nodes_rendergraph.ini").string();
-    if (std::filesystem::exists(nodesPath)) {
-        ImNodes::LoadCurrentEditorStateFromIniFile(nodesPath.c_str());
-    } else  {
+    // graph.context = ImNodes::EditorContextCreate();
+    // ImNodes::EditorContextSet(graph.context);
+    // std::string nodesPath = (path / ".ballistic/editor/nodes_rendergraph.ini").string();
+    // if (std::filesystem::exists(nodesPath)) {
+    //     ImNodes::LoadCurrentEditorStateFromIniFile(nodesPath.c_str());
+    // } else  {
 
-    }
+    // }
 }
 
 void Editor::CloseProject(const std::filesystem::path& path)
 {
+    (void)path;
+
     if (!activeIniPath.empty()) {
         ImGui::SaveIniSettingsToDisk(activeIniPath.c_str());
         ImGui::GetIO().IniFilename = nullptr;
         activeIniPath.clear();
     }
 
-    if (graph.context) {
-        ImNodes::EditorContextSet(graph.context);
-        ImNodes::SaveCurrentEditorStateToIniFile((path / ".ballistic" / "editor" / "nodes_rendergraph.ini").string().c_str());
-        ImNodes::EditorContextFree(graph.context);
-        graph.context = nullptr;
-    }
+    // if (graph.context) {
+    //     ImNodes::EditorContextSet(graph.context);
+    //     ImNodes::SaveCurrentEditorStateToIniFile((path / ".ballistic" / "editor" / "nodes_rendergraph.ini").string().c_str());
+    //     ImNodes::EditorContextFree(graph.context);
+    //     graph.context = nullptr;
+    // }
 }
 
 void Editor::SaveLayout(const std::filesystem::path& path)
 {
+    (void)path;
+    
     if (!activeIniPath.empty()) {
         ImGui::SaveIniSettingsToDisk(activeIniPath.c_str());
     }
 
-    if (graph.context) {
-        ImNodes::EditorContextSet(graph.context);
-        ImNodes::SaveCurrentEditorStateToIniFile((path / ".ballistic" / "editor" / "nodes_rendergraph.ini").string().c_str());
-    }
+    // if (graph.context) {
+    //     ImNodes::EditorContextSet(graph.context);
+    //     ImNodes::SaveCurrentEditorStateToIniFile((path / ".ballistic" / "editor" / "nodes_rendergraph.ini").string().c_str());
+    // }
 }
 
 void Editor::SaveProjectAndLayout(EditorContext& ctx)
@@ -69,7 +77,7 @@ void Editor::Update(EditorContext& ctx)
     if (ctx.workspace.config.autosaveEnabled && autosaveTimer >= ctx.workspace.config.autosaveInterval) {
         autosaveTimer = 0.0f;
         SaveProjectAndLayout(ctx);
-        LOG_DEBUG("Autosaved project");
+        // LOG_DEBUG("Autosaved project");
     }
 }
 

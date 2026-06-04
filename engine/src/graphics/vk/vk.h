@@ -8,7 +8,6 @@
 #include "core/queue.h"
 #include "core/device.h"
 #include "core/swapchain.h"
-#include "core/context.h"
 
 #include "sync/semaphore.h"
 #include "sync/command_pool.h"
@@ -31,6 +30,10 @@
 #include "image/image_2d.h"
 #include "image/image_view.h"
 #include "image/sampler.h"
+
+#include "heap/transient_resource.h"
+#include "heap/transient_heap.h"
+#include "heap/bindless_heap.h"
 
 #include "allocator/allocator.h"
 #include "allocator/allocator_pool.h"

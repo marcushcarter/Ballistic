@@ -4,6 +4,8 @@
 #include "graphics/renderer.h"
 #include "project/project.h"
 #include "project/project_loader.h"
+#include <filesystem>
+#include <functional>
 
 enum class AppState { Active, LoadingProject };
 

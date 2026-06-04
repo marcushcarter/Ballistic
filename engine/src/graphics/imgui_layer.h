@@ -1,8 +1,8 @@
 #pragma once
-#include "pch.h"
-#include "vk/vk.h"
+#include <graphics/vk/descriptor/descriptor_pool.h>
 
 struct Renderer;
+struct GLFWwindow;
 
 struct ImGuiLayer
 {

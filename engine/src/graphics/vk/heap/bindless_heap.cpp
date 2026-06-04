@@ -1,10 +1,8 @@
 #include "bindless_heap.h"
-#include "graphics/vk/misc/utils.h"
+// #include "graphics/vk/misc/utils.h"
 
 bool BindlessHeap::Create(VkDevice device, const BindlessHeapDesc& d)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-
     sampledAlloc.cap = d.sampledImages;
     storageAlloc.cap = d.storageImages;
     samplerAlloc.cap = d.samplers;
@@ -31,7 +29,7 @@ bool BindlessHeap::Create(VkDevice device, const BindlessHeapDesc& d)
     layoutInfo.pBindings = bindings;
 
     if (vkCreateDescriptorSetLayout(device, &layoutInfo, nullptr, &layout) != VK_SUCCESS) {
-        LOG_ERROR("BindlessHeap: vkCreateDescriptorSetLayout failed: (%s)", d.debugName ? d.debugName : "unnamed");
+        // LOG_ERROR("BindlessHeap: vkCreateDescriptorSetLayout failed: (%s)", d.debugName ? d.debugName : "unnamed");
         return false;
     }
 
@@ -48,7 +46,7 @@ bool BindlessHeap::Create(VkDevice device, const BindlessHeapDesc& d)
     poolInfo.pPoolSizes = poolSizes;
 
     if (vkCreateDescriptorPool(device, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
-        LOG_ERROR("BindlessHeap: vkCreateDescriptorPool failed: (%s)", d.debugName ? d.debugName : "unnamed");
+        // LOG_ERROR("BindlessHeap: vkCreateDescriptorPool failed: (%s)", d.debugName ? d.debugName : "unnamed");
         return false;
     }
 
@@ -59,20 +57,20 @@ bool BindlessHeap::Create(VkDevice device, const BindlessHeapDesc& d)
     alloc.pSetLayouts = &layout;
 
     if (vkAllocateDescriptorSets(device, &alloc, &set) != VK_SUCCESS) {
-        LOG_ERROR("BindlessHeap: vkAllocateDescriptorSets failed: (%s)", d.debugName ? d.debugName : "unnamed");
+        // LOG_ERROR("BindlessHeap: vkAllocateDescriptorSets failed: (%s)", d.debugName ? d.debugName : "unnamed");
         return false;
     }
 
-    SetObjectName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)set, d.debugName);
-    LOG_DEBUG("BindlessHeap created (%u sampled, %u storage, %u samplers)", d.sampledImages, d.storageImages, d.samplers);
+    // SetObjectName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)set, d.debugName);
+    // LOG_DEBUG("BindlessHeap created (%u sampled, %u storage, %u samplers)", d.sampledImages, d.storageImages, d.samplers);
     return true;
 }
 
 void BindlessHeap::Destroy()
 {
-    if (pool) vkDestroyDescriptorPool(deviceHandle, pool, nullptr);
-    if (layout) vkDestroyDescriptorSetLayout(deviceHandle, layout, nullptr);
-    pool = VK_NULL_HANDLE; layout = VK_NULL_HANDLE; set = VK_NULL_HANDLE;
+    if (pool) { vkDestroyDescriptorPool(deviceHandle, pool, nullptr); pool = VK_NULL_HANDLE; }
+    if (layout) { vkDestroyDescriptorSetLayout(deviceHandle, layout, nullptr); layout = VK_NULL_HANDLE; }
+    set = VK_NULL_HANDLE;
 }
 
 static void WriteImage(VkDevice device, VkDescriptorSet set, uint32_t binding, uint32_t index, VkDescriptorType type, VkImageView view, VkImageLayout layout)

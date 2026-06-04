@@ -3,12 +3,14 @@
 #include "project/project.h"
 #include "resources.h"
 #include "render_graph/render_path.h"
+#include <core/assert.h>
+#include <stb_image.h>
 
 inline bool LoadRCImage(VkDevice device, VmaAllocator vma, VkCommandBuffer cmd, int resourceID, Image2D& outImage, Buffer& outStaging, const char* debugName = nullptr)
 {
     HRSRC res = FindResource(nullptr, MAKEINTRESOURCE(resourceID), RT_RCDATA);
     if (!res) {
-        LOG_ERROR("LoadRCImage failed: resource %d not found", resourceID);
+        // LOG_ERROR("LoadRCImage failed: resource %d not found", resourceID);
         return false;
     }
     
@@ -19,7 +21,7 @@ inline bool LoadRCImage(VkDevice device, VmaAllocator vma, VkCommandBuffer cmd, 
     int w, h, channels;
     stbi_uc* pixels = stbi_load_from_memory((const stbi_uc*)data, (int)size, &w, &h, &channels, 4);
     if (!pixels) {
-        LOG_ERROR("LoadRCImage failed: stbi decode failed for resource %d", resourceID);
+        // LOG_ERROR("LoadRCImage failed: stbi decode failed for resource %d", resourceID);
         return false;
     }
 
@@ -166,7 +168,7 @@ bool Renderer::Start(Window& window)
 
     graph.SetViewport(finalImage.extent);
 
-    LOG_DEBUG("Renderer started");
+    // LOG_DEBUG("Renderer started");
     return true;
 }
 
@@ -204,7 +206,7 @@ void Renderer::Shutdown()
     debugMessenger.Destroy();
     instance.Destroy();
     
-    LOG_DEBUG("Renderer shutdown");
+    // LOG_DEBUG("Renderer shutdown");
 }
 
 bool Renderer::LoadProject(const std::filesystem::path& path)
@@ -236,14 +238,14 @@ bool Renderer::LoadProject(const std::filesystem::path& path)
     pipelineCache.Destroy();
 
     auto end = std::chrono::high_resolution_clock::now();
-    LOG_INFO("Pipeline creation took %lld ms", std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
+    // LOG_INFO("Pipeline creation took %lld ms", std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count());
     return true;
 }
 
 void Renderer::UnloadProject()
 {
     blitPipeline.Destroy();
-    LOG_INFO("PROJECT CLOSED NOW");
+    // LOG_INFO("PROJECT CLOSED NOW");
 }
 
 void Renderer::RequestWindowResize(uint32_t w, uint32_t h)
@@ -339,7 +341,7 @@ bool Renderer::BeginFrame()
     inFlightFences[currentFrame].Reset();
     
     VkResult result = vkAcquireNextImageKHR(device.Get(), swapchain.Get(), UINT64_MAX, imageAvailableSemaphores[currentFrame].Get(), VK_NULL_HANDLE, &imageIndex);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) { LOG_WARN("Swapchain out of date"); windowResizeRequested = true; return false; }
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) { /* LOG_WARN("Swapchain out of date"); */ windowResizeRequested = true;  return false; }
     
     commandBuffers[imageIndex].Reset();
     commandBuffers[imageIndex].Begin();

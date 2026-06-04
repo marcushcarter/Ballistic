@@ -1,4 +1,9 @@
 #include "workspace.h"
+#include <windows.h>
+#include <toml++/toml.hpp>
+// #include <fstream>
+#include <windows.h>
+#include <shlobj.h>
 
 void EditorWorkspace::Load()
 {
@@ -14,8 +19,8 @@ void EditorWorkspace::Load()
     CoTaskMemFree(rawLocal);
     std::filesystem::create_directories(localRoot);
 
-    LOG_DEBUG("Roaming AppData: %s", roamingRoot.string().c_str());
-    LOG_DEBUG("Local AppData: %s", localRoot.string().c_str());
+    // LOG_DEBUG("Roaming AppData: %s", roamingRoot.string().c_str());
+    // LOG_DEBUG("Local AppData: %s", localRoot.string().c_str());
  
     registry.Load(roamingRoot);
  
@@ -26,7 +31,8 @@ void EditorWorkspace::Load()
             config.autosaveEnabled  = cfg["autosave_enabled"].value_or(true);
             config.autosaveInterval = (float)cfg["autosave_interval"].value_or<double>(120.0);
         } catch (const toml::parse_error& e) {
-            LOG_ERROR("Failed to parse editor.cfg: %s", e.what());
+            (void)e;
+            // LOG_ERROR("Failed to parse editor.cfg: %s", e.what());
         }
     }
 }
@@ -41,7 +47,7 @@ void EditorWorkspace::Save()
         std::ofstream f(roamingRoot / "editor.cfg");
         f << cfg;
     } catch (...) {
-        LOG_ERROR("Failed to save editor.cfg");
+        // LOG_ERROR("Failed to save editor.cfg");
     }
 }
 

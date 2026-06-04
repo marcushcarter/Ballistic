@@ -1,5 +1,7 @@
 #include "project_registry.h"
 #include "core/timestamp.h"
+#include <toml++/toml.hpp>
+#include <fstream>
 
 void ProjectRegistry::Load(const std::filesystem::path& roamingRoot)
 {
@@ -39,7 +41,8 @@ void ProjectRegistry::Load(const std::filesystem::path& roamingRoot)
         });
 
     } catch (const toml::parse_error& e) {
-        LOG_ERROR("Failed to parse projects.cfg: %s", e.what());
+        (void)e;
+        // LOG_ERROR("Failed to parse projects.cfg: %s", e.what());
     }
 }
 

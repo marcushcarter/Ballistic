@@ -1,5 +1,6 @@
 #pragma once
-#include "pch.h"
+#include <vulkan/vulkan.h>
+#include <vector>
 
 inline VkDescriptorSetLayoutBinding SetLayoutBinding(uint32_t binding, VkDescriptorType type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT, uint32_t count = 1) {
     VkDescriptorSetLayoutBinding b{};

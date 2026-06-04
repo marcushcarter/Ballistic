@@ -2,9 +2,6 @@
 
 bool Framebuffer::Create(VkDevice device, VkRenderPass renderPass, VkExtent2D extent, const std::vector<VkImageView>& attachments, uint32_t layers)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-    VK_CHECK_HANDLE(renderPass, VkRenderPass);
-
     Destroy();
     deviceHandle = device;
     renderPassHandle = renderPass;
@@ -19,11 +16,11 @@ bool Framebuffer::Create(VkDevice device, VkRenderPass renderPass, VkExtent2D ex
     createInfo.layers = layers;
 
     if (vkCreateFramebuffer(device, &createInfo, nullptr, &framebuffer) != VK_SUCCESS) {
-        LOG_ERROR("Failed to create Vulkan framebuffer");
+        // LOG_ERROR("Failed to create Vulkan framebuffer");
         return false;
     }
 
-    LOG_DEBUG("Framebuffer created");
+    // LOG_DEBUG("Framebuffer created");
     return true;
 }
 
@@ -34,10 +31,9 @@ bool Framebuffer::Resize(VkExtent2D newExtent, const std::vector<VkImageView>& n
 
 void Framebuffer::Destroy()
 {
-    if (framebuffer != VK_NULL_HANDLE) {
+    if (framebuffer) {
         vkDestroyFramebuffer(deviceHandle, framebuffer, nullptr);
         framebuffer = VK_NULL_HANDLE;
-        LOG_DEBUG("Framebuffer destroyed");
+        // LOG_DEBUG("Framebuffer destroyed");
     }
-    deviceHandle = VK_NULL_HANDLE;
 }

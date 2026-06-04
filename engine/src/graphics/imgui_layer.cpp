@@ -1,5 +1,11 @@
 #include "imgui_layer.h"
 #include "renderer.h"
+#include <imgui.h>
+#include <backends/imgui_impl_vulkan.h>
+#include <backends/imgui_impl_glfw.h>
+#include <imnodes.h>
+#include <GLFW/glfw3.h>
+#include <core/assert.h>
 
 bool ImGuiLayer::Create(Renderer& renderer, GLFWwindow* window)
 {    
@@ -35,7 +41,7 @@ bool ImGuiLayer::Create(Renderer& renderer, GLFWwindow* window)
     initInfo.ImageCount = renderer.frameCount;
     initInfo.UseDynamicRendering = true;
     initInfo.PipelineInfoMain.PipelineRenderingCreateInfo = pipelineRenderingInfo;
-    initInfo.CheckVkResultFn = [](VkResult err){ if(err) LOG_ERROR(" "); };
+    // initInfo.CheckVkResultFn = [](VkResult err){ if(err) // LOG_ERROR(" "); };
 
     ImGui_ImplGlfw_InitForVulkan(window, true);
     ImGui_ImplVulkan_Init(&initInfo);
@@ -44,7 +50,7 @@ bool ImGuiLayer::Create(Renderer& renderer, GLFWwindow* window)
     ImNodes::GetIO().EmulateThreeButtonMouse.Modifier = nullptr;
     ImNodes::GetStyle().Flags = ImNodesStyleFlags_NodeOutline | ImNodesStyleFlags_GridLines;
 
-    LOG_DEBUG("ImGui created");
+    // LOG_DEBUG("ImGui created");
     return true;
 }
 
@@ -55,7 +61,7 @@ void ImGuiLayer::Destroy()
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();
     descriptorPool.Destroy();
-    LOG_DEBUG("ImGui destroyed");
+    // LOG_DEBUG("ImGui destroyed");
 }
 
 void ImGuiLayer::NewFrame()

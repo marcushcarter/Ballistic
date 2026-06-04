@@ -68,7 +68,7 @@ ResourceHandle RenderGraph::ImportBuffer(const char* name, Buffer* buffer)
 
 ResourceHandle RenderGraph::CreateImage(const char* name, const TransientImageDesc& desc, VkImageLayout layout, VkPipelineStageFlags2 stage, VkAccessFlags2 access)
 {
-    if (nameMap.count(name)) { LOG_ERROR("RenderGraph: resource '%s' already declared", name); return {}; }
+    if (nameMap.count(name)) { /* LOG_ERROR("RenderGraph: resource '%s' already declared", name); */ return {}; }
     Resource r{};
     r.kind = Kind::TransientImage;
     r.name = name;
@@ -82,7 +82,7 @@ ResourceHandle RenderGraph::CreateImage(const char* name, const TransientImageDe
 
 ResourceHandle RenderGraph::CreateBuffer(const char* name, const TransientBufferDesc& desc, VkPipelineStageFlags2 stage, VkAccessFlags2 access)
 {
-    if (nameMap.count(name)) { LOG_ERROR("RenderGraph: resource '%s' already declared", name); return {}; }
+    if (nameMap.count(name)) { /* LOG_ERROR("RenderGraph: resource '%s' already declared", name); */ return {}; }
     Resource r{};
     r.kind = Kind::TransientBuffer;
     r.name = name;
@@ -97,7 +97,7 @@ ResourceHandle RenderGraph::CreateBuffer(const char* name, const TransientBuffer
 int32_t RenderGraph::Resolve(const char* name)
 {
     auto it = nameMap.find(name);
-    if (it == nameMap.end()) { LOG_ERROR("RenderGraph: resource '%s' not found (must be Imported first)", name); return -1; }
+    if (it == nameMap.end()) { /* LOG_ERROR("RenderGraph: resource '%s' not found (must be Imported first)", name); */ return -1; }
     return (int32_t)it->second;
 }
 
@@ -242,8 +242,8 @@ void RenderGraph::Compile()
 
         if (r.kind == Kind::TransientImage) {
             r.resolvedExtent = ComputeExtent(r.imageDesc, viewportExtent);
-            if (r.resolvedExtent.width == 0 || r.resolvedExtent.height == 0)
-                LOG_ERROR("RenderGraph: transient '%s' resolved to zero extent (viewport set?)", r.name ? r.name : "?");
+            if (r.resolvedExtent.width == 0 || r.resolvedExtent.height == 0) {}
+                // LOG_ERROR("RenderGraph: transient '%s' resolved to zero extent (viewport set?)", r.name ? r.name : "?");
 
             TransientRequest req{};
             req.kind = TransientRequest::Kind::Image;

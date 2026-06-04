@@ -1,10 +1,9 @@
 #include "pipeline_cache.h"
-#include "graphics/vk/misc/utils.h"
+// #include "graphics/vk/misc/utils.h"
+#include <fstream>
 
 bool PipelineCache::Load(VkDevice device, const std::filesystem::path& path)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-
     Destroy();
     deviceHandle = device;
 
@@ -17,7 +16,7 @@ bool PipelineCache::Load(VkDevice device, const std::filesystem::path& path)
         data.resize(file.tellg());
         file.seekg(0);
         if (!file.read(data.data(), data.size())) {
-            LOG_WARN("Failed to read pipeline cache, creating empty cache");
+            // LOG_WARN("Failed to read pipeline cache, creating empty cache");
             data.clear();
         }
     }
@@ -28,20 +27,17 @@ bool PipelineCache::Load(VkDevice device, const std::filesystem::path& path)
     createInfo.pInitialData = data.empty() ? nullptr : data.data();
 
     if (vkCreatePipelineCache(device, &createInfo, nullptr, &cache) != VK_SUCCESS) {
-        LOG_ERROR("Failed to create Vulkan pipeline cache");
+        // LOG_ERROR("Failed to create Vulkan pipeline cache");
         return false;
     }
 
-    SetObjectName(device, VK_OBJECT_TYPE_PIPELINE_CACHE, (uint64_t)cache, "PipelineCache");
-    LOG_DEBUG("Pipeline Cache loaded");
+    // SetObjectName(device, VK_OBJECT_TYPE_PIPELINE_CACHE, (uint64_t)cache, "PipelineCache");
+    // LOG_DEBUG("Pipeline Cache loaded");
     return true;
 }
 
 bool PipelineCache::Save(VkDevice device, const std::filesystem::path& path)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-    VK_CHECK_HANDLE(cache, VkPipelineCache);
-
     size_t size = 0;
     vkGetPipelineCacheData(device, cache, &size, nullptr);
     if (size == 0) return false;
@@ -54,21 +50,20 @@ bool PipelineCache::Save(VkDevice device, const std::filesystem::path& path)
 
     std::ofstream file(fsPath, std::ios::binary);
     if (!file.is_open()) {
-        LOG_ERROR("Failed to open pipeline cache for writing: %s", path.c_str());
+        // LOG_ERROR("Failed to open pipeline cache for writing: %s", path.c_str());
         return false;
     }
 
     file.write(data.data(), data.size());
-    LOG_DEBUG("Pipeline Cache saved");
+    // LOG_DEBUG("Pipeline Cache saved");
     return file.good();
 }
 
 void PipelineCache::Destroy()
 {
-    if (cache != VK_NULL_HANDLE) {
+    if (cache) {
         vkDestroyPipelineCache(deviceHandle, cache, nullptr);
         cache = VK_NULL_HANDLE;
-        LOG_DEBUG("Pipeline Cache destroyed");
+        // LOG_DEBUG("Pipeline Cache destroyed");
     }
-    deviceHandle = VK_NULL_HANDLE;
 }

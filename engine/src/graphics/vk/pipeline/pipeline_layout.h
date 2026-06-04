@@ -1,5 +1,7 @@
 #pragma once
-#include "pch.h"
+#include <vulkan/vulkan.h>
+#include <cstdint>
+#include <vector>
 
 inline VkPushConstantRange PushConstant(VkShaderStageFlags stage = VK_SHADER_STAGE_VERTEX_BIT, uint32_t offset = 0, uint32_t size = 0) {
     VkPushConstantRange p{};

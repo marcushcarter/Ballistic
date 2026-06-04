@@ -1,9 +1,9 @@
 #include "render_pass.h"
+#include <cstdint>
+#include <array>
 
 bool RenderPass::Create(VkDevice device, const std::vector<VkAttachmentDescription>& attachments)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-
     Destroy();
     deviceHandle = device;
 
@@ -77,7 +77,7 @@ bool RenderPass::Create(VkDevice device, const std::vector<VkAttachmentDescripti
     createInfo.pDependencies = deps.data();
 
     if (vkCreateRenderPass(device, &createInfo, nullptr, &renderPass) != VK_SUCCESS) {
-        LOG_ERROR("Failed to create Vulkan render pass");
+        // LOG_ERROR("Failed to create Vulkan render pass");
         return false;
     }
 
@@ -85,17 +85,17 @@ bool RenderPass::Create(VkDevice device, const std::vector<VkAttachmentDescripti
     for (auto& a : attachments)
         finalLayouts.push_back(a.finalLayout);
 
-    LOG_DEBUG("Render Pass created");
+    // LOG_DEBUG("Render Pass created");
     return true;
 }
 
 void RenderPass::Destroy()
 {
-    if (renderPass != VK_NULL_HANDLE) {
+    if (renderPass) {
         vkDestroyRenderPass(deviceHandle, renderPass, nullptr);
         renderPass = VK_NULL_HANDLE;
         finalLayouts.clear();
-        LOG_DEBUG("Render Pass destroyed");
+        // LOG_DEBUG("Render Pass destroyed");
     }
 }
 

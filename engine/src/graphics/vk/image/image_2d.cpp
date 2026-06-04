@@ -2,9 +2,6 @@
 
 bool Image2D::Create(VkDevice device, VmaAllocator vma, const Image2DDesc& desc)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-    VK_CHECK_HANDLE(vma, VmaAllocator);
-
     Destroy();
     extent = desc.extent;
     format = desc.format;
@@ -38,7 +35,7 @@ bool Image2D::Create(VkDevice device, VmaAllocator vma, const Image2DDesc& desc)
     allocInfo.requiredFlags = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
     if (vmaCreateImage(vma, &imageInfo, &allocInfo, &image, &allocation, nullptr) != VK_SUCCESS) {
-        LOG_ERROR("Image2D create failed: %s - vmaCreateImage", debugName.empty() ? "Unnamed" : debugName.c_str());
+        // LOG_ERROR("Image2D create failed: %s - vmaCreateImage", debugName ? debugName : "Unnamed");
         return false;
     }
 
@@ -55,35 +52,32 @@ bool Image2D::Create(VkDevice device, VmaAllocator vma, const Image2DDesc& desc)
     viewInfo.subresourceRange.layerCount = layers;
 
     if (vkCreateImageView(device, &viewInfo, nullptr, &view) != VK_SUCCESS) {
-        LOG_ERROR("Image2D create failed: %s - vkCreateImageView", debugName.empty() ? "Unnamed" : debugName.c_str());
+        // LOG_ERROR("Image2D create failed: %s - vkCreateImageView", debugName ? debugName : "Unnamed");
         return false;
     }
 
-    if (!debugName.empty()) {
+    if (debugName) {
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
         nameInfo.objectHandle = (uint64_t)image;
-        nameInfo.pObjectName = debugName.c_str();
+        nameInfo.pObjectName = debugName;
         auto func = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(device, "vkSetDebugUtilsObjectNameEXT");
         if (func) func(device, &nameInfo);
     }
     
-    LOG_DEBUG("Image2D created: %s (%ux%u, %s, usage %s)",
-        debugName.empty() ? "Unnamed" : debugName.c_str(),
-        extent.width, extent.height,
-        vk::to_string(vk::Format(format)).c_str(),
-        vk::to_string(vk::ImageUsageFlags(usage)).c_str()
-    );
+    // LOG_DEBUG("Image2D created: %s (%ux%u, %s, usage %s)",
+    //     debugName ? debugName : "Unnamed",
+    //     extent.width, extent.height,
+    //     vk::to_string(vk::Format(format)).c_str(),
+    //     vk::to_string(vk::ImageUsageFlags(usage)).c_str()
+    // );
 
     return true;
 }
 
 bool Image2D::WrapSwapchainImage(VkDevice device, VkImage swapchainImage, VkFormat swapchainFormat, VkExtent2D swapchainExtent)
 {
-    VK_CHECK_HANDLE(device, VkDevice);
-    VK_CHECK_HANDLE(swapchainImage, VkImage);
-
     Destroy();
     image = swapchainImage;
     format = swapchainFormat;
@@ -109,24 +103,24 @@ bool Image2D::WrapSwapchainImage(VkDevice device, VkImage swapchainImage, VkForm
     viewInfo.subresourceRange.layerCount = layers;
 
     if (vkCreateImageView(device, &viewInfo, nullptr, &view) != VK_SUCCESS) {
-        LOG_ERROR("Image2D create failed: %s - vkCreateImageView", debugName.empty() ? "Unnamed" : debugName.c_str());
+        // LOG_ERROR("Image2D create failed: %s - vkCreateImageView", debugName ? debugName : "Unnamed");
         return false;
     }
 
-    if (!debugName.empty()) {
+    if (debugName) {
         VkDebugUtilsObjectNameInfoEXT nameInfo{};
         nameInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
         nameInfo.objectType = VK_OBJECT_TYPE_IMAGE;
         nameInfo.objectHandle = (uint64_t)image;
-        nameInfo.pObjectName = debugName.c_str();
+        nameInfo.pObjectName = debugName;
         auto func = (PFN_vkSetDebugUtilsObjectNameEXT)vkGetDeviceProcAddr(device, "vkSetDebugUtilsObjectNameEXT");
         if (func) func(device, &nameInfo);
     }
 
-    LOG_DEBUG("Swapchain Image2D wrapped: (%ux%u, %s)",
-        extent.width, extent.height,
-        vk::to_string(vk::Format(format)).c_str()
-    );
+    // LOG_DEBUG("Swapchain Image2D wrapped: (%ux%u, %s)",
+    //     extent.width, extent.height,
+    //     vk::to_string(vk::Format(format)).c_str()
+    // );
     
     return true;
 }
@@ -134,7 +128,7 @@ bool Image2D::WrapSwapchainImage(VkDevice device, VkImage swapchainImage, VkForm
 bool Image2D::Resize(VkExtent2D newExtent)
 {
     if (!ownsImage) {
-        LOG_WARN("Image2D resize failed: %s - Cannot resize image that does not own its memory", debugName.empty() ? "Unnamed" : debugName.c_str());
+        // LOG_WARN("Image2D resize failed: %s - Cannot resize image that does not own its memory", debugName ? debugName : "Unnamed");
         return false;
     }
 
@@ -151,31 +145,21 @@ bool Image2D::Resize(VkExtent2D newExtent)
 
 void Image2D::Destroy()
 {
-    if (view != VK_NULL_HANDLE) {
+    if (view) {
         vkDestroyImageView(deviceHandle, view, nullptr);
         view = VK_NULL_HANDLE;
     }
 
-    if (image != VK_NULL_HANDLE && ownsImage) {
+    if (image && ownsImage) {
         vmaDestroyImage(vmaHandle, image, allocation);
         image = VK_NULL_HANDLE;
         allocation = VK_NULL_HANDLE;
-        LOG_DEBUG("Image2D destroyed: %s", debugName.empty() ? "Unnamed" : debugName.c_str());
+        // LOG_DEBUG("Image2D destroyed: %s", debugName ? debugName : "Unnamed");
     }
-
-    stage = 0;
-    access = 0;
-    layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    
-    vmaHandle = VK_NULL_HANDLE;
-    deviceHandle = VK_NULL_HANDLE;
 }
 
 bool Image2D::CopyBuffer(VkCommandBuffer cmd, VkBuffer srcBuffer, VkDeviceSize bufferOffset, VkOffset3D imageOffset)
 {
-    VK_CHECK_HANDLE(cmd, VkCommandBuffer);
-    VK_CHECK_HANDLE(srcBuffer, VkBuffer);
-
     VkBufferImageCopy region{};
     region.bufferOffset = bufferOffset;
     region.bufferRowLength = 0;
@@ -187,15 +171,11 @@ bool Image2D::CopyBuffer(VkCommandBuffer cmd, VkBuffer srcBuffer, VkDeviceSize b
     region.imageOffset = imageOffset;
     region.imageExtent = { extent.width, extent.height, 1 };
     vkCmdCopyBufferToImage(cmd, srcBuffer, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-
     return true;
 }
 
 bool Image2D::CopyImage(VkCommandBuffer cmd, VkImage srcImage, VkExtent2D copyExtent, VkImageAspectFlags srcAspect)
-{
-    VK_CHECK_HANDLE(cmd, VkCommandBuffer);
-    VK_CHECK_HANDLE(srcImage, VkImage);
-    
+{    
     VkImageCopy copyRegion{};
     copyRegion.srcSubresource.aspectMask = srcAspect;
     copyRegion.srcSubresource.baseArrayLayer = 0;
@@ -209,7 +189,6 @@ bool Image2D::CopyImage(VkCommandBuffer cmd, VkImage srcImage, VkExtent2D copyEx
     copyRegion.dstOffset = {0, 0, 0};
     copyRegion.extent = { copyExtent.width, copyExtent.height, 1 };
     vkCmdCopyImage(cmd, srcImage, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copyRegion);
-
     return true;
 }
 

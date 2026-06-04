@@ -1,6 +1,13 @@
 #include "editor_application.h"
 #include "resources.h"
 #include "graphics/render_paths/editor_render_path.h"
+#include "windows.h"
+
+#include <imgui.h>
+#include <backends/imgui_impl_vulkan.h>
+#include <backends/imgui_impl_glfw.h>
+
+#include <IconsFontAwesome6.h>
 
 void EditorApplication::OnInit()
 {
@@ -73,7 +80,7 @@ void EditorApplication::OnInit()
     };
     
     window.Show();
-    LOG_DEBUG("Editor initialized");
+    // LOG_DEBUG("Editor initialized");
 }
 
 static void custom_temp() {
@@ -147,14 +154,14 @@ void EditorApplication::OnShutdown()
     renderer.device.Wait();
     workspace.Save();
     imguiLayer.Destroy();
-    LOG_DEBUG("Editor shutdown");
+    // LOG_DEBUG("Editor shutdown");
 }
 
 void EditorApplication::OnProjectOpened(const std::filesystem::path& path)
 {
     editor.OpenProject(path);
     workspace.TouchProject(path);
-    LOG_INFO("Editing project: %s", path.string().c_str());
+    // LOG_INFO("Editing project: %s", path.string().c_str());
 }
 
 void EditorApplication::OnProjectClosed()
