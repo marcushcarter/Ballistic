@@ -1,10 +1,6 @@
-// #include "editor_imgui_pass.h"
-// #include "graphics/imgui_layer.h"
-// #include "graphics/vk/image/image_2d.h"
-
-#include "scene_placeholder_pass.h"
-#include "graphics/renderer.h"
-#include "graphics/imgui_layer.h"
+#include <graphics/passes/scene_placeholder_pass.h>
+#include <graphics/renderer.h>
+#include <graphics/imgui_layer.h>
 
 ResourceHandle AddImGuiPass(RenderGraph& g, Renderer* renderer, ImGuiLayer* imguiLayer)
 {    

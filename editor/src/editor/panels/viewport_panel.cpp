@@ -1,6 +1,6 @@
-#include "viewport_panel.h"
-#include "editor/context.h"
-#include "graphics/renderer.h"
+#include <editor/panels/viewport_panel.h>
+#include <editor/context.h>
+#include <graphics/renderer.h>
 #include <imgui.h>
 #include <IconsFontAwesome6.h>
 

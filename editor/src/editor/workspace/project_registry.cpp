@@ -1,5 +1,5 @@
-#include "project_registry.h"
-#include "core/timestamp.h"
+#include <editor/workspace/project_registry.h>
+#include <core/timestamp.h>
 #include <toml++/toml.hpp>
 #include <fstream>
 

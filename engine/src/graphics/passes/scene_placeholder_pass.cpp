@@ -1,4 +1,4 @@
-#include "scene_placeholder_pass.h"
+#include <graphics/passes/scene_placeholder_pass.h>
 #include <GLFW/glfw3.h>
 
 ResourceHandle AddScenePlaceholderPass(RenderGraph& g)

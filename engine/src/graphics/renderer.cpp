@@ -1,8 +1,8 @@
-#include "renderer.h"
-#include "core/window.h"
-#include "project/project.h"
-#include "resources.h"
-#include "render_graph/render_path.h"
+#include <graphics/renderer.h>
+#include <core/window.h>
+#include <project/project.h>
+#include <resources.h>
+#include <graphics/render_graph/render_path.h>
 #include <core/assert.h>
 #include <stb_image.h>
 

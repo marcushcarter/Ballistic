@@ -1,5 +1,5 @@
-#include "project_loader.h"
-#include "project.h"
+#include <project/project_loader.h>
+#include <project/project.h>
 
 void ProjectLoader::Begin(Project& project, const std::filesystem::path& path)
 {

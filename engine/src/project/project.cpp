@@ -1,5 +1,5 @@
-#include "project.h"
-#include "serialization.h"
+#include <project/project.h>
+#include <project/serialization.h>
 #include <fstream>
 #include <Windows.h>
 

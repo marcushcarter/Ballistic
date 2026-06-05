@@ -1,5 +1,5 @@
-#include "blit_to_swapchain_pass.h"
-#include "graphics/renderer.h"
+#include <graphics/passes/blit_to_swapchain_pass.h>
+#include <graphics/renderer.h>
 
 ResourceHandle AddBlitToSwapchainPass(RenderGraph& g, Renderer* renderer)
 {

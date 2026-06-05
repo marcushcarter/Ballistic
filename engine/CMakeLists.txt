@@ -15,6 +15,7 @@ target_include_directories(ballistic_engine
 )
 
 target_link_options(ballistic_engine PRIVATE "/ignore:4099")
+target_link_options(ballistic_engine INTERFACE "/ignore:4099")
 
 target_link_libraries(ballistic_engine
     PUBLIC ballistic_compiler_options

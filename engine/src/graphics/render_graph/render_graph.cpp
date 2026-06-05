@@ -1,4 +1,4 @@
-#include "render_graph.h"
+#include <graphics/render_graph/render_graph.h>
 
 static VkExtent2D ComputeExtent(const TransientImageDesc& d, VkExtent2D vp)
 {

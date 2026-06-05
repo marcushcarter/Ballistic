@@ -1,6 +1,5 @@
 #pragma once
-#include "pch.h"
-#include "graphics/render_graph/render_path.h"
+#include <graphics/render_graph/render_path.h>
 
 struct Renderer;
 

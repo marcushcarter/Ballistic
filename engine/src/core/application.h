@@ -1,9 +1,8 @@
 #pragma once
-#include "pch.h"
-#include "window.h"
-#include "graphics/renderer.h"
-#include "project/project.h"
-#include "project/project_loader.h"
+#include <core/window.h>
+#include <graphics/renderer.h>
+#include <project/project.h>
+#include <project/project_loader.h>
 #include <filesystem>
 #include <functional>
 

@@ -1,7 +1,7 @@
-#include "render_graph_panel.h"
-#include "editor/context.h"
-#include "graphics/renderer.h"
-#include "graphics/render_graph/render_graph.h"
+#include <editor/panels/render_graph_panel.h>
+#include <editor/context.h>
+#include <graphics/renderer.h>
+#include <graphics/render_graph/render_graph.h>
 #include <imgui.h>
 #include <IconsFontAwesome6.h>
 

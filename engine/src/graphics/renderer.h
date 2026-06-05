@@ -1,8 +1,7 @@
 #pragma once
-#include "pch.h"
-#include "vk/vk.h"
-#include "render_graph/render_graph.h"
-#include "render_graph/render_path.h"
+#include <graphics/vk/vk.h>
+#include <graphics/render_graph/render_graph.h>
+#include <graphics/render_graph/render_path.h>
 #include <functional>
 
 struct Window;

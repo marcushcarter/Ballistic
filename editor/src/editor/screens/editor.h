@@ -1,7 +1,7 @@
 #pragma once
-#include "editor/context.h"
-#include "editor/panels/viewport_panel.h"
-#include "editor/panels/render_graph_panel.h"
+#include <editor/context.h>
+#include <editor/panels/viewport_panel.h>
+#include <editor/panels/render_graph_panel.h>
 #include <filesystem>
 
 struct Project;

@@ -1,9 +1,8 @@
-#include "editor.h"
-#include "editor/workspace/workspace.h"
-#include "project/project.h"
-#include "graphics/renderer.h"
-#include "platform/file_dialog.h"
-
+#include <editor/screens/editor.h>
+#include <editor/workspace/workspace.h>
+#include <project/project.h>
+#include <graphics/renderer.h>
+#include <platform/file_dialog.h>
 #include <imgui.h>
 #include <imnodes.h>
 #include <IconsFontAwesome6.h>

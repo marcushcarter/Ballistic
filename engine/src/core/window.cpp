@@ -1,12 +1,9 @@
-#include "window.h"
-
+#include <core/window.h>
 #include <windows.h>
 #include <dwmapi.h>
-
 #include <GLFW/glfw3.h>
 #define GLFW_EXPOSE_NATIVE_WIN32
 #include <GLFW/glfw3native.h>
-
 #include <stb_image.h>
 
 bool Window::Create(const char* title, uint32_t w, uint32_t h)

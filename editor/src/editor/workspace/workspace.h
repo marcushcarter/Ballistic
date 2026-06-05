@@ -1,5 +1,5 @@
 #pragma once
-#include "project_registry.h"
+#include <editor/workspace/project_registry.h>
 #include <filesystem>
 
 struct EditorConfig

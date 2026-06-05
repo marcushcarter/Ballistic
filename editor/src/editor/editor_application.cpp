@@ -1,12 +1,10 @@
-#include "editor_application.h"
-#include "resources.h"
-#include "graphics/render_paths/editor_render_path.h"
-#include "windows.h"
-
+#include <editor/editor_application.h>
+#include <resources.h>
+#include <graphics/render_paths/editor_render_path.h>
+#include <windows.h>
 #include <imgui.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <backends/imgui_impl_glfw.h>
-
 #include <IconsFontAwesome6.h>
 
 void EditorApplication::OnInit()

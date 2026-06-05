@@ -1,5 +1,5 @@
-#include "serialization.h"
-#include "project.h"
+#include <project/serialization.h>
+#include <project/project.h>
 #include <toml++/toml.hpp>
 #include <fstream>
 

@@ -1,5 +1,4 @@
 #pragma once
-#include "pch.h"
 #include <core/application.h>
 
 struct GameApplication : Application

@@ -1,5 +1,5 @@
-#include "game_application.h"
-#include "graphics/render_paths/game_render_path.h"
+#include <game/game_application.h>
+#include <graphics/render_paths/game_render_path.h>
 
 void GameApplication::OnInit()
 {

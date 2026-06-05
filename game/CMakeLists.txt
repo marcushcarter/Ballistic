@@ -14,6 +14,6 @@ target_include_directories(ballistic_engine
 
 target_link_libraries(ballistic_game PRIVATE ballistic_engine)
 
-target_precompile_headers(ballistic_game REUSE_FROM ballistic_engine)
+target_precompile_headers(ballistic_game PRIVATE pch.h)
 
 set_target_properties(ballistic_game PROPERTIES OUTPUT_NAME "ballistic_game")

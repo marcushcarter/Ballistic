@@ -1,13 +1,12 @@
 #pragma once
 #include <vulkan/vulkan.h>
-#include "core/application.h"
-#include "workspace/workspace.h"
-#include "workspace/settings.h"
-#include "workspace/theme.h"
-#include "screens/project_manager.h"
-#include "screens/editor.h"
-#include "graphics/imgui_layer.h"
-
+#include <core/application.h>
+#include <editor/workspace/workspace.h>
+#include <editor/workspace/settings.h>
+#include <editor/workspace/theme.h>
+#include <editor/screens/project_manager.h>
+#include <editor/screens/editor.h>
+#include <graphics/imgui_layer.h>
 #include <filesystem>
 
 struct EditorApplication : Application
