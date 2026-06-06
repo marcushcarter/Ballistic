@@ -26,8 +26,8 @@ struct GameRenderPath : RenderPath
         blitFeature.DestroyResources();
     }
     
-    void Build(RenderGraph& g) override {
-        placeholderFeature.AddPass(g);
-        blitFeature.AddPass(g);
+    void Build(RenderGraph& g, FrameGraph& fg) override {
+        placeholderFeature.AddPass(g, fg);
+        blitFeature.AddPass(g, fg);
     }
 };

@@ -26,8 +26,8 @@ struct EditorRenderPath : RenderPath
         placeholderFeature.DestroyResources();
     }
     
-    void Build(RenderGraph& g) override {
-        placeholderFeature.AddPass(g);
-        AddImGuiPass(g, renderer, imguiLayer);
+    void Build(RenderGraph& g, FrameGraph& fg) override {
+        placeholderFeature.AddPass(g, fg);
+        AddImGuiPass(g, fg, renderer, imguiLayer);
     }
 };

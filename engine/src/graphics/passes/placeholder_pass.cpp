@@ -1,11 +1,12 @@
 #include <graphics/passes/placeholder_pass.h>
 #include <graphics/render_graph/render_graph.h>
+#include <graphics/render_graph/render_path.h>
 #include <graphics/renderer.h>
 #include <GLFW/glfw3.h>
 
-bool PlaceholderFeature::CreateResources(Renderer& renderer)
+bool PlaceholderFeature::CreateResources(Renderer& r)
 {
-    (void)renderer;
+    (void)r;
     return true;
 }
 
@@ -14,12 +15,13 @@ void PlaceholderFeature::DestroyResources()
 
 }
 
-void PlaceholderFeature::AddPass(RenderGraph& g)
+void PlaceholderFeature::AddPass(RenderGraph& g, FrameGraph& fg)
 {
     struct PassData { ResourceHandle dst; };
     PassData out = g.AddPass<PassData>("PlaceholderPass",
     [&](RenderGraph& builder, PassData& data) {
-        data.dst = builder.WriteImage("finalImage", VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+        data.dst = builder.WriteImage(fg.finalImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+        fg.finalImage = data.dst;
     },
     [this](VkCommandBuffer cmd, const PassData& data, RenderGraph& g) {
         VkImageView view = g.GetImageView(data.dst);
@@ -32,7 +34,7 @@ void PlaceholderFeature::AddPass(RenderGraph& g)
         color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
-        color.clearValue.color = { sinf((float)glfwGetTime()), 0.0f, 1.0f, 1.0f };
+        color.clearValue.color = { sinf((float)glfwGetTime()) / 2 + 0.5f, 0.0f, 1.0f, 1.0f };
 
         VkRenderingInfo info{};
         info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;

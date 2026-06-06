@@ -322,15 +322,17 @@ void Renderer::Render()
     frameUniformRing.Current(currentFrame).Update(&temp, sizeof(TEMPBUFFERSTRUCT), 0);
 
     graph.BeginFrame(frameNumber, frameNumber - frameCount);
-    graph.ImportImage("finalImage", &finalImage);
-    graph.ImportImage("swapchain", &swapchainImages[imageIndex]);
-    graph.ImportBuffer("frameUniformBuffer", &frameUniformRing.Current(currentFrame));
+    
+    FrameGraph fg{};
+    fg.finalImage = graph.ImportImage("finalImage", &finalImage);
+    fg.swapchain = graph.ImportImage("swapchain", &swapchainImages[imageIndex]);
+    fg.frameUniform = graph.ImportBuffer("frameUniformBuffer", &frameUniformRing.Current(currentFrame));
     
     VkDescriptorSet pDescriptorSets = { bindlessHeap.GetSet() };
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, globalPipelineLayout.Get(), 0, 1, &pDescriptorSets, 0, nullptr);
     vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, globalPipelineLayout.Get(), 0, 1, &pDescriptorSets, 0, nullptr);
 
-    renderPath->Build(graph);
+    renderPath->Build(graph, fg);
     graph.Compile();
     graph.Execute(cmd);
 
@@ -353,7 +355,7 @@ bool Renderer::BeginFrame()
     inFlightFences[currentFrame].Reset();
     
     VkResult result = vkAcquireNextImageKHR(device.Get(), swapchain.Get(), UINT64_MAX, imageAvailableSemaphores[currentFrame].Get(), VK_NULL_HANDLE, &imageIndex);
-    if (result == VK_ERROR_OUT_OF_DATE_KHR) { /* LOG_WARN("Swapchain out of date"); */ windowResizeRequested = true;  return false; }
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) { LOG_WARN("Swapchain out of date"); windowResizeRequested = true;  return false; }
     
     commandBuffers[imageIndex].Reset();
     commandBuffers[imageIndex].Begin();

@@ -1,5 +1,6 @@
 #include <graphics/passes/blit_pass.h>
 #include <graphics/render_graph/render_graph.h>
+#include <graphics/render_graph/render_path.h>
 #include <graphics/renderer.h>
 #include <resources.h>
 #include <core/assert.h>
@@ -34,19 +35,20 @@ void SwapchainBlitFeature::DestroyResources()
     pipeline.Destroy();
 }
 
-void SwapchainBlitFeature::AddPass(RenderGraph& g)
+void SwapchainBlitFeature::AddPass(RenderGraph& g, FrameGraph& fg)
 {
     struct PassData { ResourceHandle src, dst, frameUn; };
-    PassData out = g.AddPass<PassData>("BlitToSwapchainPass",
+    PassData out = g.AddPass<PassData>("SwapchainBlitPass",
     [&](RenderGraph& builder, PassData& data) {
-        data.frameUn = builder.ReadBuffer("frameUniformBuffer", VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
-        data.src = builder.ReadImage("finalImage", VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
-        data.dst = builder.WriteImage("swapchain", VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+        data.frameUn = builder.ReadBuffer(fg.frameUniform, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
+        data.src = builder.ReadImage(fg.finalImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
+        data.dst = builder.WriteImage(fg.swapchain, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+        fg.swapchain = data.dst;
     },
     [this](VkCommandBuffer cmd, const PassData& data, RenderGraph& g) {    
         VkImageView swapView = g.GetImageView(data.dst);
         VkExtent2D ext = g.GetImageExtent(data.dst);
-        if (!swapView || !renderer) return;
+        if (!swapView) return;
 
         VkRenderingAttachmentInfo color{};
         color.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;

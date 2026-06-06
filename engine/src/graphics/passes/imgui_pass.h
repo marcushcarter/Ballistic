@@ -2,4 +2,5 @@
 struct RenderGraph;
 struct Renderer;
 struct ImGuiLayer;
-void AddImGuiPass(RenderGraph& g, Renderer* renderer, ImGuiLayer* imguiLayer);
+struct FrameGraph;
+void AddImGuiPass(RenderGraph& g, FrameGraph& fg, Renderer* renderer, ImGuiLayer* imguiLayer);

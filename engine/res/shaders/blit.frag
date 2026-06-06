@@ -22,5 +22,5 @@ layout(location = 0) out vec4 FragColor;
 
 void main() {
     FragColor = texture(sampler2D(uTextures[pc.srcIndex], uSamplers[pc.samplerIndex]), vUV);
-    FragColor = vec4(pc.temp.color, 1.0);
+    // FragColor = vec4(pc.temp.color, 1.0);
 }
