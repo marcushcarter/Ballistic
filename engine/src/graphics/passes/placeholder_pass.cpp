@@ -39,10 +39,18 @@ void PlaceholderPass::AddPass(RenderGraph& g, FrameGraph& fg)
 {
     struct PassData { ResourceHandle dst; };
     PassData out = g.AddPass<PassData>("PlaceholderPass",
-    [&](RenderGraph& builder, PassData& data) {
-        builder.ReadImage(fg.lightImage, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
+    [&](RenderGraph& builder, PassData& data)
+    {
+        builder.ReadImage(fg.lightImage,
+        VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL,
+        VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT,
+        VK_ACCESS_2_SHADER_READ_BIT);
 
-        data.dst = builder.WriteImage(fg.finalImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+        data.dst = builder.WriteImage(fg.finalImage,
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
+
         fg.finalImage = data.dst;
     },
     [this](VkCommandBuffer cmd, const PassData& data, RenderGraph& g) {

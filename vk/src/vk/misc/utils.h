@@ -1,5 +1,4 @@
 #pragma once
-#include "pch.h"
 
 inline void Viewport(VkCommandBuffer cmd, float x, float y, float width, float height, float minDepth = 0.0f, float maxDepth = 1.0f)
 {

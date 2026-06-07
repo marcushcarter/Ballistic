@@ -1,4 +1,5 @@
 #include <vk/core/debug_messenger.h>
+#include <iostream>
 
 bool DebugMessenger::Create(VkInstance instance, VkDebugUtilsMessageSeverityFlagsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, bool enableValidation)
 {
@@ -46,9 +47,18 @@ void DebugMessenger::Destroy()
 
 VKAPI_ATTR VkBool32 DebugMessenger::DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT severity, VkDebugUtilsMessageTypeFlagsEXT, const VkDebugUtilsMessengerCallbackDataEXT* data, void*)
 {
-    (void)data;
-    if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {} // LOG_ERROR("[VULKAN] %s", data->pMessage);
-    else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {} // LOG_WARN("[VULKAN] %s", data->pMessage);
-    else {} // LOG_DEBUG("[VULKAN] %s", data->pMessage);
+    // if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+
+    // } // LOG_ERROR("[VULKAN] %s", data->pMessage);
+    // else if (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+
+    // } // LOG_WARN("[VULKAN] %s", data->pMessage);
+    // else {
+
+    // } // LOG_DEBUG("[VULKAN] %s", data->pMessage);
+    // return VK_FALSE;
+
+    const char* level = (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) ? "ERROR" : (severity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) ? "WARN" : "INFO";
+    std::cerr << "\n[VULKAN][" << level << "] " << data->pMessage << "\n";
     return VK_FALSE;
 }

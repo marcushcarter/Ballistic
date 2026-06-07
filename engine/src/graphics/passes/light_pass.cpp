@@ -73,9 +73,9 @@ void LightPass::AddPass(RenderGraph& g, FrameGraph& fg)
             .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
             .debugName = "light_diffuse",
         },
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-        VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
         
         data.ligthSpecular = builder.CreateImage("LightSpecularImage", {
             .format = VK_FORMAT_R16G16B16A16_SFLOAT,
@@ -83,9 +83,9 @@ void LightPass::AddPass(RenderGraph& g, FrameGraph& fg)
             .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
             .debugName = "light_specular",
         },
-        VK_IMAGE_LAYOUT_DEPTH_ATTACHMENT_OPTIMAL,
-        VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT,
-        VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+        VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
         fg.lightDiffuseImage = data.lightDiffuse;
         fg.ligthSpecularImage = data.ligthSpecular;

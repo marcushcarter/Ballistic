@@ -34,9 +34,8 @@ void MainZPass::AddPass(RenderGraph& g, FrameGraph& fg)
 
         fg.mainZBuffer = data.depth;
     },
-    [this](VkCommandBuffer cmd, const PassData& data, RenderGraph& g) {
-        (void)cmd;
-
+    [this](VkCommandBuffer cmd, const PassData& data, RenderGraph& g)
+    {
         VkImageView view = g.GetImageView(data.depth);
         VkExtent2D ext = g.GetImageExtent(data.depth);
         if (!view) return;
@@ -57,6 +56,8 @@ void MainZPass::AddPass(RenderGraph& g, FrameGraph& fg)
 
         // vkCmdBeginRendering(cmd, &info);
         // vkCmdEndRendering(cmd);
+
+        (void)cmd;
     });
 
 }

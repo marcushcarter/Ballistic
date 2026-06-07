@@ -13,11 +13,11 @@ bool Instance::Create(const char* name, uint32_t major, uint32_t minor, uint32_t
     appInfo.apiVersion = VK_API_VERSION_1_3;
 
     std::vector<const char*> layers = requiredLayers;
-
     if (enableValidation)
         layers.push_back("VK_LAYER_KHRONOS_validation");
 
-    if (!CheckLayerSupport(layers)) {
+    bool layersEnabled = CheckLayerSupport(layers);
+    if (!layersEnabled) {
         // LOG_ERROR("Instance validation layers unavailable");
         layers.clear();
     }
@@ -27,12 +27,29 @@ bool Instance::Create(const char* name, uint32_t major, uint32_t minor, uint32_t
         return false;
     }
 
-    VkInstanceCreateInfo createInfo{};
-    createInfo.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+    std::vector<const char*> extensions = requiredExtensions;
+
+    VkValidationFeatureEnableEXT enabledValidation[] = {
+        VK_VALIDATION_FEATURE_ENABLE_SYNCHRONIZATION_VALIDATION_EXT,
+        VK_VALIDATION_FEATURE_ENABLE_GPU_ASSISTED_EXT,            // optional, heavier
+        VK_VALIDATION_FEATURE_ENABLE_BEST_PRACTICES_EXT,         // optional
+    };
+
+    VkValidationFeaturesEXT validationFeatures{ VK_STRUCTURE_TYPE_VALIDATION_FEATURES_EXT };
+    validationFeatures.enabledValidationFeatureCount = (uint32_t)std::size(enabledValidation);
+    validationFeatures.pEnabledValidationFeatures = enabledValidation;
+
+    VkInstanceCreateInfo createInfo{ VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO };
+
+    if (enableValidation && layersEnabled) {
+        extensions.push_back(VK_EXT_VALIDATION_FEATURES_EXTENSION_NAME);
+        createInfo.pNext = &validationFeatures;   // chained only when layer is active
+    }
+
     createInfo.pApplicationInfo = &appInfo;
-    createInfo.enabledExtensionCount = static_cast<uint32_t>(requiredExtensions.size());
-    createInfo.ppEnabledExtensionNames = requiredExtensions.data();
-    createInfo.enabledLayerCount = static_cast<uint32_t>(layers.size());
+    createInfo.enabledExtensionCount = (uint32_t)extensions.size();
+    createInfo.ppEnabledExtensionNames = extensions.data();
+    createInfo.enabledLayerCount = (uint32_t)layers.size();
     createInfo.ppEnabledLayerNames = layers.empty() ? nullptr : layers.data();
 
     if (vkCreateInstance(&createInfo, nullptr, &instance) != VK_SUCCESS) {

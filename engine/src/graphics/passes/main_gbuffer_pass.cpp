@@ -46,7 +46,7 @@ void MainGBufferPass::AddPass(RenderGraph& g, FrameGraph& fg)
 
         data.normal = builder.CreateImage("GBufferNormal", {
             .format = VK_FORMAT_A2B10G10R10_UNORM_PACK32,
-            .usage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+            .usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
             .aspect = VK_IMAGE_ASPECT_COLOR_BIT,
             .debugName = "GBufferNormal", 
         },

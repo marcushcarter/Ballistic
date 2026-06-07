@@ -1,5 +1,5 @@
 #include <vk/heap/transient_resource.h>
-// #include "graphics/vk/misc/utils.h"
+#include <vk/misc/utils.h>
 
 bool PhysicalImage::CreateUnbound(VkDevice device, const TransientImageDesc& d, VkExtent2D resolved)
 {
@@ -28,7 +28,7 @@ bool PhysicalImage::CreateUnbound(VkDevice device, const TransientImageDesc& d, 
     }
 
     vkGetImageMemoryRequirements(device, image, &memReq);
-    // SetObjectName(device, VK_OBJECT_TYPE_IMAGE, (uint64_t)image, d.debugName);
+    SetObjectName(device, VK_OBJECT_TYPE_IMAGE, (uint64_t)image, d.debugName);
     return true;
 }
 
@@ -78,7 +78,7 @@ bool PhysicalBuffer::CreateUnbound(VkDevice device, const TransientBufferDesc& d
     }
 
     vkGetBufferMemoryRequirements(device, buffer, &memReq);
-    // SetObjectName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, d.debugName);
+    SetObjectName(device, VK_OBJECT_TYPE_BUFFER, (uint64_t)buffer, d.debugName);
     return true;
 }
 

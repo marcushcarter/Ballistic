@@ -73,7 +73,7 @@ void SwapchainBlitPass::AddPass(RenderGraph& g, FrameGraph& fg)
         pc.srcIndex = g.GetBindlessSampled(data.src);
         pc.samplerIndex = renderer->linearSampler.bindlessSampler;
         pc.address = g.GetDeviceAddress(data.frameUn);
-        vkCmdPushConstants(cmd, renderer->globalPipelineLayout.Get(), VK_SHADER_STAGE_ALL, 0, sizeof(pc), &pc);
+        vkCmdPushConstants(cmd, renderer->globalPipelineLayout.Get(), VK_SHADER_STAGE_ALL, 0, 128, &pc);
         vkCmdDraw(cmd, 3, 1, 0, 0);
 
         vkCmdEndRendering(cmd);
