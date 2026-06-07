@@ -10,24 +10,24 @@ struct Renderer;
 struct GameRenderPath : RenderPath
 {
     Renderer* renderer = nullptr;
-    PlaceholderFeature placeholderFeature;
-    SwapchainBlitFeature blitFeature;
+    PlaceholderPass placeholderPass;
+    SwapchainBlitPass blitPass;
 
     explicit GameRenderPath(Renderer& r) : renderer(&r) {}
 
     bool CreateResources(Renderer& r) override {
-        placeholderFeature.CreateResources(r);
-        blitFeature.CreateResources(r);
+        placeholderPass.CreateResources(r);
+        blitPass.CreateResources(r);
         return true;
     }
 
     void DestroyResources() override {
-        placeholderFeature.DestroyResources();
-        blitFeature.DestroyResources();
+        placeholderPass.DestroyResources();
+        blitPass.DestroyResources();
     }
     
     void Build(RenderGraph& g, FrameGraph& fg) override {
-        placeholderFeature.AddPass(g, fg);
-        blitFeature.AddPass(g, fg);
+        placeholderPass.AddPass(g, fg);
+        blitPass.AddPass(g, fg);
     }
 };

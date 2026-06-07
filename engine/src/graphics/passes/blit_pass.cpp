@@ -5,7 +5,7 @@
 #include <core/assert.h>
 #include <resources.h>
 
-bool SwapchainBlitFeature::CreateResources(Renderer& r)
+bool SwapchainBlitPass::CreateResources(Renderer& r)
 {
     renderer = &r;
     
@@ -30,12 +30,12 @@ bool SwapchainBlitFeature::CreateResources(Renderer& r)
     return true;
 }
 
-void SwapchainBlitFeature::DestroyResources()
+void SwapchainBlitPass::DestroyResources()
 {
     pipeline.Destroy();
 }
 
-void SwapchainBlitFeature::AddPass(RenderGraph& g, FrameGraph& fg)
+void SwapchainBlitPass::AddPass(RenderGraph& g, FrameGraph& fg)
 {
     struct PassData { ResourceHandle src, dst, frameUn; };
     PassData out = g.AddPass<PassData>("SwapchainBlitPass",

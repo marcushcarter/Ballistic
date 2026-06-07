@@ -4,7 +4,7 @@ struct Renderer;
 struct RenderGraph;
 struct FrameGraph;
 
-struct SwapchainBlitFeature
+struct SwapchainBlitPass
 {
     GraphicsPipeline pipeline;
     Renderer* renderer = nullptr;

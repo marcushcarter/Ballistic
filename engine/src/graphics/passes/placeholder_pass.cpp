@@ -5,7 +5,7 @@
 #include <core/assert.h>
 #include <resources.h>
 
-bool PlaceholderFeature::CreateResources(Renderer& r)
+bool PlaceholderPass::CreateResources(Renderer& r)
 {
     renderer = &r;
     
@@ -30,12 +30,12 @@ bool PlaceholderFeature::CreateResources(Renderer& r)
     return true;
 }
 
-void PlaceholderFeature::DestroyResources()
+void PlaceholderPass::DestroyResources()
 {
     pipeline.Destroy();
 }
 
-void PlaceholderFeature::AddPass(RenderGraph& g, FrameGraph& fg)
+void PlaceholderPass::AddPass(RenderGraph& g, FrameGraph& fg)
 {
     struct PassData { ResourceHandle dst; };
     PassData out = g.AddPass<PassData>("TrianglePass",

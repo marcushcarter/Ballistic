@@ -21,6 +21,9 @@ struct FrameGraph {
     ResourceHandle finalImage;
     ResourceHandle swapchain;
     ResourceHandle frameUniform;
+
+    
+    ResourceHandle deferredLightImage;
 };
 
 struct RenderPath

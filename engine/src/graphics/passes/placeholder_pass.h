@@ -4,7 +4,7 @@ struct Renderer;
 struct RenderGraph;
 struct FrameGraph;
 
-struct PlaceholderFeature
+struct PlaceholderPass
 {
     GraphicsPipeline pipeline;
     Renderer* renderer = nullptr;

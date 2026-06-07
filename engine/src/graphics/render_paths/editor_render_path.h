@@ -13,26 +13,26 @@ struct EditorRenderPath : RenderPath
 {
     Renderer* renderer = nullptr;
     ImGuiLayer* imguiLayer = nullptr;
-    PlaceholderFeature placeholderFeature;
+    PlaceholderPass placeholderPass;
 
     bool resourcesReady = false;
 
     EditorRenderPath(Renderer& r, ImGuiLayer& i) : renderer(&r), imguiLayer(&i) {}
 
     bool CreateResources(Renderer& r) override {
-        placeholderFeature.CreateResources(r);
+        placeholderPass.CreateResources(r);
         resourcesReady = true;
         return true;
     }
 
     void DestroyResources() override {
-        placeholderFeature.DestroyResources();
+        placeholderPass.DestroyResources();
         resourcesReady = false;
     }
     
     void Build(RenderGraph& g, FrameGraph& fg) override {
         if (resourcesReady) {
-            placeholderFeature.AddPass(g, fg);
+            placeholderPass.AddPass(g, fg);
         }
 
         AddImGuiPass(g, fg, renderer, imguiLayer, resourcesReady);
