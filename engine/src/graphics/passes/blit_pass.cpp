@@ -40,8 +40,10 @@ void SwapchainBlitPass::AddPass(RenderGraph& g, FrameGraph& fg)
     struct PassData { ResourceHandle src, dst, frameUn; };
     PassData out = g.AddPass<PassData>("SwapchainBlitPass",
     [&](RenderGraph& builder, PassData& data) {
+        // builder.ReadImage(fg.mainZBuffer, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
         data.frameUn = builder.ReadBuffer(fg.frameUniform, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
         data.src = builder.ReadImage(fg.finalImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
+
         data.dst = builder.WriteImage(fg.swapchain, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
         fg.swapchain = data.dst;
     },
@@ -50,16 +52,14 @@ void SwapchainBlitPass::AddPass(RenderGraph& g, FrameGraph& fg)
         VkExtent2D ext = g.GetImageExtent(data.dst);
         if (!swapView) return;
 
-        VkRenderingAttachmentInfo color{};
-        color.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        VkRenderingAttachmentInfo color{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
         color.imageView = swapView;
         color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         color.clearValue.color = { 0.0f, 0.0f, 0.0f, 1.0f };
 
-        VkRenderingInfo info{};
-        info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        VkRenderingInfo info{ VK_STRUCTURE_TYPE_RENDERING_INFO };
         info.renderArea = { {0,0}, ext };
         info.layerCount = 1;
         info.colorAttachmentCount = 1;

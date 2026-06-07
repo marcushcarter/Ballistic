@@ -14,7 +14,7 @@ bool PlaceholderPass::CreateResources(Renderer& r)
     BE_ASSERT(frag.LoadOrCompile(r.device.Get(), VK_SHADER_STAGE_FRAGMENT_BIT, LoadShaderSource(SHADER_TRIANGLE_FRAG), r.projectPath / ".ballistic/cache/shaders/triangle.frag.spv", "triangle.frag"));
 
     PipelineRenderingInfo renderingInfo;
-    renderingInfo.colorFormats = { r.swapchain.format };
+    renderingInfo.colorFormats = { r.finalImage.format };
     auto renderingCreateInfo = renderingInfo.Get();
 
     BE_ASSERT(pipeline.Create(r.device.Get(), {
@@ -38,8 +38,10 @@ void PlaceholderPass::DestroyResources()
 void PlaceholderPass::AddPass(RenderGraph& g, FrameGraph& fg)
 {
     struct PassData { ResourceHandle dst; };
-    PassData out = g.AddPass<PassData>("TrianglePass",
+    PassData out = g.AddPass<PassData>("PlaceholderPass",
     [&](RenderGraph& builder, PassData& data) {
+        builder.ReadImage(fg.hdrLightImage, VK_IMAGE_LAYOUT_DEPTH_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_2_FRAGMENT_SHADER_BIT, VK_ACCESS_2_SHADER_READ_BIT);
+
         data.dst = builder.WriteImage(fg.finalImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
         fg.finalImage = data.dst;
     },
@@ -48,16 +50,14 @@ void PlaceholderPass::AddPass(RenderGraph& g, FrameGraph& fg)
         VkExtent2D ext = g.GetImageExtent(data.dst);
         if (!view) return;
 
-        VkRenderingAttachmentInfo color{};
-        color.sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+        VkRenderingAttachmentInfo color{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
         color.imageView = view;
         color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
         color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
         color.clearValue.color = { 1.0f, 1.0f, 1.0f, 1.0f };
 
-        VkRenderingInfo info{};
-        info.sType = VK_STRUCTURE_TYPE_RENDERING_INFO;
+        VkRenderingInfo info{ VK_STRUCTURE_TYPE_RENDERING_INFO };
         info.renderArea = { {0,0}, ext };
         info.layerCount = 1;
         info.colorAttachmentCount = 1;

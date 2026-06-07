@@ -4,17 +4,7 @@
 struct Renderer;
 struct RenderGraph;
 
-// struct GBufferOutput {
-//     ResourceHandle albedo, normal, material, depth;
-// };
-
-// struct IndirectDrawData {
-//     ResourceHandle commands;
-//     ResourceHandle count;
-//     ResourceHandle visibility;
-//     ResourceHandle offsets;
-//     ResourceHandle writtenCount;
-// };
+struct GBufferOutput { ResourceHandle albedo, normal; };
 
 struct FrameGraph {
     // Imported
@@ -22,8 +12,11 @@ struct FrameGraph {
     ResourceHandle swapchain;
     ResourceHandle frameUniform;
 
-    
-    ResourceHandle deferredLightImage;
+    ResourceHandle mainZBuffer;
+    GBufferOutput gbuffer;
+    ResourceHandle aoRaw;
+    ResourceHandle aoBlurred;
+    ResourceHandle hdrLightImage;
 };
 
 struct RenderPath

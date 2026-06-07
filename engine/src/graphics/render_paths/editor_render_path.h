@@ -1,38 +1,36 @@
 #pragma once
 #include <graphics/render_graph/render_path.h>
+#include <graphics/render_graph/render_graph.h>
 #include <graphics/renderer.h>
 #include <graphics/imgui_layer.h>
-#include <graphics/render_graph/render_graph.h>
-#include <graphics/passes/placeholder_pass.h>
-#include <graphics/passes/imgui_pass.h>
 
-struct ImGuiLayer;
-struct Renderer;
+#include <graphics/passes/scene_passes.h>
+#include <graphics/passes/imgui_pass.h>
 
 struct EditorRenderPath : RenderPath
 {
     Renderer* renderer = nullptr;
     ImGuiLayer* imguiLayer = nullptr;
-    PlaceholderPass placeholderPass;
 
+    ScenePasses scenePasses;
     bool resourcesReady = false;
 
-    EditorRenderPath(Renderer& r, ImGuiLayer& i) : renderer(&r), imguiLayer(&i) {}
+    explicit EditorRenderPath(Renderer& r, ImGuiLayer& i) : renderer(&r), imguiLayer(&i) {}
 
     bool CreateResources(Renderer& r) override {
-        placeholderPass.CreateResources(r);
+        scenePasses.CreateResources(r);
         resourcesReady = true;
         return true;
     }
 
     void DestroyResources() override {
-        placeholderPass.DestroyResources();
+        scenePasses.DestroyResources();
         resourcesReady = false;
     }
     
     void Build(RenderGraph& g, FrameGraph& fg) override {
         if (resourcesReady) {
-            placeholderPass.AddPass(g, fg);
+            scenePasses.Build(g, fg);
         }
 
         AddImGuiPass(g, fg, renderer, imguiLayer, resourcesReady);
