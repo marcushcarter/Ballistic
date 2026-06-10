@@ -1,17 +1,36 @@
 #include <vk/heap/bindless_heap.h>
-// #include "graphics/vk/misc/utils.h"
+#include <vk/misc/utils.h>
 
-bool BindlessHeap::Create(VkDevice device, const BindlessHeapDesc& d)
+bool BindlessHeap::Create(VkDevice device, VkPhysicalDevice physical, const BindlessHeapDesc& d)
 {
-    sampledAlloc.cap = d.sampledImages;
-    storageAlloc.cap = d.storageImages;
-    samplerAlloc.cap = d.samplers;
     deviceHandle = device;
 
+    VkPhysicalDeviceVulkan12Properties p12{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES };
+    VkPhysicalDeviceProperties2 p2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+    p2.pNext = &p12;
+    vkGetPhysicalDeviceProperties2(physical, &p2);
+
+    auto clamp = [](uint32_t want, uint32_t perSet, uint32_t perStage) {
+        uint32_t lim = perSet < perStage ? perSet : perStage;
+        return want < lim ? want : lim;
+    };
+    const uint32_t sampled = clamp(d.sampledImages, p12.maxDescriptorSetUpdateAfterBindSampledImages, p12.maxPerStageDescriptorUpdateAfterBindSampledImages);
+    const uint32_t storage = clamp(d.storageImages, p12.maxDescriptorSetUpdateAfterBindStorageImages, p12.maxPerStageDescriptorUpdateAfterBindStorageImages);
+    const uint32_t samplers = clamp(d.samplers,     p12.maxDescriptorSetUpdateAfterBindSamplers,      p12.maxPerStageDescriptorUpdateAfterBindSamplers);
+
+    if (sampled < d.sampledImages || storage < d.storageImages || samplers < d.samplers) {
+        // LOG_WARN("BindlessHeap: requested counts clamped to device limits (sampled %u->%u, storage %u->%u, sampler %u->%u)",
+        //          d.sampledImages, sampled, d.storageImages, storage, d.samplers, samplers);
+    }
+
+    sampledAlloc.cap = sampled;
+    storageAlloc.cap = storage;
+    samplerAlloc.cap = samplers;
+
     VkDescriptorSetLayoutBinding bindings[3]{};
-    bindings[BINDING_SAMPLED] = { BINDING_SAMPLED, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, d.sampledImages, VK_SHADER_STAGE_ALL, nullptr };
-    bindings[BINDING_STORAGE] = { BINDING_STORAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, d.storageImages, VK_SHADER_STAGE_ALL, nullptr };
-    bindings[BINDING_SAMPLER] = { BINDING_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLER, d.samplers, VK_SHADER_STAGE_ALL, nullptr };
+    bindings[BINDING_SAMPLED] = { BINDING_SAMPLED, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampled, VK_SHADER_STAGE_ALL, nullptr };
+    bindings[BINDING_STORAGE] = { BINDING_STORAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storage, VK_SHADER_STAGE_ALL, nullptr };
+    bindings[BINDING_SAMPLER] = { BINDING_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLER, samplers, VK_SHADER_STAGE_ALL, nullptr };
 
     const VkDescriptorBindingFlags bf = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
     VkDescriptorBindingFlags flags[3]{ bf, bf, bf};
@@ -34,9 +53,9 @@ bool BindlessHeap::Create(VkDevice device, const BindlessHeapDesc& d)
     }
 
     VkDescriptorPoolSize poolSizes[3] = {
-        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, d.sampledImages },
-        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, d.storageImages },
-        { VK_DESCRIPTOR_TYPE_SAMPLER, d.samplers },
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampled },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storage },
+        { VK_DESCRIPTOR_TYPE_SAMPLER, samplers },
     };
     VkDescriptorPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
@@ -61,7 +80,7 @@ bool BindlessHeap::Create(VkDevice device, const BindlessHeapDesc& d)
         return false;
     }
 
-    // SetObjectName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)set, d.debugName);
+    SetObjectName(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)set, d.debugName);
     // LOG_DEBUG("BindlessHeap created (%u sampled, %u storage, %u samplers)", d.sampledImages, d.storageImages, d.samplers);
     return true;
 }
@@ -73,47 +92,56 @@ void BindlessHeap::Destroy()
     set = VK_NULL_HANDLE;
 }
 
-static void WriteImage(VkDevice device, VkDescriptorSet set, uint32_t binding, uint32_t index, VkDescriptorType type, VkImageView view, VkImageLayout layout)
+void BindlessHeap::Stage(uint32_t binding, uint32_t index, VkDescriptorType type, VkImageView view, VkSampler sampler, VkImageLayout layout)
 {
     VkDescriptorImageInfo info{};
+    info.sampler = sampler;
     info.imageView = view;
     info.imageLayout = layout;
+    pendingInfos.push_back(info);
 
-    VkWriteDescriptorSet w{};
-    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+    VkWriteDescriptorSet w{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
     w.dstSet = set;
     w.dstBinding = binding;
     w.dstArrayElement = index;
     w.descriptorCount = 1;
     w.descriptorType = type;
-    w.pImageInfo = &info;
-
-    vkUpdateDescriptorSets(device, 1, &w, 0, nullptr);
+    pendingWrites.push_back(w);
 }
 
 uint32_t BindlessHeap::RegisterSampledImage(VkImageView view)
 {
+    std::lock_guard<std::mutex> lk(updateMutex);
     uint32_t i = sampledAlloc.Acquire();
-    WriteImage(deviceHandle, set, BINDING_SAMPLED, i, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+    if (i == UINT32_MAX) return UINT32_MAX;
+    Stage(BINDING_SAMPLED, i, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, view, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     return i;
 }
 
 uint32_t BindlessHeap::RegisterStorageImage(VkImageView view)
 {
+    std::lock_guard<std::mutex> lk(updateMutex);
     uint32_t i = storageAlloc.Acquire();
-    WriteImage(deviceHandle, set, BINDING_STORAGE, i, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, view, VK_IMAGE_LAYOUT_GENERAL);
+    if (i == UINT32_MAX) return UINT32_MAX;
+    Stage(BINDING_STORAGE, i, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, view, VK_NULL_HANDLE, VK_IMAGE_LAYOUT_GENERAL);
     return i;
 }
 
 uint32_t BindlessHeap::RegisterSampler(VkSampler sampler)
 {
+    std::lock_guard<std::mutex> lk(updateMutex);
     uint32_t i = samplerAlloc.Acquire();
-    VkDescriptorImageInfo info{}; info.sampler = sampler;
-    VkWriteDescriptorSet w{};
-    w.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-    w.dstSet = set; w.dstBinding = BINDING_SAMPLER; w.dstArrayElement = i;
-    w.descriptorCount = 1; w.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
-    w.pImageInfo = &info;
-    vkUpdateDescriptorSets(deviceHandle, 1, &w, 0, nullptr);
+    if (i == UINT32_MAX) return UINT32_MAX;
+    Stage(BINDING_SAMPLER, i, VK_DESCRIPTOR_TYPE_SAMPLER, VK_NULL_HANDLE, sampler, VK_IMAGE_LAYOUT_UNDEFINED);
     return i;
+}
+
+void BindlessHeap::Flush()
+{
+    std::lock_guard<std::mutex> lk(updateMutex);
+    if (pendingWrites.empty()) return;
+    for (size_t k = 0; k < pendingWrites.size(); ++k) pendingWrites[k].pImageInfo = &pendingInfos[k];
+    vkUpdateDescriptorSets(deviceHandle, (uint32_t)pendingWrites.size(), pendingWrites.data(), 0, nullptr);
+    pendingWrites.clear();
+    pendingInfos.clear();
 }

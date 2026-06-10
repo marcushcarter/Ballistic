@@ -67,6 +67,23 @@ bool TransientHeap::Realize(const std::vector<TransientRequest>& requests, uint6
     buffers.clear();
     buffers.reserve(n);
 
+    auto abort = [&]() -> bool {
+        for (auto& img : images) {
+            bindless->FreeSampledImage(img.bindlessSampled);
+            bindless->FreeStorageImage(img.bindlessStorage);
+            img.Destroy(device);
+        }
+        for (auto& buf : buffers) buf.Destroy(device);
+        for (auto& b : buckets) if (b.backing) vmaFreeMemory(vma, b.backing);
+        images.clear();
+        buffers.clear();
+        buckets.clear();
+        slots.clear();
+        realizedOnce = false;
+        currentHash = 0;
+        return false;
+    };
+
     for (size_t i = 0; i < n; ++i) {
         const TransientRequest& r = requests[i];
         Slot& s = slots[i];
@@ -76,13 +93,13 @@ bool TransientHeap::Realize(const std::vector<TransientRequest>& requests, uint6
 
         if (r.kind == TransientRequest::Kind::Image) {
             PhysicalImage img{};
-            if (!img.CreateUnbound(device, r.imageDesc, r.extent)) return false;
+            if (!img.CreateUnbound(device, r.imageDesc, r.extent)) return abort();;
             s.physIndex = (uint32_t)images.size();
             s.memReq = img.memReq;
             images.push_back(img);
         } else {
             PhysicalBuffer buf{};
-            if (!buf.CreateUnbound(device, r.bufferDesc)) return false;
+            if (!buf.CreateUnbound(device, r.bufferDesc)) return abort();;
             s.physIndex = (uint32_t)buffers.size();
             s.memReq = buf.memReq;
             buffers.push_back(buf);
@@ -100,7 +117,7 @@ bool TransientHeap::Realize(const std::vector<TransientRequest>& requests, uint6
     stats = {};
     for (Bucket& b : buckets) {
         b.size = PlaceBucket(b);
-        if (!EnsureBacking(b)) return false;
+        if (!EnsureBacking(b)) return abort();
         stats.totalBackingBytes += b.size;
     }
 
@@ -108,7 +125,7 @@ bool TransientHeap::Realize(const std::vector<TransientRequest>& requests, uint6
         Slot& s = slots[i];
         VmaAllocation backing = buckets[s.bucket].backing;
         if (s.kind == TransientRequest::Kind::Image) {
-            if (!images[s.physIndex].BindAndView(device, vma, backing, s.offset)) return false;
+            if (!images[s.physIndex].BindAndView(device, vma, backing, s.offset)) return abort();
             stats.imageCount++;
 
             PhysicalImage& img = images[s.physIndex];
@@ -116,7 +133,7 @@ bool TransientHeap::Realize(const std::vector<TransientRequest>& requests, uint6
             if (usage & VK_IMAGE_USAGE_SAMPLED_BIT) img.bindlessSampled = bindless->RegisterSampledImage(img.view);
             if (usage & VK_IMAGE_USAGE_STORAGE_BIT) img.bindlessStorage = bindless->RegisterStorageImage(img.view);
         } else {
-            if (!buffers[s.physIndex].Bind(device, vma, backing, s.offset)) return false;
+            if (!buffers[s.physIndex].Bind(device, vma, backing, s.offset)) return abort();
             stats.bufferCount++;
         }
         stats.sumResourceBytes += s.memReq.size;
@@ -160,15 +177,28 @@ VkDeviceSize TransientHeap::PlaceBucket(Bucket& b)
             if (off + sz <= freeList[f].offset + freeList[f].size &&
                 (best < 0 || freeList[f].size < freeList[best].size)) { best = f; bestOff = off; }
         }
+        
         if (best >= 0) {
-            s.offset = bestOff;
+            const FreeRange chosen = freeList[best];
             freeList.erase(freeList.begin() + best);
+            s.offset = bestOff;
+
+            // reclaim the alignment head gap [chosen.offset, bestOff)
+            if (bestOff > chosen.offset)
+                freeList.push_back({ chosen.offset, bestOff - chosen.offset, chosen.freeAtPass });
+
+            // reclaim the tail remainder [bestOff + sz, chosen end)
+            const VkDeviceSize tailOff  = bestOff + sz;
+            const VkDeviceSize chosenEnd = chosen.offset + chosen.size;
+            if (tailOff < chosenEnd)
+                freeList.push_back({ tailOff, chosenEnd - tailOff, chosen.freeAtPass });
         } else {
             s.offset = AlignUp(high, al);
             high = s.offset + sz;
         }
 
         freeList.push_back({ s.offset, sz, s.lastPass });
+
     }
     return high;
 }

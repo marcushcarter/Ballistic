@@ -1,5 +1,4 @@
 #include <editor/editor_application.h>
-#include <graphics/render_paths/editor_render_path.h>
 #include <core/log.h>
 #include <resources.h>
 #include <imgui.h>
@@ -45,7 +44,7 @@ void EditorApplication::OnInit()
         io.Fonts->Build();
     }
     
-    renderer.SetRenderPath(std::make_unique<EditorRenderPath>(renderer, imguiLayer));
+    // renderer.SetRenderPath(std::make_unique<EditorRenderPath>(renderer, imguiLayer));
 
     finalTextureID = ImGui_ImplVulkan_AddTexture(
         renderer.linearSampler.Get(),
@@ -62,6 +61,10 @@ void EditorApplication::OnInit()
         renderer.logoLongImage.GetView(),
         VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL
     );
+
+    renderer.tempOnRender = [this](VkCommandBuffer cmd) {
+        imguiLayer.RecordDraw(cmd);
+    };
 
     renderer.onViewportResized = [this]() {
         ImGui_ImplVulkan_RemoveTexture((VkDescriptorSet)finalTextureID);
@@ -82,48 +85,48 @@ void EditorApplication::OnInit()
     LOG_DEBUG("Editor initialized");
 }
 
-static void custom_temp() {
-    if (ImGui::Begin("Panel")) {
-        ImVec2 avail = ImGui::GetContentRegionAvail();
-        float halfH = avail.y * 0.5f;
+// static void custom_temp() {
+//     if (ImGui::Begin("Panel")) {
+//         ImVec2 avail = ImGui::GetContentRegionAvail();
+//         float halfH = avail.y * 0.5f;
 
-        if (ImGui::BeginChild("TopChild", ImVec2(0, halfH), ImGuiChildFlags_Borders)) {
-            if (ImGui::BeginTabBar("TopTabs")) {
-                if (ImGui::BeginTabItem("Tab A")) {
-                    ImGui::EndTabItem();
-                }
-                if (ImGui::BeginTabItem("Tab B")) {
-                    ImGui::EndTabItem();
-                }
-                ImGui::EndTabBar();
-            }
-        }
-        ImGui::EndChild();
+//         if (ImGui::BeginChild("TopChild", ImVec2(0, halfH), ImGuiChildFlags_Borders)) {
+//             if (ImGui::BeginTabBar("TopTabs")) {
+//                 if (ImGui::BeginTabItem("Tab A")) {
+//                     ImGui::EndTabItem();
+//                 }
+//                 if (ImGui::BeginTabItem("Tab B")) {
+//                     ImGui::EndTabItem();
+//                 }
+//                 ImGui::EndTabBar();
+//             }
+//         }
+//         ImGui::EndChild();
 
-        // --- Bottom Half ---
-        if (ImGui::BeginChild("BottomChild", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
-            ImGui::Text("Bottom child content");
+//         // --- Bottom Half ---
+//         if (ImGui::BeginChild("BottomChild", ImVec2(0, 0), ImGuiChildFlags_Borders)) {
+//             ImGui::Text("Bottom child content");
 
-            float spacing = ImGui::GetStyle().ItemSpacing.x;
-            float frameH = ImGui::GetFrameHeight();
+//             float spacing = ImGui::GetStyle().ItemSpacing.x;
+//             float frameH = ImGui::GetFrameHeight();
 
-            static char inputBuf[256] = "";
-            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - frameH - spacing);
-            ImGui::InputText("##Input", inputBuf, sizeof(inputBuf));
-            ImGui::SameLine();
-            ImGui::Button("X", ImVec2(frameH, frameH));
-        }
-        ImGui::EndChild();
+//             static char inputBuf[256] = "";
+//             ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - frameH - spacing);
+//             ImGui::InputText("##Input", inputBuf, sizeof(inputBuf));
+//             ImGui::SameLine();
+//             ImGui::Button("X", ImVec2(frameH, frameH));
+//         }
+//         ImGui::EndChild();
 
-    }
-    ImGui::End();
-}
+//     }
+//     ImGui::End();
+// }
 
 void EditorApplication::OnUpdate()
 {
     imguiLayer.NewFrame();
 
-    custom_temp();
+    // custom_temp();
 
     if (inProjectManager) {
         window.SetTitle("Ballistic Engine - Project Manager");

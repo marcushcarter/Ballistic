@@ -1,7 +1,5 @@
 #pragma once
 #include <vk/vk.h>
-#include <graphics/render_graph/render_graph.h>
-#include <graphics/render_graph/render_path.h>
 #include <functional>
 
 struct Window;
@@ -18,7 +16,6 @@ struct Renderer
 
     // CORE
 
-    uint64_t frameNumber = 0;
     uint32_t frameCount = 0;
     uint32_t imageIndex = 0;
     uint32_t currentFrame = 0;
@@ -53,10 +50,7 @@ struct Renderer
     PipelineLayout globalPipelineLayout;
 
     PipelineCache pipelineCache;
-    // GraphicsPipeline blitPipeline;
-
-    RenderGraph graph;
-    std::unique_ptr<RenderPath> renderPath;
+    GraphicsPipeline blitPipeline;
 
     std::filesystem::path projectPath;
 
@@ -67,6 +61,7 @@ struct Renderer
     // std::vector<CommandBuffer> commandBuffers;
 
     std::function<void()> onViewportResized; // pretty much only for updatign the imgui final texture descriptor set
+    std::function<void(VkCommandBuffer cmd)> tempOnRender;
 
     bool Start(Window& window);
     void Shutdown();
@@ -82,7 +77,7 @@ struct Renderer
     void ViewportResize();
     void ApplyVSync();
 
-    void SetRenderPath(std::unique_ptr<RenderPath> path) { renderPath = std::move(path); }
+    // void SetRenderPath(std::unique_ptr<RenderPath> path) { renderPath = std::move(path); }
 
     void Render();
 

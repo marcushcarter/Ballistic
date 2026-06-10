@@ -1,5 +1,0 @@
-So what is happening is i have made this rendergraph system with transient and external images/buffer system, what is happeining is everything works, but when i try to uncomment to begine dynamic rendering in the mainzpass, the entire program freezes and throws no errors even with more messages enabled in the debug renderer, im not sure why this is happening or if its a driver issue or something but i need help fixing this. First check when you uncomment the vkBegin/EndRenderingInfo in main_z_pass.cpp actually gives you an error becasue if it doesnt then it might be a driver issue, but if it does then you will have to fix it.
-
-the job is considered complete when the freezes no longer happen and it runs smoothly
-
-The project is made entirely in Vulkan and C++ and it already has a cmake setup that i have tested compiles properly.

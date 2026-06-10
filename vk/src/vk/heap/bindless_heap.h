@@ -3,6 +3,7 @@
 #include <vk_mem_alloc.h>
 #include <cstdint>
 #include <vector>
+#include <mutex>
 
 struct BindlessHeapDesc
 {
@@ -29,26 +30,35 @@ struct BindlessHeap
         uint32_t next = 0, cap = 0;
         uint32_t Acquire() {
             if (!freeList.empty()) { uint32_t i = freeList.back(); freeList.pop_back(); return i; }
-            // BE_ASSERT(next < cap);
+            if (next >= cap) return UINT32_MAX;
             return next++;
         }
         void Free(uint32_t i) { freeList.push_back(i); }
     };
     IndexAllocator sampledAlloc, storageAlloc, samplerAlloc;
 
-    bool Create(VkDevice device, const BindlessHeapDesc& desc);
+    bool Create(VkDevice device, VkPhysicalDevice physical, const BindlessHeapDesc& desc);
     void Destroy();
 
     uint32_t RegisterSampledImage(VkImageView view);
     uint32_t RegisterStorageImage(VkImageView view);
     uint32_t RegisterSampler(VkSampler sampler);
 
-    void FreeSampledImage(uint32_t i) { if (i != UINT32_MAX) sampledAlloc.Free(i); }
-    void FreeStorageImage(uint32_t i) { if (i != UINT32_MAX) storageAlloc.Free(i); }
+    void Flush();
+
+    void FreeSampledImage(uint32_t i) { if (i == UINT32_MAX) return; std::lock_guard<std::mutex> lk(updateMutex); sampledAlloc.Free(i); }
+    void FreeStorageImage(uint32_t i) { if (i == UINT32_MAX) return; std::lock_guard<std::mutex> lk(updateMutex); storageAlloc.Free(i); }
+    void FreeSampler(uint32_t i) { if (i == UINT32_MAX) return; std::lock_guard<std::mutex> lk(updateMutex); samplerAlloc.Free(i); }
 
     VkDescriptorSetLayout GetLayout() const { return layout; }
     VkDescriptorSet GetSet() const { return set; }
     
 private:
+    void Stage(uint32_t binding, uint32_t index, VkDescriptorType type, VkImageView view, VkSampler sampler, VkImageLayout layout);
+
     VkDevice deviceHandle = VK_NULL_HANDLE;
+
+    std::mutex updateMutex;
+    std::vector<VkDescriptorImageInfo> pendingInfos;
+    std::vector<VkWriteDescriptorSet>  pendingWrites;
 };

@@ -75,4 +75,6 @@ struct TransientHeap
     PhysicalBuffer& GetBuffer(uint32_t slot);
 
     const Stats& GetStats() const { return stats; }
+
+    const std::vector<Slot>& GetSlots() const { return slots; }
 };

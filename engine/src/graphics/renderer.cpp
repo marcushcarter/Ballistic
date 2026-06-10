@@ -2,7 +2,6 @@
 #include <core/window.h>
 #include <project/project.h>
 #include <resources.h>
-#include <graphics/render_graph/render_path.h>
 #include <core/assert.h>
 #include <core/log.h>
 #include <vulkan/vulkan.hpp>
@@ -130,7 +129,7 @@ bool Renderer::Start(Window& window)
         .debugName  = "LinearSampler"
     }));
 
-    BE_ASSERT(bindlessHeap.Create(device.Get(), {
+    BE_ASSERT(bindlessHeap.Create(device.Get(), physicalDevice.Get(), {
         .sampledImages = 16384,
         .storageImages = 4096,
         .samplers = 256,
@@ -176,11 +175,6 @@ bool Renderer::Start(Window& window)
     finalImage.bindlessStorage = bindlessHeap.RegisterStorageImage(finalImage.GetView());
     linearSampler.bindlessSampler = bindlessHeap.RegisterSampler(linearSampler.Get());
 
-    graph.Init(device.Get(), allocator.Get(), &bindlessHeap);
-    frameNumber = frameCount;
-
-    graph.SetViewport(finalImage.extent);
-
     frameUniformRing.Create(device.Get(), allocator.Get(), frameCount, {
         BufferDesc::Uniform(128, "frameUniformBuffer")
     });
@@ -196,8 +190,6 @@ void Renderer::Shutdown()
     UnloadProject();
 
     frameUniformRing.Destroy();
-
-    graph.Shutdown();
 
     globalPipelineLayout.Destroy();
     bindlessHeap.Destroy();
@@ -234,8 +226,25 @@ bool Renderer::LoadProject(const std::filesystem::path& path)
 
     projectPath = path;
     BE_ASSERT(pipelineCache.Load(device.Get(), path / ".ballistic/cache/pipelines/pipeline_cache.bin"));
+    
+    Shader vert{}, frag{};
+    BE_ASSERT(vert.LoadOrCompile(device.Get(), VK_SHADER_STAGE_VERTEX_BIT, LoadShaderSource(SHADER_FULLSCREEN_VERT), path / ".ballistic/cache/shaders/fullscreen.vert.spv", "fullscreen.vert"));    
+    BE_ASSERT(frag.LoadOrCompile(device.Get(), VK_SHADER_STAGE_FRAGMENT_BIT, LoadShaderSource(SHADER_BLIT_FRAG), path / ".ballistic/cache/shaders/blit.frag.spv", "blit.frag"));
 
-    if (renderPath) BE_ASSERT(renderPath->CreateResources(*this));
+    PipelineRenderingInfo renderingInfo;
+    renderingInfo.colorFormats = { swapchain.format };
+    auto renderingCreateInfo = renderingInfo.Get();
+
+    BE_ASSERT(blitPipeline.Create(device.Get(), {
+        .pNext = &renderingCreateInfo,
+        .layout = globalPipelineLayout.Get(),
+        .cache = pipelineCache.Get(),
+        .shaderStages = { PipelineShaderStage(vert.Get(), vert.stage), PipelineShaderStage(frag.Get(), frag.stage) },
+        .debugName = "BlitPipeline"
+    }));
+
+    vert.Destroy();
+    frag.Destroy();
 
     BE_ASSERT(pipelineCache.Save(device.Get(), path / ".ballistic/cache/pipelines/pipeline_cache.bin"));
     pipelineCache.Destroy();
@@ -248,7 +257,7 @@ bool Renderer::LoadProject(const std::filesystem::path& path)
 void Renderer::UnloadProject()
 {
     device.Wait();
-    if (renderPath) renderPath->DestroyResources();
+    blitPipeline.Destroy();
     pipelineCache.Destroy();
     projectPath.clear();
     LOG_INFO("PROJECT CLOSED NOW");
@@ -292,7 +301,7 @@ void Renderer::ViewportResize()
     device.Wait();
     
     finalImage.Resize({ pendingViewportW, pendingViewportH });
-    graph.SetViewport(finalImage.extent);
+
     bindlessHeap.FreeSampledImage(finalImage.bindlessSampled);
     bindlessHeap.FreeStorageImage(finalImage.bindlessStorage);
     finalImage.bindlessSampled = bindlessHeap.RegisterSampledImage(finalImage.GetView());
@@ -314,28 +323,49 @@ void Renderer::ApplyVSync()
 
 void Renderer::Render()
 {
-    if (!renderPath || !BeginFrame()) return;
-    
-    struct TEMPBUFFERSTRUCT {
-        float color[3] = { 1.0f, 0.5f, 1.0f };
-    } temp;
+    if (!BeginFrame()) return;
 
-    frameUniformRing.Current(currentFrame).Update(&temp, sizeof(TEMPBUFFERSTRUCT), 0);
+    TransitionSet toColor;
+    toColor.AddImage(&finalImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    toColor.Transition(cmd);
 
-    graph.BeginFrame(frameNumber, frameNumber - frameCount);
-    
-    FrameGraph fg{};
-    fg.finalImage = graph.ImportImage("FinalImage", &finalImage);
-    fg.swapchain = graph.ImportImage("Swapchain", &swapchainImages[imageIndex]);
-    fg.frameUniform = graph.ImportBuffer("FrameUniformBuffer", &frameUniformRing.Current(currentFrame));
-    
-    VkDescriptorSet pDescriptorSets = { bindlessHeap.GetSet() };
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, globalPipelineLayout.Get(), 0, 1, &pDescriptorSets, 0, nullptr);
-    vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, globalPipelineLayout.Get(), 0, 1, &pDescriptorSets, 0, nullptr);
+    VkRenderingAttachmentInfo color{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    color.imageView = finalImage.GetView();
+    color.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color.clearValue.color = { 1.0f, 0.0f, 1.0f, 1.0f };
 
-    renderPath->Build(graph, fg);
-    graph.Compile();
-    graph.Execute(cmd);
+    VkRenderingInfo info{ VK_STRUCTURE_TYPE_RENDERING_INFO };
+    info.renderArea = { {0,0}, finalImage.extent };
+    info.layerCount = 1;
+    info.colorAttachmentCount = 1;
+    info.pColorAttachments = &color;
+
+    vkCmdBeginRendering(cmd, &info);
+    vkCmdEndRendering(cmd);
+
+    TransitionSet mid;
+    mid.AddImage(&finalImage, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, VK_ACCESS_SHADER_READ_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    mid.AddImage(&swapchainImages[imageIndex], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT, VK_IMAGE_ASPECT_COLOR_BIT);
+    mid.Transition(cmd);
+
+    VkRenderingAttachmentInfo color2{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+    color2.imageView = swapchainImages[imageIndex].GetView();
+    color2.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    color2.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    color2.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+    color2.clearValue.color = { 1.0f, 0.0f, 0.0f, 1.0f };
+
+    VkRenderingInfo info2{ VK_STRUCTURE_TYPE_RENDERING_INFO };
+    info2.renderArea = { {0,0}, swapchain.extent };
+    info2.layerCount = 1;
+    info2.colorAttachmentCount = 1;
+    info2.pColorAttachments = &color2;
+
+    vkCmdBeginRendering(cmd, &info2);
+    tempOnRender(cmd);
+    vkCmdEndRendering(cmd);
 
     TransitionSet toPresent;
     toPresent.AddImage(&swapchainImages[imageIndex], VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, 0, VK_IMAGE_ASPECT_COLOR_BIT);
@@ -381,5 +411,4 @@ void Renderer::EndFrame()
     if (pres != VK_SUCCESS && pres != VK_SUBOPTIMAL_KHR) LOG_ERROR("vkQueuePresent: %d", pres);
 
     currentFrame = (currentFrame + 1) % frameCount;
-    frameNumber++; 
 }

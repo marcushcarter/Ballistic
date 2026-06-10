@@ -69,7 +69,7 @@ bool PhysicalBuffer::CreateUnbound(VkDevice device, const TransientBufferDesc& d
 
     VkBufferCreateInfo ci{ VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO };
     ci.size = d.size;
-    ci.usage = d.usage;
+    ci.usage = d.usage | VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT;
     ci.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
     if (vkCreateBuffer(device, &ci, nullptr, &buffer) != VK_SUCCESS) {
