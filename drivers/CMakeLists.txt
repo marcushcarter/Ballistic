@@ -10,6 +10,7 @@ target_link_libraries(ballistic_drivers
 PUBLIC
     ballistic_compiler_options
     Vulkan::Vulkan
+    Vulkan::shaderc_combined
     vma
     imgui
     dwmapi
