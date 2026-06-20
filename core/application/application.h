@@ -1,5 +1,6 @@
 #pragma once
 #include <drivers/windows/window_driver_windows.h>
+#include <drivers/imgui/imgui_layer.h>
 #include <string>
 
 namespace ballistic {
@@ -14,6 +15,7 @@ struct ApplicationCreateInfo
 struct Application
 {
     WindowDriverWindows window;
+    ImGuiLayer imgui_layer;
     ApplicationCreateInfo create_info;
 
     void create(const ApplicationCreateInfo& p_info);
