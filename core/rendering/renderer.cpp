@@ -24,11 +24,8 @@ Error Renderer::create(uint32_t p_frame_count)
 
     for (uint32_t i = 0; i < frame_count; i++) {
         in_flight_fences[i] = device_driver->fence_create(true);
-
         image_available_semaphores[i] = device_driver->semaphore_create();
-
         command_pools[i] = device_driver->command_pool_create(graphics_family);
-
         command_buffers[i] = device_driver->command_buffer_create(command_pools[i]);
     }
 
@@ -37,9 +34,29 @@ Error Renderer::create(uint32_t p_frame_count)
 
 void Renderer::destroy()
 {
+    for (uint32_t i = 0; i < frame_count; i++) {
+        device_driver->fence_free(in_flight_fences[i]);
+        device_driver->semaphore_free(image_available_semaphores[i]);
+        device_driver->command_pool_free(command_pools[i]);
+    }
 
+    device_driver->swapchain_free(swapchain);
 }
 
+Error Renderer::check_resize()
+{
+    using enum Error;
+
+    if (!device_driver->context_driver->surface.needs_resize) return Ok;
+    
+    device_driver->device_wait_idle();
+
+    Error err = device_driver->swapchain_resize(swapchain, frame_count);
+    BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
+
+    return Ok;
+}
+    
 static void command_image_barrier(VkCommandBuffer p_cmd, VkImage p_image, VkImageLayout p_old_layout, VkImageLayout p_new_layout, VkPipelineStageFlags2 p_src_stage, VkPipelineStageFlags2 p_dst_stage, VkAccessFlags2 p_src_access, VkAccessFlags2 p_dst_access)
 {
     VkImageMemoryBarrier2 barrier{ VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2 };
@@ -65,18 +82,22 @@ Error Renderer::begin_frame()
 {
     using enum Error;
 
-    device_driver->fence_wait(in_flight_fences[current_frame]);
-    device_driver->fence_reset(in_flight_fences[current_frame]);
+    Error err = device_driver->fence_wait(in_flight_fences[current_frame]);
+    BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 
-    vkAcquireNextImageKHR(device_driver->device, swapchain.swapchain, UINT64_MAX, image_available_semaphores[current_frame], VK_NULL_HANDLE, &swapchain.image_index);
+    err = device_driver->fence_reset(in_flight_fences[current_frame]);
+    BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 
-    Error err = device_driver->command_pool_reset(command_pools[current_frame]);
-    device_driver->command_buffer_begin(command_buffers[current_frame], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-    (void)err;
+    err = device_driver->swapchain_acquire_next_image(swapchain, image_available_semaphores[current_frame]);
+    BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
+
+    err = device_driver->command_pool_reset(command_pools[current_frame]);
+    BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
+
+    err = device_driver->command_buffer_begin(command_buffers[current_frame], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+    BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 
     cmd = command_buffers[current_frame];
-
-    // command_image_barrier(cmd, swapchain.images[swapchain.image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
     command_image_barrier(cmd, swapchain.images[swapchain.image_index], VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, 0, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT);
 
@@ -89,7 +110,8 @@ Error Renderer::end_frame()
 
     command_image_barrier(cmd, swapchain.images[swapchain.image_index], VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, 0);
 
-    device_driver->command_buffer_end(command_buffers[current_frame]);
+    Error err = device_driver->command_buffer_end(command_buffers[current_frame]);
+    BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 
     VkPipelineStageFlags wait_stage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
     VkSubmitInfo submit_info{ VK_STRUCTURE_TYPE_SUBMIT_INFO };

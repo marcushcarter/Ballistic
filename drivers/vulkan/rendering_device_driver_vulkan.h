@@ -54,6 +54,8 @@ struct RenderingDeviceDriverVulkan
     Error initialize(uint32_t p_device_index, uint32_t p_frame_count);
     void shutdown();
 
+    Error device_wait_idle();
+
     /****************/
     /**** MEMORY ****/
     /****************/
@@ -118,6 +120,7 @@ struct RenderingDeviceDriverVulkan
     Swapchain swapchain_create(RenderingContextDriverVulkan::Surface* r_surface);
     Error swapchain_resize(Swapchain& r_swapchain, uint32_t p_desired_framebuffer_count);
     void swapchain_free(Swapchain& r_swapchain);
+    Error swapchain_acquire_next_image(Swapchain& r_swapchain, VkSemaphore p_signal_semaphore);
 };
 
 }

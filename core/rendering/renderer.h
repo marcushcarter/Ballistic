@@ -23,6 +23,8 @@ struct Renderer
     Error create(uint32_t p_frame_count);
     void destroy();
 
+    Error check_resize();
+
     Error begin_frame();
     Error end_frame();
 };

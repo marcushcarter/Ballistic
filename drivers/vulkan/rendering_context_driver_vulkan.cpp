@@ -189,6 +189,9 @@ Error RenderingContextDriverVulkan::_initialize_instance()
 
         VkResult debug_result = func(instance, &debug_messenger_ci, nullptr, &debug_messenger);
         BALLISTIC_ERR_FAIL_COND_V_MSG(debug_result != VK_SUCCESS, Failed, "Failed to create Vulkan debug messenger.");
+        
+        functions.DestroyDebugUtilsMessengerEXT = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        BALLISTIC_ERR_FAIL_COND_V_MSG(!functions.DestroyDebugUtilsMessengerEXT, Failed, "vkDestroyDebugUtilsMessengerEXT not present.");
     }
 
     // fill functions
@@ -256,7 +259,15 @@ Error RenderingContextDriverVulkan::initialize()
 
 void RenderingContextDriverVulkan::shutdown()
 {
+    if (debug_messenger) {
+        functions.DestroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
+        debug_messenger = VK_NULL_HANDLE;
+    }
 
+    if (instance) {
+        vkDestroyInstance(instance, nullptr);
+        instance = VK_NULL_HANDLE;
+    }
 }
 
 Error RenderingContextDriverVulkan::surface_create(HWND p_hwnd)

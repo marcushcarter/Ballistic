@@ -20,6 +20,7 @@ struct RenderingContextDriverVulkan
     struct Functions {
         // Debug Messenger
         PFN_vkDebugUtilsMessengerCallbackEXT DebugUtilsMessengerCallbackEXT = nullptr;
+        PFN_vkDestroyDebugUtilsMessengerEXT DestroyDebugUtilsMessengerEXT = nullptr;
     };
 
     struct DeviceQueueFamilies {

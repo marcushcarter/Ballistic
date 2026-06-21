@@ -56,6 +56,8 @@ Error Application::create(const ApplicationCreateInfo& p_info)
 
 void Application::destroy()
 {
+    vulkan_device.device_wait_idle();
+
     imgui.destroy();
     renderer.destroy();
     vulkan_device.shutdown();
@@ -87,8 +89,8 @@ int Application::run()
             window.resize_requested = false;
         }
 
-        // err = vulkan_device.check_resize();
-        // BALLISTIC_ERR_FAIL_COND_V(err != Ok, static_cast<int>(err));
+        err = renderer.check_resize();
+        BALLISTIC_ERR_FAIL_COND_V(err != Ok, static_cast<int>(err));
         
         imgui.new_frame();
         on_update((float)delta);
@@ -96,7 +98,23 @@ int Application::run()
 
         renderer.begin_frame();
 
-        // imgui.record_commands(renderer.cmd);
+        VkRenderingAttachmentInfo color_attachment{ VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO };
+        color_attachment.imageView = renderer.swapchain.image_views[renderer.swapchain.image_index];
+        color_attachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+        color_attachment.clearValue.color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+
+        VkRenderingInfo rendering_info{ VK_STRUCTURE_TYPE_RENDERING_INFO };
+        rendering_info.renderArea = { { 0, 0 }, { vulkan_context.surface.width, vulkan_context.surface.height } };
+        rendering_info.layerCount = 1;
+        rendering_info.colorAttachmentCount = 1;
+        rendering_info.pColorAttachments = &color_attachment;
+
+        vkCmdBeginRendering(renderer.cmd, &rendering_info);
+        imgui.record_commands(renderer.cmd);
+        vkCmdEndRendering(renderer.cmd);
+
         renderer.end_frame();
     }
 

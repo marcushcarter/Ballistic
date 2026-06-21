@@ -476,7 +476,36 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
 
 void RenderingDeviceDriverVulkan::shutdown()
 {
-    
+    device_wait_idle();
+
+    // while (small_allocs_pools.size()) {
+    //     HashMap<uint32_t, VmaPool>::Iterator E = small_allocs_pools.begin();
+    //     vmaDestroyPool(allocator, E->value);
+    //     small_allocs_pools.remove(E);
+    // }
+
+    vmaDestroyAllocator(allocator);
+
+    // for (KeyValue<int, DescriptorSetPools> &pool_map : linear_descriptor_set_pools) {
+    //     for (KeyValue<DescriptorSetPoolKey, HashMap<VkDescriptorPool, uint32_t>> pools : pool_map.value) {
+    //         for (KeyValue<VkDescriptorPool, uint32_t> descriptor_pool : pools.value) {
+    //             vkDestroyDescriptorPool(vk_device, descriptor_pool.key, VKC::get_allocation_callbacks(VK_OBJECT_TYPE_DESCRIPTOR_POOL));
+    //         }
+    //     }
+    // }
+
+    if (device) {
+        vkDestroyDevice(device, nullptr);
+        device = VK_NULL_HANDLE;
+    }
+}
+
+Error RenderingDeviceDriverVulkan::device_wait_idle()
+{    
+    using enum Error;
+    VkResult err = vkDeviceWaitIdle(device);
+    BALLISTIC_ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, Failed, "Couldn't wait idle for Vulkan device.");
+    return Ok;
 }
 
 /****************/
@@ -804,6 +833,21 @@ Error RenderingDeviceDriverVulkan::swapchain_resize(Swapchain& r_swapchain, uint
 void RenderingDeviceDriverVulkan::swapchain_free(Swapchain& r_swapchain)
 {
     _swapchain_release(r_swapchain);
+}
+
+Error RenderingDeviceDriverVulkan::swapchain_acquire_next_image(Swapchain& r_swapchain, VkSemaphore p_signal_semaphore)
+{
+    using enum Error;
+
+    VkResult err = vkAcquireNextImageKHR(device, r_swapchain.swapchain, UINT64_MAX, p_signal_semaphore, VK_NULL_HANDLE, &r_swapchain.image_index);
+    if (err == VK_ERROR_OUT_OF_DATE_KHR || err == VK_SUBOPTIMAL_KHR) {
+        r_swapchain.surface->needs_resize = true;
+        return Ok;
+    }
+    BALLISTIC_ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, Failed, "Couldn't get next Vulkan swapchain image.");\
+    
+    return Ok;
+    
 }
 
 }
