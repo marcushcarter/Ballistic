@@ -81,8 +81,7 @@ int Application::run()
         window.poll_events();
         
         if (window.resize_requested) {
-            if (window.pending_width != vulkan_context.surface.width ||
-                window.pending_height != vulkan_context.surface.height) {
+            if (window.pending_width != vulkan_context.surface.width || window.pending_height != vulkan_context.surface.height) {
                 vulkan_context.surface_set_size(window.pending_width, window.pending_height);
             }
             window.resize_requested = false;
