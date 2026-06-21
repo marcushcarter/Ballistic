@@ -78,6 +78,9 @@ struct RenderingDeviceDriverVulkan
     /**** SEMAPHORES ****/
     /********************/
 
+    VkSemaphore semaphore_create();
+    void semaphore_free(VkSemaphore& r_semaphore);
+
     /******************/
     /**** COMMANDS ****/
     /******************/

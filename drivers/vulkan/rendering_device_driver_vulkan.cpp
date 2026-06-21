@@ -519,4 +519,32 @@ Error RenderingDeviceDriverVulkan::fence_reset(VkFence p_fence)
     return Ok;
 }
 
+/********************/
+/**** SEMAPHORES ****/
+/********************/
+
+VkSemaphore RenderingDeviceDriverVulkan::semaphore_create()
+{
+    VkSemaphore semaphore;
+    VkSemaphoreCreateInfo semaphore_ci{ VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO };
+    semaphore_ci.pNext = nullptr;
+    semaphore_ci.flags = 0;
+
+    VkResult err = vkCreateSemaphore(device, &semaphore_ci, nullptr, &semaphore);
+    BALLISTIC_ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, VK_NULL_HANDLE, "Couldn't create Vulkan semaphore.");
+    
+    return semaphore;
+;
+
+}
+
+void RenderingDeviceDriverVulkan::semaphore_free(VkSemaphore& r_semaphore)
+{
+    if (r_semaphore) {
+        vkDestroySemaphore(device, r_semaphore, nullptr);
+        r_semaphore = VK_NULL_HANDLE;
+    }
+
+}
+
 }
