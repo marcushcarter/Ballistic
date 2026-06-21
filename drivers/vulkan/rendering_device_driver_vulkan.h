@@ -121,6 +121,25 @@ struct RenderingDeviceDriverVulkan
     Error swapchain_resize(Swapchain& r_swapchain, uint32_t p_desired_framebuffer_count);
     void swapchain_free(Swapchain& r_swapchain);
     Error swapchain_acquire_next_image(Swapchain& r_swapchain, VkSemaphore p_signal_semaphore);
+
+	/*******************/
+	/**** RENDERING ****/
+	/*******************/
+
+    // void command_render_set_viewport(VkCommandBuffer p_cmd_buffer, VectorView<Rect2i> p_viewports);
+	// void command_render_set_scissor(VkCommandBuffer p_cmd_buffer, VectorView<Rect2i> p_scissors);
+
+    // bind vertex buffers
+    // bind index buffers
+
+    // draw indirect
+    // draw
+    // draw indexed
+
+    // bid render/compute pipeline
+    // bind render/comput uniform sets
+
+
 };
 
 }
