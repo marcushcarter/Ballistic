@@ -13,7 +13,7 @@ if(BALLISTIC_BUILD_EDITOR)
         ${CMAKE_BINARY_DIR}/generated/embedded_assets_editor.rc
         main_editor.cpp
     )
-    target_link_libraries(ballistic_editor_app PRIVATE ballistic_core)
+    target_link_libraries(ballistic_editor_app PRIVATE ballistic_core ballistic_editor)
     ballistic_common_target(ballistic_editor_app)
     target_compile_definitions(ballistic_editor_app PRIVATE BALLISTIC_EDITOR)
 endif()
@@ -24,7 +24,7 @@ if(BALLISTIC_BUILD_GAME)
         ${CMAKE_BINARY_DIR}/generated/embedded_assets_shared.rc
         main_game.cpp
     )
-    target_link_libraries(ballistic_game PRIVATE ballistic_core)
+    target_link_libraries(ballistic_game PRIVATE ballistic_core ballistic_game_lib)
     ballistic_common_target(ballistic_game)
     target_compile_definitions(ballistic_game PRIVATE BALLISTIC_GAME)
 endif()

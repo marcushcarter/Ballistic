@@ -1,4 +1,4 @@
-#include <core/application/editor_application.h>
+#include <editor/editor_application.h>
 #include <windows.h>
 #include <cstdio>
 

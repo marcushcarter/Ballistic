@@ -31,6 +31,8 @@ include(EmbedAssets)
 add_subdirectory(thirdparty)
 add_subdirectory(drivers)
 add_subdirectory(core)
+add_subdirectory(editor)
+add_subdirectory(game)
 
 set(BALLISTIC_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
 file(MAKE_DIRECTORY ${BALLISTIC_GENERATED_DIR})

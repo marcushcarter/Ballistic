@@ -1,4 +1,4 @@
-#include <core/application/game_application.h>
+#include <game/game_application.h>
 #include <windows.h>
 
 int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)

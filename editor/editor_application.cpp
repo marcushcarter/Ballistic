@@ -1,4 +1,4 @@
-#include <core/application/editor_application.h>
+#include <editor/editor_application.h>
 #include <core/io/embedded_resource.h>
 #include <core/error/error_macros.h>
 #include <imgui.h>
