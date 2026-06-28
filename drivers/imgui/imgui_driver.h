@@ -1,5 +1,5 @@
 #pragma once
-#include <core/error/error.h>
+#include <core/log/error.h>
 #include <vulkan/vulkan.h>
 #include <windows.h>
 #include <string>
@@ -17,6 +17,7 @@ struct ImGuiDriverCreateInfo
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
     uint32_t image_count = 2;
     const char* ini_path = nullptr;
+    bool enable_docking = false;
 };
 
 struct ImGuiDriver

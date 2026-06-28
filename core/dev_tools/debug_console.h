@@ -2,7 +2,7 @@
 
 namespace ballistic {
 
-struct RenderBufferXray
+struct DebugConsole
 {
     bool open = false;
     void draw();

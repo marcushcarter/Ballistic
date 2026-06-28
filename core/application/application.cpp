@@ -1,5 +1,5 @@
 #include <core/application/application.h>
-#include <core/error/error_macros.h>
+#include <core/log/error_macros.h>
 #include <core/version.h>
 #include <windows.h>
 #include <chrono>
@@ -12,8 +12,8 @@ Error Application::create(const ApplicationCreateInfo& p_info)
     using enum Error;
     Error err;
 
-    std::cout << BALLISTIC_VERSION_NAME << " v" << BALLISTIC_VERSION_NUMBER << ".stable.official - https://ballisticgames.ca\n";
-    
+    ballistic::log_write("%s v%s.stable.official - https://ballisticgames.ca", BALLISTIC_VERSION_NAME, BALLISTIC_VERSION_NUMBER);
+
     create_info = p_info;
 
     err = window.create(p_info.window_title, p_info.width, p_info.height);
@@ -48,6 +48,7 @@ Error Application::create(const ApplicationCreateInfo& p_info)
     imgui_ci.color_format = device_driver.swapchain.format;
     imgui_ci.image_count = 3;
     imgui_ci.ini_path = p_info.ini_path;
+    imgui_ci.enable_docking = wants_docking();
     err = imgui.create(imgui_ci);
     BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 

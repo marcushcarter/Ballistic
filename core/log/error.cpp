@@ -1,4 +1,4 @@
-#include <core/error/error.h>
+#include <core/log/error.h>
 #include <iterator>
 
 namespace ballistic {

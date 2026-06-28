@@ -1,5 +1,5 @@
 #pragma once
-#include <core/error/error.h>
+#include <core/log/error.h>
 #include <windows.h>
 #include <string>
 

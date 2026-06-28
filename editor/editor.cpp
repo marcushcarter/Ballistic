@@ -32,7 +32,8 @@ void Editor::draw()
     ImGui::ShowDemoWindow();
 
     viewport.draw(context);
-    // context.dev->xray.draw();
+    
+    context.dev->debug_console.draw();
 }
 
 void Editor::begin_dockspace()
@@ -66,12 +67,19 @@ void Editor::begin_dockspace()
 void Editor::draw_menu_bar()
 {
     if (ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("Window")) {
+
+        if (ImGui::BeginMenu("View")) {
             ImGui::MenuItem("Viewport", nullptr, &viewport.open);
-            // ImGui::Separator();
-            // ImGui::MenuItem("Xray", nullptr, &context.dev->xray.open);
+            ImGui::Separator();
+            ImGui::MenuItem("Debug Console", nullptr, &context.dev->debug_console.open);
+            ImGui::Separator();
+            if (ImGui::MenuItem("Close All")) {
+                viewport.open = false;
+                context.dev->debug_console.open = false;
+            }
             ImGui::EndMenu();
         }
+        
         ImGui::EndMainMenuBar();
     }
 }
@@ -101,7 +109,7 @@ void Editor::load_layout() {
     int val;
     while (f >> key >> val) {
         if (key == "viewport") viewport.open = (val != 0);
-        // else if (key == "xray") context.dev->xray.open = (val != 0);
+        else if (key == "debug_console") context.dev->debug_console.open = (val != 0);
     }
 }
 
@@ -111,7 +119,7 @@ void Editor::save_layout() {
     std::ofstream f(path);
     if (!f) return;
     f << "viewport " << (viewport.open ? 1 : 0) << "\n";
-    // f << "xray " << (context.dev->xray.open ? 1 : 0) << "\n";
+    f << "debug_console " << (context.dev->debug_console.open ? 1 : 0) << "\n";
 }
 
 }

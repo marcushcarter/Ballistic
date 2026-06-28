@@ -1,5 +1,5 @@
 #include <core/rendering/renderer.h>
-#include <core/error/error_macros.h>
+#include <core/log/error_macros.h>
 #include <iostream>
 
 namespace ballistic {

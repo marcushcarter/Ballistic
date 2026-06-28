@@ -2,6 +2,7 @@
 #include <editor/editor_context.h>
 #include <core/rendering/renderer.h>
 #include <imgui.h>
+#include <IconsFontAwesome6.h>
 
 namespace ballistic {
 
@@ -39,8 +40,7 @@ void ViewportPanel::draw(EditorContext& ctx)
         ImVec2 button_pos = ImVec2(ImGui::GetWindowContentRegionMax().x - button_size.x, ImGui::GetWindowContentRegionMin().y + margin);
 
         ImGui::SetCursorPos(button_pos);
-        // if (ImGui::Button(ICON_FA_HAND_DOTS, button_size)) {}
-        if (ImGui::Button("x", button_size)) {}
+        if (ImGui::Button(ICON_FA_ELLIPSIS, button_size)) {}
     }
     ImGui::End();
 }

@@ -5,7 +5,7 @@
 #include <drivers/imgui/imgui_driver.h>
 #include <core/dev_tools/dev_systems.h>
 #include <core/rendering/renderer.h>
-#include <core/error/error.h>
+#include <core/log/error.h>
 #include <string>
 
 namespace ballistic {
@@ -37,6 +37,7 @@ struct Application
     virtual Error on_init() { return Error::Ok; }
     virtual void on_update(float p_dt) { (void)p_dt; }
     virtual void on_shutdown() {}
+    virtual bool wants_docking() const { return false; }
     virtual ~Application() = default;
 };
 

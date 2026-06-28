@@ -1,6 +1,6 @@
 #include <editor/editor_application.h>
 #include <core/io/embedded_resource.h>
-#include <core/error/error_macros.h>
+#include <core/log/error_macros.h>
 #include <imgui.h>
 #include <IconsFontAwesome6.h>
 

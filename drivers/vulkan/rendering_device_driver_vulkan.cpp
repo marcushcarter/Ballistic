@@ -1,5 +1,5 @@
 #include <drivers/vulkan/rendering_device_driver_vulkan.h>
-#include <core/error/error_macros.h>
+#include <core/log/error_macros.h>
 #include <vulkan/vulkan.hpp>
 #include <iostream>
 #include <algorithm>
@@ -81,10 +81,18 @@ Error RenderingDeviceDriverVulkan::_initialize_device_extensions()
 void RenderingDeviceDriverVulkan::_get_device_properties()
 {
     vkGetPhysicalDeviceProperties(physical_device, &physical_device_properties);
-    
-    std::cout << "Vulkan " << VK_API_VERSION_MAJOR(physical_device_properties.apiVersion) << "." << VK_API_VERSION_MINOR(physical_device_properties.apiVersion) << "." << VK_API_VERSION_PATCH(physical_device_properties.apiVersion)
-        << " - Driver " << VK_API_VERSION_MAJOR(physical_device_properties.driverVersion) << "." << VK_API_VERSION_MINOR(physical_device_properties.driverVersion) << "." << VK_API_VERSION_PATCH(physical_device_properties.driverVersion)
-        << " - Using Device: " << physical_device_properties.deviceName << " (" << vk::to_string(vk::PhysicalDeviceType(physical_device_properties.deviceType)).c_str() << ")\n";
+
+    std::string device_type = vk::to_string(vk::PhysicalDeviceType(physical_device_properties.deviceType));
+
+    log_write("Vulkan %u.%u.%u - Driver %u.%u.%u - Using Device: %s (%s)",
+        VK_API_VERSION_MAJOR(physical_device_properties.apiVersion),
+        VK_API_VERSION_MINOR(physical_device_properties.apiVersion),
+        VK_API_VERSION_PATCH(physical_device_properties.apiVersion),
+        VK_API_VERSION_MAJOR(physical_device_properties.driverVersion),
+        VK_API_VERSION_MINOR(physical_device_properties.driverVersion),
+        VK_API_VERSION_PATCH(physical_device_properties.driverVersion),
+        physical_device_properties.deviceName,
+        device_type.c_str());
 }
 
 Error RenderingDeviceDriverVulkan::_check_device_features()

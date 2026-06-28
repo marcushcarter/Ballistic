@@ -9,7 +9,7 @@ void RenderBufferXray::draw()
     if (!open) return;
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(750, 400), ImGuiCond_FirstUseEver);
-    bool visible = ImGui::Begin("RenderBuffer XRay - Press 2 for a screenshot of selected buffer", &open);
+    bool visible = ImGui::Begin("RenderBuffer XRay - Press 2 for a screenshot of the selected buffer", &open);
     ImGui::PopStyleVar();
 
     if (visible) {

@@ -1,7 +1,7 @@
 #include <game/game_application.h>
 #include <windows.h>
 
-int main()
+int WINAPI WinMain(HINSTANCE, HINSTANCE, LPSTR, int)
 {
     ballistic::ApplicationCreateInfo info;
     info.window_title = "Ballistic Game (Dev Tools)";

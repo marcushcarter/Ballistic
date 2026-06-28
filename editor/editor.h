@@ -1,7 +1,7 @@
 #pragma once
 #include <editor/editor_context.h>
 #include <editor/panels/viewport_panel.h>
-#include <core/error/error.h>
+#include <core/log/error.h>
 #include <filesystem>
 
 namespace ballistic {

@@ -1,5 +1,5 @@
 #include <drivers/imgui/imgui_driver.h>
-#include <core/error/error_macros.h>
+#include <core/log/error_macros.h>
 #include <backends/imgui_impl_win32.h>
 #include <backends/imgui_impl_vulkan.h>
 #include <vulkan/vulkan.h>
@@ -17,7 +17,9 @@ Error ImGuiDriver::create(const ImGuiDriverCreateInfo& p_info)
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
-    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    if (p_info.enable_docking) {
+        io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    }
 
     if (p_info.ini_path) {
         ini_path_storage = p_info.ini_path;

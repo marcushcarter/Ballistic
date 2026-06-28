@@ -16,6 +16,7 @@ void GameApplication::on_update(float p_dt)
     draw_menu_bar();
 
     dev_systems.renderbuffer_xray.draw();
+    dev_systems.debug_console.draw();
 #endif
 }
 
@@ -24,12 +25,21 @@ void GameApplication::on_shutdown() {}
 void GameApplication::draw_menu_bar()
 {
     if (debug_menu_visible && ImGui::BeginMainMenuBar()) {
-        if (ImGui::BeginMenu("Edit")) {
+
+        if (ImGui::BeginMenu("View")) {
+            ImGui::MenuItem("RenderBuffer XRay", nullptr, &dev_systems.renderbuffer_xray.open);
+            ImGui::MenuItem("Debug Console", nullptr, &dev_systems.debug_console.open);
+            ImGui::Separator();
+            if (ImGui::MenuItem("Close All")) {
+                dev_systems.renderbuffer_xray.open = false;
+                dev_systems.debug_console.open = false;
+            }
             ImGui::EndMenu();
         }
+
         if (ImGui::BeginMenu("Tools")) {
 
-            //Mouse tools
+            // Mouse tools
             // -----------
             // AI >
             // Animations >
@@ -44,9 +54,7 @@ void GameApplication::draw_menu_bar()
             
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("View")) {
-            ImGui::EndMenu();
-        }
+
         if (ImGui::BeginMenu("Renderer")) {
 
             // wireframe
@@ -81,36 +89,55 @@ void GameApplication::draw_menu_bar()
             
             ImGui::EndMenu();
         }
+
         if (ImGui::BeginMenu("Performance")) {
+
+            // fps
+            // frame time graph
+            // draw calls
+            // triangles
+            // memory usage
+            // allocations per frame
+            // entitiy count
+
             ImGui::EndMenu();
         }
+
         if (ImGui::BeginMenu("Effects")) {
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Weather")) {
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Pie Menu")) {
-            ImGui::EndMenu();
-        }
+
+        // if (ImGui::BeginMenu("Weather")) {
+        //     ImGui::EndMenu();
+        // }
+
+        // if (ImGui::BeginMenu("Pie Menu")) {
+        //     ImGui::EndMenu();
+        // }
+
         if (ImGui::BeginMenu("Sound")) {
             ImGui::EndMenu();
         }
+
         if (ImGui::BeginMenu("HUD")) {
             ImGui::EndMenu();
         }
-        if (ImGui::BeginMenu("Menu")) {
-            ImGui::EndMenu();
-        }
-        if (ImGui::BeginMenu("Placement")) {
-            ImGui::EndMenu();
-        }
+
+        // if (ImGui::BeginMenu("Menu")) {
+        //     ImGui::EndMenu();
+        // }
+
+        // if (ImGui::BeginMenu("Placement")) {
+        //     ImGui::EndMenu();
+        // }
+
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("Open Documentation")) {
                 ShellExecuteA(nullptr, "open", "https://ballisticgames.ca", nullptr, nullptr, SW_SHOWNORMAL);
             }
             ImGui::EndMenu();
         }
+
         ImGui::EndMainMenuBar();
     }
 }

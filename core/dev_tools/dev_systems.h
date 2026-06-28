@@ -1,6 +1,7 @@
 #pragma once
 #include <core/dev_tools/renderbuffer_xray.h>
-#include <core/error/error.h>
+#include <core/dev_tools/debug_console.h>
+#include <core/log/error.h>
 
 namespace ballistic {
 
@@ -10,6 +11,7 @@ namespace drivers { struct RenderingDeviceDriverVulkan; }
 struct DevSystems
 {
     RenderBufferXray renderbuffer_xray;
+    DebugConsole debug_console;
 
     Renderer* renderer = nullptr;
     drivers::RenderingDeviceDriverVulkan* device_driver = nullptr;
