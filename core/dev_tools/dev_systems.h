@@ -1,5 +1,5 @@
 #pragma once
-#include <core/dev_tools/xray.h>
+#include <core/dev_tools/renderbuffer_xray.h>
 #include <core/error/error.h>
 
 namespace ballistic {
@@ -9,7 +9,7 @@ namespace drivers { struct RenderingDeviceDriverVulkan; }
 
 struct DevSystems
 {
-    Xray xray;
+    RenderBufferXray renderbuffer_xray;
 
     Renderer* renderer = nullptr;
     drivers::RenderingDeviceDriverVulkan* device_driver = nullptr;

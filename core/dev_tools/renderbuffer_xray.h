@@ -2,9 +2,9 @@
 
 namespace ballistic {
 
-struct Xray
+struct RenderBufferXray
 {
-    bool open = false;
+    bool open = true;
     void draw();
 };
 

@@ -1,13 +1,18 @@
 #pragma once
 #include <windows.h>
-#include <string>
 
 namespace ballistic {
 
 struct EmbeddedResource
 {
-    static HICON load_icon(const std::wstring& p_resource_name);
-    static HFONT load_font(const std::wstring& p_resource_name);
+    struct Blob {
+        const void* data = nullptr;
+        size_t size = 0;
+        explicit operator bool() const { return data != nullptr; }
+    };
+
+    static Blob load(const wchar_t* p_resource_name);
+    static HICON load_icon(const wchar_t* p_resource_name);
 };
 
 }

@@ -2,14 +2,18 @@
 
 namespace ballistic {
 
-HICON EmbeddedResource::load_icon(const std::wstring& p_resource_name) {
-    return LoadIconW(GetModuleHandleW(nullptr), p_resource_name.c_str());
+EmbeddedResource::Blob EmbeddedResource::load(const wchar_t* p_resource_name)
+{
+    HMODULE mod = GetModuleHandleW(nullptr);
+    HRSRC res = FindResourceW(mod, p_resource_name, RT_RCDATA);
+    if (!res) return {};
+    HGLOBAL mem = LoadResource(mod, res);
+    if (!mem) return {};
+    return { LockResource(mem), SizeofResource(mod, res) };
 }
 
-HFONT EmbeddedResource::load_font(const std::wstring& p_resource_name)
-{
-    (void)p_resource_name;
-    return nullptr;
+HICON EmbeddedResource::load_icon(const wchar_t* p_resource_name) {
+    return LoadIconW(GetModuleHandleW(nullptr), p_resource_name);
 }
 
 }
