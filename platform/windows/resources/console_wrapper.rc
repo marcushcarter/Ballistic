@@ -19,10 +19,10 @@ BEGIN
         BEGIN
             VALUE "CompanyName",     "Ballistic Games"
             VALUE "FileDescription", "Ballistic Engine (Console)"
-            VALUE "FileVersion",     BALLISTIC_VERSION_NUMBER
+            VALUE "FileVersion",     "1.0.0"
             VALUE "InternalName",    "ballistic_console_wrapper"
             VALUE "ProductName",     BALLISTIC_VERSION_NAME
-            VALUE "ProductVersion",  BALLISTIC_VERSION_FULL_BUILD
+            VALUE "ProductVersion",  "1.0.0"
         END
     END
     BLOCK "VarFileInfo"

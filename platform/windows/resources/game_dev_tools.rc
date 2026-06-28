@@ -17,9 +17,9 @@ BEGIN
         BLOCK "040904b0"
         BEGIN
             VALUE "CompanyName",     "Ballistic Games"
-            VALUE "FileDescription", "Ballistic Game"
+            VALUE "FileDescription", "Ballistic Game (Dev Tools)"
             VALUE "FileVersion",     BALLISTIC_VERSION_NUMBER
-            VALUE "InternalName",    "ballistic_game"
+            VALUE "InternalName",    "ballistic_game_dev_tools"
             VALUE "ProductName",     BALLISTIC_VERSION_NAME
             VALUE "ProductVersion",  BALLISTIC_VERSION_FULL_BUILD
         END

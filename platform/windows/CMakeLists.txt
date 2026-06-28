@@ -23,10 +23,21 @@ if(BALLISTIC_BUILD_GAME)
         resources/game.rc
         ${CMAKE_BINARY_DIR}/generated/embedded_assets_shared.rc
         main_game.cpp
+        ${CMAKE_SOURCE_DIR}/game/game_application.cpp
     )
-    target_link_libraries(ballistic_game PRIVATE ballistic_core ballistic_game_lib)
+    target_link_libraries(ballistic_game PRIVATE ballistic_core)
     ballistic_common_target(ballistic_game)
     target_compile_definitions(ballistic_game PRIVATE BALLISTIC_GAME)
+
+    add_executable(ballistic_game_dev_tools # WIN32
+        resources/game_dev_tools.rc
+        ${CMAKE_BINARY_DIR}/generated/embedded_assets_shared.rc
+        main_game_dev_tools.cpp
+        ${CMAKE_SOURCE_DIR}/game/game_application.cpp
+    )
+    target_link_libraries(ballistic_game_dev_tools PRIVATE ballistic_core)
+    ballistic_common_target(ballistic_game_dev_tools)
+    target_compile_definitions(ballistic_game_dev_tools PRIVATE BALLISTIC_GAME BALLISTIC_DEV_TOOLS)
 endif()
 
 if(BALLISTIC_BUILD_CONSOLE_WRAPPER)

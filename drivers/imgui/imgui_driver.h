@@ -2,6 +2,7 @@
 #include <core/error/error.h>
 #include <vulkan/vulkan.h>
 #include <windows.h>
+#include <string>
 
 namespace ballistic::drivers {
 
@@ -15,12 +16,14 @@ struct ImGuiDriverCreateInfo
     VkQueue queue = VK_NULL_HANDLE;
     VkFormat color_format = VK_FORMAT_B8G8R8A8_UNORM;
     uint32_t image_count = 2;
+    const char* ini_path = nullptr;
 };
 
 struct ImGuiDriver
 {
     VkDevice device = VK_NULL_HANDLE;
     VkDescriptorPool descriptor_pool = VK_NULL_HANDLE;
+    std::string ini_path_storage;
 
     Error create(const ImGuiDriverCreateInfo& p_info);
     void destroy();

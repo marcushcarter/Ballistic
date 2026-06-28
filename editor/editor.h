@@ -1,0 +1,29 @@
+#pragma once
+#include <editor/editor_context.h>
+#include <editor/panels/viewport_panel.h>
+#include <core/error/error.h>
+#include <filesystem>
+
+namespace ballistic {
+
+struct Editor
+{
+    EditorContext context;
+
+    ViewportPanel viewport;
+
+    Error create(const EditorContext& p_context);
+    void destroy();
+    void update(float p_dt);
+    void draw();
+
+    void begin_dockspace();
+    void draw_menu_bar();
+
+    void load_layout();
+    void save_layout();
+    
+    static std::filesystem::path get_layout_path();
+};
+
+}

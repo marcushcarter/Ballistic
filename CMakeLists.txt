@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.28)
-project(Ballistic VERSION 0.1.0 LANGUAGES CXX)
+project(Ballistic VERSION 3.0.0 LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,6 +23,10 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE ${CMAKE_BINARY_DIR}/bin/Release)
 
 set(CMAKE_RC_FLAGS "${CMAKE_RC_FLAGS} /I\"${CMAKE_SOURCE_DIR}\" /I\"${CMAKE_BINARY_DIR}/generated\"")
 
+option(BALLISTIC_BUILD_EDITOR "Build the editor" ON)
+option(BALLISTIC_BUILD_GAME "Build the game runtime" ON)
+option(BALLISTIC_BUILD_CONSOLE_WRAPPER "Build the console wrapper" ON)
+
 include(CompilerOptions)
 include(Platform)
 include(Dependencies)
@@ -32,7 +36,6 @@ add_subdirectory(thirdparty)
 add_subdirectory(drivers)
 add_subdirectory(core)
 add_subdirectory(editor)
-add_subdirectory(game)
 
 set(BALLISTIC_GENERATED_DIR ${CMAKE_BINARY_DIR}/generated)
 file(MAKE_DIRECTORY ${BALLISTIC_GENERATED_DIR})
@@ -47,9 +50,5 @@ ballistic_generate_asset_rc(
     ${BALLISTIC_GENERATED_DIR}/embedded_assets_editor.rc
     ${CMAKE_SOURCE_DIR}/assets/editor/logos
 )
-
-option(BALLISTIC_BUILD_EDITOR "Build the editor" ON)
-option(BALLISTIC_BUILD_GAME "Build the game runtime" ON)
-option(BALLISTIC_BUILD_CONSOLE_WRAPPER "Build the console wrapper" ON)
 
 add_subdirectory(platform/windows)

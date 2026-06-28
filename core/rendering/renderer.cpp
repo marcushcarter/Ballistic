@@ -1,5 +1,6 @@
 #include <core/rendering/renderer.h>
 #include <core/error/error_macros.h>
+#include <iostream>
 
 namespace ballistic {
 
@@ -42,11 +43,11 @@ Error Renderer::set_size(uint32_t p_width, uint32_t p_height)
 
     if (p_width == 0 || p_height == 0) return Ok;
     if (p_width == width && p_height == height) return Ok;
+
+    width = p_width;
+    height = p_height;
     
     device_driver->device_wait_idle();
-
-    // Error err = device_driver->swapchain_resize(swapchain, frame_count);
-    // BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 
     return Ok;
 }

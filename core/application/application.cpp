@@ -47,7 +47,7 @@ Error Application::create(const ApplicationCreateInfo& p_info)
     imgui_ci.queue = device_driver.queue_families[context_driver.graphics_queue_family][0].queue;
     imgui_ci.color_format = device_driver.swapchain.format;
     imgui_ci.image_count = 3;
-
+    imgui_ci.ini_path = p_info.ini_path;
     err = imgui.create(imgui_ci);
     BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 
@@ -87,11 +87,9 @@ int Application::run()
         if (err != Ok) {
             continue;
         }
-        
-        err = renderer.set_size(window.width, window.height);
-        BALLISTIC_ERR_FAIL_COND_V(err != Ok, static_cast<int>(err));
-        
+
         imgui.new_frame();
+        dev_systems.new_frame((float)delta);
         on_update((float)delta);
         imgui.render();
 

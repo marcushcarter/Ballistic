@@ -18,7 +18,14 @@ Error ImGuiDriver::create(const ImGuiDriverCreateInfo& p_info)
     ImGuiIO& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
     io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
-    io.IniFilename = nullptr;
+
+    if (p_info.ini_path) {
+        ini_path_storage = p_info.ini_path;
+        io.IniFilename = ini_path_storage.c_str();
+    } else {
+        io.IniFilename = nullptr;
+    }
+    
     ImGui::StyleColorsDark();
 
     VkDescriptorPoolSize pool_sizes[] = {

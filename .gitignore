@@ -6,7 +6,13 @@
 /*.cmake
 /*.make
 /*.ninja
-/.vscode/
+
+.vscode/*
+!.vscode/c_cpp_properties.json
+!.vscode/settings.json
+!.vscode/extensions.json
+!.vscode/launch.json
+!.vscode/tasks.json
 
 CMakeLists.txt.user
 CMakeCache.txt
