@@ -3,6 +3,7 @@
 #include <vulkan/vulkan.hpp>
 #include <iostream>
 #include <algorithm>
+#include <mutex>
 
 namespace ballistic::drivers {
 
@@ -485,12 +486,17 @@ Error RenderingDeviceDriverVulkan::initialize(uint32_t p_device_index, uint32_t 
     err = swapchain_resize(frame_count);
 	BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 
+    err = bindless_heap_create(16384, 4096, 256);
+	BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
+
     return Ok;
 }
 
 void RenderingDeviceDriverVulkan::shutdown()
 {
     device_wait_idle();
+
+    bindless_heap_free();
 
     swapchain_free();
 
@@ -873,6 +879,193 @@ Error RenderingDeviceDriverVulkan::update_swapchain()
     if (!swapchain.surface->needs_resize) return Ok;
     device_wait_idle();
     return swapchain_resize(frame_count);
+}
+
+/*********************/
+/**** DESCRIPTORS ****/
+/*********************/
+
+// ----- BINDLESS HEAP -----
+
+Error RenderingDeviceDriverVulkan::bindless_heap_create(uint32_t p_sampled_count, uint32_t p_storage_count, uint32_t p_samplers_count)
+{
+    using enum Error;
+    
+    VkPhysicalDeviceVulkan12Properties p12{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_PROPERTIES };
+    VkPhysicalDeviceProperties2 p2{ VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_PROPERTIES_2 };
+    p2.pNext = &p12;
+    vkGetPhysicalDeviceProperties2(physical_device, &p2);
+
+    auto clamp = [](uint32_t want, uint32_t per_set, uint32_t per_stage) {
+        uint32_t lim = per_set < per_stage ? per_set : per_stage;
+        return want < lim ? want : lim;
+    };
+    const uint32_t sampled = clamp(p_sampled_count, p12.maxDescriptorSetUpdateAfterBindSampledImages, p12.maxPerStageDescriptorUpdateAfterBindSampledImages);
+    const uint32_t storage = clamp(p_storage_count, p12.maxDescriptorSetUpdateAfterBindStorageImages, p12.maxPerStageDescriptorUpdateAfterBindStorageImages);
+    const uint32_t samplers = clamp(p_samplers_count, p12.maxDescriptorSetUpdateAfterBindSamplers,      p12.maxPerStageDescriptorUpdateAfterBindSamplers);
+
+    if (sampled < p_sampled_count || storage < p_storage_count || samplers < p_samplers_count) {
+        log_write("Bindless heap counts clamped to device limits (sampled %u->%u, storage %u->%u, sampler %u->%u).\n", p_sampled_count, sampled, p_storage_count, storage, p_samplers_count, samplers);
+    }
+
+    bindless_heap.sampled_alloc.cap = sampled;
+    bindless_heap.storage_alloc.cap = storage;
+
+    VkDescriptorSetLayoutBinding bindings[3]{};
+    bindings[BindlessHeap::BINDING_SAMPLED] = { BindlessHeap::BINDING_SAMPLED, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampled, VK_SHADER_STAGE_ALL, nullptr };
+    bindings[BindlessHeap::BINDING_STORAGE] = { BindlessHeap::BINDING_STORAGE, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storage, VK_SHADER_STAGE_ALL, nullptr };
+    bindings[BindlessHeap::BINDING_SAMPLER] = { BindlessHeap::BINDING_SAMPLER, VK_DESCRIPTOR_TYPE_SAMPLER, samplers, VK_SHADER_STAGE_ALL, nullptr };
+
+    const VkDescriptorBindingFlags bf = VK_DESCRIPTOR_BINDING_PARTIALLY_BOUND_BIT | VK_DESCRIPTOR_BINDING_UPDATE_AFTER_BIND_BIT;
+    VkDescriptorBindingFlags flags[3]{ bf, bf, bf};
+
+    VkDescriptorSetLayoutBindingFlagsCreateInfo flags_ci{};
+    flags_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_BINDING_FLAGS_CREATE_INFO;
+    flags_ci.bindingCount = 3;
+    flags_ci.pBindingFlags = flags;
+
+    VkDescriptorSetLayoutCreateInfo layout_ci{};
+    layout_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layout_ci.pNext = &flags_ci;
+    layout_ci.flags = VK_DESCRIPTOR_SET_LAYOUT_CREATE_UPDATE_AFTER_BIND_POOL_BIT;
+    layout_ci.bindingCount = 3;
+    layout_ci.pBindings = bindings;
+
+    VkResult err = vkCreateDescriptorSetLayout(device, &layout_ci, nullptr, &bindless_heap.layout);
+    BALLISTIC_ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, Failed, "Couldn't create Vulkan descriptor set layout.");
+
+    VkDescriptorPoolSize pool_sizes[3] = {
+        { VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, sampled },
+        { VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, storage },
+        { VK_DESCRIPTOR_TYPE_SAMPLER, samplers },
+    };
+    VkDescriptorPoolCreateInfo pool_ci{};
+    pool_ci.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    pool_ci.flags = VK_DESCRIPTOR_POOL_CREATE_UPDATE_AFTER_BIND_BIT;
+    pool_ci.maxSets = 1;
+    pool_ci.poolSizeCount = 3;
+    pool_ci.pPoolSizes = pool_sizes;
+
+    err = vkCreateDescriptorPool(device, &pool_ci, nullptr, &bindless_heap.pool);
+    BALLISTIC_ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, Failed, "Couldn't create Vulkan descriptor pool.");
+
+    VkDescriptorSetAllocateInfo set_ai{ VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO };
+    set_ai.descriptorPool = bindless_heap.pool;
+    set_ai.descriptorSetCount = 1;
+    set_ai.pSetLayouts = &bindless_heap.layout;
+
+    err = vkAllocateDescriptorSets(device, &set_ai, &bindless_heap.set);
+    BALLISTIC_ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, Failed, "Couldn't create Vulkan descriptor set.");
+
+    VkPushConstantRange push_range{};
+    push_range.stageFlags = VK_SHADER_STAGE_ALL;
+    push_range.offset = 0;
+    push_range.size = BindlessHeap::PUSH_CONSTANT_SIZE;
+
+    VkPipelineLayoutCreateInfo pl_ci{ VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO };
+    pl_ci.setLayoutCount = 1;
+    pl_ci.pSetLayouts = &bindless_heap.layout;
+    pl_ci.pushConstantRangeCount = 1;
+    pl_ci.pPushConstantRanges = &push_range;
+
+    err = vkCreatePipelineLayout(device, &pl_ci, nullptr, &bindless_heap.pipeline_layout);
+    BALLISTIC_ERR_FAIL_COND_V_MSG(err != VK_SUCCESS, Failed, "Couldn't create Vulkan pipeline layout.");
+
+    return Ok;
+}
+
+void RenderingDeviceDriverVulkan::bindless_heap_free()
+{
+    if (bindless_heap.pipeline_layout) {
+        vkDestroyPipelineLayout(device, bindless_heap.pipeline_layout, nullptr);
+        bindless_heap.pipeline_layout = VK_NULL_HANDLE;
+    }
+    if (bindless_heap.pool) {
+        vkDestroyDescriptorPool(device, bindless_heap.pool, nullptr);
+        bindless_heap.pool = VK_NULL_HANDLE;
+    }
+    if (bindless_heap.layout) {
+        vkDestroyDescriptorSetLayout(device, bindless_heap.layout, nullptr);
+        bindless_heap.layout = VK_NULL_HANDLE;
+    }
+    bindless_heap.set = VK_NULL_HANDLE;
+}
+
+uint32_t RenderingDeviceDriverVulkan::bindless_heap_alloc_sampled(VkImageView p_image_view)
+{
+    uint32_t index = bindless_heap.sampled_alloc.acquire();
+    if (index == UINT32_MAX) {
+        
+        log_write("Bindless heap sampled image array exhausted.");
+        return UINT32_MAX;
+    }
+
+    VkDescriptorImageInfo info{};
+    info.imageView = p_image_view;
+    info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    VkWriteDescriptorSet w{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    w.dstSet = bindless_heap.set;
+    w.dstBinding = BindlessHeap::BINDING_SAMPLED;
+    w.dstArrayElement = index;
+    w.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+    w.descriptorCount = 1;
+    w.pImageInfo = &info;
+
+    vkUpdateDescriptorSets(device, 1, &w, 0, nullptr);
+    return index;
+}
+
+uint32_t RenderingDeviceDriverVulkan::bindless_heap_alloc_storage(VkImageView p_image_view)
+{
+    uint32_t index = bindless_heap.storage_alloc.acquire();
+    if (index == UINT32_MAX) {
+        log_write("Bindless heap storage image array exhausted.");
+        return UINT32_MAX;
+    }
+
+    VkDescriptorImageInfo info{};
+    info.imageView = p_image_view;
+    info.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+
+    VkWriteDescriptorSet w{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    w.dstSet = bindless_heap.set;
+    w.dstBinding = BindlessHeap::BINDING_STORAGE;
+    w.dstArrayElement = index;
+    w.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+    w.descriptorCount = 1;
+    w.pImageInfo = &info;
+
+    vkUpdateDescriptorSets(device, 1, &w, 0, nullptr);
+    return index;
+}
+
+void RenderingDeviceDriverVulkan::bindless_heap_free_sampled(uint32_t p_index)
+{
+    if (p_index == UINT32_MAX) return;
+    bindless_heap.sampled_alloc.release(p_index);
+}
+
+void RenderingDeviceDriverVulkan::bindless_heap_free_storage(uint32_t p_index)
+{
+    if (p_index == UINT32_MAX) return;
+    bindless_heap.storage_alloc.release(p_index);
+}
+
+void RenderingDeviceDriverVulkan::bindless_heap_register_sampler(uint32_t p_index, VkSampler p_sampler)
+{
+    VkDescriptorImageInfo info{};
+    info.sampler = p_sampler;
+
+    VkWriteDescriptorSet w{ VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET };
+    w.dstSet = bindless_heap.set;
+    w.dstBinding = BindlessHeap::BINDING_SAMPLER;
+    w.dstArrayElement = p_index;
+    w.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+    w.descriptorCount = 1;
+    w.pImageInfo = &info;
+
+    vkUpdateDescriptorSets(device, 1, &w, 0, nullptr);
 }
 
 }

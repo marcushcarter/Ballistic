@@ -32,7 +32,7 @@ void ViewportPanel::draw(EditorContext& ctx)
             // ImGui::Image((ImTextureID)ctx.finalTextureID, size);
         } else {
             ImDrawList* dl = ImGui::GetWindowDrawList();
-            dl->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), IM_COL32(25, 25, 25, 255));
+            dl->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), IM_COL32(255, 0, 0, 255));
         }
 
         const float margin = 8.0f;

@@ -28,11 +28,7 @@ void Editor::draw()
 {
     begin_dockspace();
     draw_menu_bar();
-    
-    ImGui::ShowDemoWindow();
-
     viewport.draw(context);
-    
     context.dev->debug_console.draw();
 }
 

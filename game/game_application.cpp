@@ -13,10 +13,11 @@ void GameApplication::on_update(float p_dt)
     renderer.set_size(window.width, window.height);
 
 #if BALLISTIC_DEV_TOOLS
-    draw_menu_bar();
-
-    dev_systems.renderbuffer_xray.draw();
-    dev_systems.debug_console.draw();
+    if (debug_menu_visible) {
+        draw_menu_bar();
+        dev_systems.renderbuffer_xray.draw();
+        dev_systems.debug_console.draw();
+    }
 #endif
 }
 
@@ -59,7 +60,6 @@ void GameApplication::draw_menu_bar()
 
             // wireframe
             // grid >
-            //
             // -----------
             // make swatch screenshot
             // 4x mode
@@ -82,7 +82,7 @@ void GameApplication::draw_menu_bar()
             // clous rendering >
             // lighting >
             // draw debugging >
-            // streaming >>
+            // streaming >
             // content instancing >
             // -----------
             // hotload shaders (CTRL+H)
@@ -107,14 +107,6 @@ void GameApplication::draw_menu_bar()
             ImGui::EndMenu();
         }
 
-        // if (ImGui::BeginMenu("Weather")) {
-        //     ImGui::EndMenu();
-        // }
-
-        // if (ImGui::BeginMenu("Pie Menu")) {
-        //     ImGui::EndMenu();
-        // }
-
         if (ImGui::BeginMenu("Sound")) {
             ImGui::EndMenu();
         }
@@ -122,14 +114,6 @@ void GameApplication::draw_menu_bar()
         if (ImGui::BeginMenu("HUD")) {
             ImGui::EndMenu();
         }
-
-        // if (ImGui::BeginMenu("Menu")) {
-        //     ImGui::EndMenu();
-        // }
-
-        // if (ImGui::BeginMenu("Placement")) {
-        //     ImGui::EndMenu();
-        // }
 
         if (ImGui::BeginMenu("Help")) {
             if (ImGui::MenuItem("Open Documentation")) {

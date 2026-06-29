@@ -126,6 +126,50 @@ struct RenderingDeviceDriverVulkan
 
     Error update_swapchain();
 
+	/*********************/
+	/**** DESCRIPTORS ****/
+	/*********************/
+
+    // ----- BINDLESS HEAP -----
+
+    struct IndexAllocator {
+        uint32_t cap = 0;
+        uint32_t high_water = 0;
+        std::vector<uint32_t> free_list;
+
+        uint32_t acquire() {
+            if (!free_list.empty()) { uint32_t i = free_list.back(); free_list.pop_back(); return i; }
+            if (high_water < cap) return high_water++;
+            return UINT32_MAX;
+        }
+        void release(uint32_t i) { free_list.push_back(i); }
+    };
+
+    struct BindlessHeap {
+        VkDescriptorSet set = VK_NULL_HANDLE;
+        VkDescriptorSetLayout layout = VK_NULL_HANDLE;
+        VkDescriptorPool pool = VK_NULL_HANDLE;
+        VkPipelineLayout pipeline_layout = VK_NULL_HANDLE;
+        
+        IndexAllocator sampled_alloc;
+        IndexAllocator storage_alloc;
+
+        static constexpr uint32_t BINDING_SAMPLED = 0;
+        static constexpr uint32_t BINDING_STORAGE = 1;
+        static constexpr uint32_t BINDING_SAMPLER = 2;
+        static constexpr uint32_t PUSH_CONSTANT_SIZE = 128;
+    };
+
+    BindlessHeap bindless_heap;
+
+    Error bindless_heap_create(uint32_t p_sampled_count = 16384, uint32_t p_storage_count = 4096, uint32_t p_samplers_count = 256);
+    void bindless_heap_free();
+    uint32_t bindless_heap_alloc_sampled(VkImageView p_image_view);
+    uint32_t bindless_heap_alloc_storage(VkImageView p_image_view);
+    void bindless_heap_free_sampled(uint32_t p_index);
+    void bindless_heap_free_storage(uint32_t p_index);
+    void bindless_heap_register_sampler(uint32_t p_index, VkSampler p_sampler);
+
 	/*******************/
 	/**** RENDERING ****/
 	/*******************/
