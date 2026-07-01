@@ -5,11 +5,7 @@
 
 namespace ballistic {
 
-Error GameApplication::on_init()
-{
-    dev_systems.renderbuffer_xray.init(device_driver);
-    return Error::Ok;
-}
+Error GameApplication::on_init() { return Error::Ok; }
 
 void GameApplication::on_update(float p_dt)
 {
@@ -19,7 +15,7 @@ void GameApplication::on_update(float p_dt)
 #if BALLISTIC_DEV_TOOLS
     if (debug_menu_visible) {
         draw_menu_bar();
-        dev_systems.renderbuffer_xray.draw(renderer.graph, renderer.frame_number, renderer.frame_count);
+        dev_systems.renderbuffer_xray.draw(renderer.graph, dev_systems.texture_cache);
         dev_systems.debug_console.draw();
     }
 #endif

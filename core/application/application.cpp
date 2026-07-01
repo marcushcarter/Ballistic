@@ -59,7 +59,8 @@ Error Application::create(const ApplicationCreateInfo& p_info)
     err = render_path->create_resources();
     BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 
-    // dev_systems.create(&renderer, &device_driver);
+    dev_systems.create(renderer, device_driver);
+    BALLISTIC_ERR_FAIL_COND_V(err != Ok, err);
 
     return Ok;
 }
@@ -67,11 +68,15 @@ Error Application::create(const ApplicationCreateInfo& p_info)
 void Application::destroy()
 {
     device_driver.device_wait_idle();
+    
+    dev_systems.destroy();
+    
     if (render_path) {
         render_path->destroy_resources();
         delete render_path;
         render_path = nullptr;
     }
+
     imgui.destroy();
     renderer.destroy();
     device_driver.shutdown();
@@ -110,6 +115,8 @@ int Application::run()
         renderer.begin_frame();
         render_path->build(renderer.graph);
         renderer.end_frame();
+
+        dev_systems.texture_cache.collect(renderer.frame_number, renderer.frame_count);
     }
 
     on_shutdown();

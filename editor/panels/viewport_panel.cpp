@@ -1,6 +1,7 @@
 #include <editor/panels/viewport_panel.h>
 #include <editor/editor_context.h>
 #include <core/rendering/renderer.h>
+#include <core/dev_tools/dev_systems.h>
 #include <imgui.h>
 #include <IconsFontAwesome6.h>
 
@@ -25,14 +26,17 @@ void ViewportPanel::draw(EditorContext& ctx)
         if ((w != last_viewport_w || h != last_viewport_h) && !ImGui::IsAnyItemActive()) {
             last_viewport_w = w;
             last_viewport_h = h;
+
+            VkImageView old_view = ctx.renderer->final_image.image_view;
             ctx.renderer->set_size(w, h);
+            ctx.dev->texture_cache.retire(old_view, ctx.renderer->frame_number, ctx.renderer->frame_count);
         }
 
-        if (false) {
-            // ImGui::Image((ImTextureID)ctx.finalTextureID, size);
+        if (true) {
+            ImGui::Image((ImTextureID)ctx.dev->texture_cache.get(ctx.renderer->final_image.image_view), size);
         } else {
             ImDrawList* dl = ImGui::GetWindowDrawList();
-            dl->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), IM_COL32(255, 0, 0, 255));
+            dl->AddRectFilled(pos, ImVec2(pos.x + size.x, pos.y + size.y), IM_COL32(25, 25, 25, 255));
         }
 
         const float margin = 8.0f;

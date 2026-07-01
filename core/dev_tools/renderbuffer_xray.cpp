@@ -1,52 +1,16 @@
 #include <core/dev_tools/renderbuffer_xray.h>
 #include <core/rendering/render_graph.h>
+#include <core/dev_tools/imgui_texture_cache.h>
 #include <drivers/vulkan/rendering_device_driver_vulkan.h>
-#include <core/log/error_macros.h>
-#include <backends/imgui_impl_vulkan.h>
 #include <imgui.h>
 
 namespace ballistic {
 
 static const uint64_t BACKBUFFER_ID = RenderGraph::intern("backbuffer");
 
-Error RenderBufferXray::init(drivers::RenderingDeviceDriverVulkan& p_device_driver)
-{
-    using enum Error;
-    device_driver = &p_device_driver;
-
-    drivers::RenderingDeviceDriverVulkan::SamplerDesc sampler_desc{};
-    sampler_desc.mipmap_mode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    sampler_desc.address_mode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    sampler = device_driver->sampler_create(sampler_desc);
-
-    // selected_name_id = RenderGraph::intern("final_image")
-
-    return Ok;
-}
-
-void RenderBufferXray::shutdown()
-{
-    if (pending_free) {
-        ImGui_ImplVulkan_RemoveTexture(pending_free);
-        pending_free = VK_NULL_HANDLE;
-    }
-    if (set) {
-        ImGui_ImplVulkan_RemoveTexture(set);
-        set = VK_NULL_HANDLE;
-    }
-    built_for_view = VK_NULL_HANDLE;
-
-    device_driver->sampler_free(sampler);
-}
-
-void RenderBufferXray::draw(RenderGraph& graph, uint64_t frame, uint32_t frame_count)
+void RenderBufferXray::draw(RenderGraph& graph, ImGuiTextureCache& cache)
 {
     if (!open) return;
-
-    if (pending_free && frame >= pending_free_frame) {
-        ImGui_ImplVulkan_RemoveTexture(pending_free);
-        pending_free = VK_NULL_HANDLE;
-    }
 
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
     ImGui::SetNextWindowSize(ImVec2(750, 400), ImGuiCond_FirstUseEver);
@@ -57,16 +21,10 @@ void RenderBufferXray::draw(RenderGraph& graph, uint64_t frame, uint32_t frame_c
         ImVec2 avail = ImGui::GetContentRegionAvail();
         float right_w = avail.x * 0.25f;
         float left_w = avail.x - right_w;
-
-        VkImageView sel_view = VK_NULL_HANDLE;
+        
         ImageResource* sel = graph.resource_by_id(selected_name_id);
-        if (sel && sel->image) sel_view = sel->image->image_view;
-
-        if (sel_view != built_for_view) {
-            if (set) { pending_free = set; pending_free_frame = frame + frame_count; set = VK_NULL_HANDLE; }
-            if (sel_view != VK_NULL_HANDLE) set = ImGui_ImplVulkan_AddTexture(sampler, sel_view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-            built_for_view = sel_view;
-        }
+        VkImageView sel_view = (sel && sel->image) ? sel->image->image_view : VK_NULL_HANDLE;
+        VkDescriptorSet set = cache.get(sel_view);      // one line — cache handles lifetime
 
         ImGui::BeginChild("##xray_image", ImVec2(left_w, avail.y), false, ImGuiWindowFlags_NoScrollbar);
         {
